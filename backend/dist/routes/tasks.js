@@ -1,0 +1,463 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const prisma_1 = require("../prisma");
+const auth_1 = require("../middleware/auth");
+const validation_1 = require("../middleware/validation");
+const router = (0, express_1.Router)();
+
+function validatePythonCode(code) {
+    const cleanCode = code.replace(/\s+/g, ' ');
+    const forbiddenModules = ['os', 'sys', 'subprocess', 'socket', 'shutil', 'platform', 'importlib', 'ctypes', 'builtins'];
+    for (const mod of forbiddenModules) {
+        const importRegex = new RegExp(`\\b(import|from)\\s+${mod}\\b`);
+        if (importRegex.test(cleanCode)) {
+            return { valid: false, reason: `Importing the module "${mod}" is forbidden for security reasons.` };
+        }
+    }
+    const forbiddenBuiltins = ['eval', 'exec', 'open', '__import__', 'getattr', 'globals', 'locals'];
+    for (const func of forbiddenBuiltins) {
+        const funcRegex = new RegExp(`\\b${func}\\s*\\(`);
+        if (funcRegex.test(cleanCode)) {
+            return { valid: false, reason: `Calling "${func}()" is forbidden for security reasons.` };
+        }
+    }
+    return { valid: true };
+}
+
+function validateCCode(code) {
+    const cleanCode = code.replace(/\s+/g, ' ');
+    const forbiddenHeaders = ['unistd.h', 'dirent.h', 'sys/', 'fcntl.h', 'process.h'];
+    for (const header of forbiddenHeaders) {
+        const headerRegex = new RegExp(`#\\s*include\\s*[<\\"]${header}[>\\"]`);
+        if (headerRegex.test(code)) {
+            return { valid: false, reason: `Including header "${header}" is forbidden for security reasons.` };
+        }
+    }
+    const forbiddenCalls = ['system', 'popen', 'fork', 'exec', 'remove', 'rename', 'fopen', 'freopen', 'mkdir', 'rmdir'];
+    for (const call of forbiddenCalls) {
+        const callRegex = new RegExp(`\\b${call}\\s*\\(`);
+        if (callRegex.test(cleanCode)) {
+            return { valid: false, reason: `Calling "${call}()" is forbidden for security reasons.` };
+        }
+    }
+    return { valid: true };
+}
+
+router.get('/', async (_req, res) => {
+    const tasks = await prisma_1.prisma.task.findMany({ where: { published: true }, orderBy: { deadline: 'asc' } });
+    res.json({ tasks });
+});
+
+// IMPORTANT: /run-code must be declared before any /:id routes
+// to prevent Express matching "run-code" as an :id param
+router.post('/run-code', async (req, res) => {
+    const child_process = require('child_process');
+    const fs = require('fs');
+    const path = require('path');
+    const { code, language, input } = req.body;
+    if (!code || !language) {
+        return res.status(400).json({ error: 'Missing code or language' });
+    }
+    if (language === 'python') {
+        const validation = validatePythonCode(code);
+        if (!validation.valid) {
+            return res.status(400).json({ error: validation.reason });
+        }
+    } else if (language === 'c') {
+        const validation = validateCCode(code);
+        if (!validation.valid) {
+            return res.status(400).json({ error: validation.reason });
+        }
+    } else {
+        return res.status(400).json({ error: 'Unsupported language' });
+    }
+    const tempDir = path.join(__dirname, '../../temp_run');
+    if (!fs.existsSync(tempDir)) {
+        fs.mkdirSync(tempDir, { recursive: true });
+    }
+    const fileId = Math.random().toString(36).substring(7);
+    if (language === 'python') {
+        const filePath = path.join(tempDir, `run_${fileId}.py`);
+        fs.writeFileSync(filePath, code);
+        const child = child_process.spawn('python', [filePath]);
+        let stdout = '';
+        let stderr = '';
+        if (input) {
+            child.stdin.write(input);
+            child.stdin.end();
+        }
+        child.stdout.on('data', (data) => { stdout += data.toString(); });
+        child.stderr.on('data', (data) => { stderr += data.toString(); });
+        const timeout = setTimeout(() => { child.kill(); }, 5000);
+        child.on('close', (exitCode) => {
+            clearTimeout(timeout);
+            try { fs.unlinkSync(filePath); } catch (e) {}
+            res.json({ stdout, stderr, exitCode });
+        });
+        child.on('error', (err) => {
+            clearTimeout(timeout);
+            try { fs.unlinkSync(filePath); } catch (e) {}
+            res.json({ stdout, stderr, exitCode: 1, error: err.message });
+        });
+    } else if (language === 'c') {
+        const sourcePath = path.join(tempDir, `run_${fileId}.c`);
+        const exePath = path.join(tempDir, `run_${fileId}.exe`);
+        fs.writeFileSync(sourcePath, code);
+        child_process.exec(`clang "${sourcePath}" -o "${exePath}"`, (compileErr, compileStdout, compileStderr) => {
+            if (compileErr) {
+                try { fs.unlinkSync(sourcePath); } catch (e) {}
+                return res.json({ stdout: '', stderr: compileStderr || compileErr.message, exitCode: 1, compileError: true });
+            }
+            const child = child_process.spawn(exePath);
+            let stdout = '';
+            let stderr = '';
+            if (input) {
+                child.stdin.write(input);
+                child.stdin.end();
+            }
+            child.stdout.on('data', (data) => { stdout += data.toString(); });
+            child.stderr.on('data', (data) => { stderr += data.toString(); });
+            const timeout = setTimeout(() => { child.kill(); }, 5000);
+            child.on('close', (exitCode) => {
+                clearTimeout(timeout);
+                try { fs.unlinkSync(sourcePath); } catch (e) {}
+                try { fs.unlinkSync(exePath); } catch (e) {}
+                res.json({ stdout, stderr, exitCode });
+            });
+            child.on('error', (err) => {
+                clearTimeout(timeout);
+                try { fs.unlinkSync(sourcePath); } catch (e) {}
+                try { fs.unlinkSync(exePath); } catch (e) {}
+                res.json({ stdout, stderr, exitCode: 1, error: err.message });
+            });
+        });
+    }
+});
+
+router.get('/admin', auth_1.authenticateJWT, (0, auth_1.authorizeRoles)('ADMIN'), async (_req, res) => {
+    const tasks = await prisma_1.prisma.task.findMany({ orderBy: { createdAt: 'desc' } });
+    res.json({ tasks });
+});
+
+router.get('/:id', async (req, res) => {
+    const task = await prisma_1.prisma.task.findUnique({
+        where: { id: String(req.params.id) },
+        include: {
+            quizQuestions: {
+                select: {
+                    id: true,
+                    question: true,
+                    options: true,
+                    order: true
+                },
+                orderBy: { order: 'asc' }
+            }
+        }
+    });
+    if (!task)
+        return res.status(404).json({ error: 'Task not found' });
+    res.json({ task });
+});
+
+router.get('/admin/:id', auth_1.authenticateJWT, (0, auth_1.authorizeRoles)('ADMIN'), async (req, res) => {
+    const task = await prisma_1.prisma.task.findUnique({
+        where: { id: String(req.params.id) },
+        include: {
+            quizQuestions: {
+                orderBy: { order: 'asc' }
+            }
+        }
+    });
+    if (!task)
+        return res.status(404).json({ error: 'Task not found' });
+    res.json({ task });
+});
+
+router.post('/', auth_1.authenticateJWT, (0, auth_1.authorizeRoles)('ADMIN'), (0, validation_1.validateBody)(validation_1.createTaskSchema), async (req, res) => {
+    const { title, description, type, difficulty, deadline, testCases, sampleInput, sampleOutput, hints, starterCode, isDraft, quizQuestions, baseXp, targetTime, maxMarks } = req.body;
+    const task = await prisma_1.prisma.task.create({
+        data: {
+            title,
+            description,
+            type: type || 'CODE',
+            difficulty: difficulty || 'Beginner',
+            deadline: deadline ? new Date(deadline) : null,
+            baseXp: Number(baseXp) || 0,
+            targetTime: targetTime ? Number(targetTime) : null,
+            maxMarks: maxMarks ? Number(maxMarks) : null,
+            testCases: testCases || '',
+            sampleInput: sampleInput || '',
+            sampleOutput: sampleOutput || '',
+            hints: hints || '',
+            starterCode: starterCode || '',
+            isDraft: Boolean(isDraft),
+            published: !Boolean(isDraft),
+            quizQuestions: type === 'QUIZ' && Array.isArray(quizQuestions) ? {
+                create: quizQuestions.map((q, idx) => ({
+                    question: q.question,
+                    options: JSON.stringify(q.options),
+                    answer: q.answer,
+                    order: q.order ?? idx
+                }))
+            } : undefined
+        },
+        include: { quizQuestions: true }
+    });
+    res.status(201).json({ task });
+});
+
+router.put('/:id', auth_1.authenticateJWT, (0, auth_1.authorizeRoles)('ADMIN'), (0, validation_1.validateBody)(validation_1.updateTaskSchema), async (req, res) => {
+    const { id } = req.params;
+    const updates = req.body;
+    const taskData = {
+        title: updates.title,
+        description: updates.description,
+        type: updates.type,
+        difficulty: updates.difficulty,
+        deadline: updates.deadline ? new Date(updates.deadline) : undefined,
+        sampleInput: updates.sampleInput,
+        sampleOutput: updates.sampleOutput,
+        hints: updates.hints,
+        starterCode: updates.starterCode,
+        testCases: updates.testCases,
+        baseXp: updates.baseXp !== undefined ? Number(updates.baseXp) : undefined,
+        targetTime: updates.targetTime !== undefined ? Number(updates.targetTime) : undefined,
+        maxMarks: updates.maxMarks !== undefined ? Number(updates.maxMarks) : undefined,
+        published: typeof updates.published === 'boolean' ? updates.published : undefined,
+        isDraft: typeof updates.isDraft === 'boolean' ? updates.isDraft : undefined
+    };
+    if (updates.type === 'QUIZ' && Array.isArray(updates.quizQuestions)) {
+        await prisma_1.prisma.quizQuestion.deleteMany({ where: { taskId: id } });
+        taskData.quizQuestions = {
+            create: updates.quizQuestions.map((q, idx) => ({
+                question: q.question,
+                options: JSON.stringify(q.options),
+                answer: q.answer,
+                order: q.order ?? idx
+            }))
+        };
+    }
+    const task = await prisma_1.prisma.task.update({
+        where: { id },
+        data: taskData,
+        include: { quizQuestions: true }
+    });
+    res.json({ task });
+});
+
+router.delete('/:id', auth_1.authenticateJWT, (0, auth_1.authorizeRoles)('ADMIN'), async (req, res) => {
+    const { id } = req.params;
+    await prisma_1.prisma.task.delete({ where: { id } });
+    res.json({ ok: true });
+});
+
+router.post('/:id/publish', auth_1.authenticateJWT, (0, auth_1.authorizeRoles)('ADMIN'), async (req, res) => {
+    const { id } = req.params;
+    const task = await prisma_1.prisma.task.update({ where: { id }, data: { published: true, isDraft: false } });
+    res.json({ task });
+});
+
+router.post('/:id/submit', auth_1.authenticateJWT, async (req, res) => {
+    const { id } = req.params;
+    const userId = req.user?.sub;
+    const { code, timeTaken, language } = req.body;
+    if (!userId)
+        return res.status(401).json({ error: 'Authentication required' });
+    const task = await prisma_1.prisma.task.findUnique({
+        where: { id },
+        include: { quizQuestions: true }
+    });
+    if (!task)
+        return res.status(404).json({ error: 'Task not found' });
+    let status = 'Pending';
+    let marks = null;
+    let feedback = null;
+    let earnedXp = 0;
+    if (task.type === 'QUIZ') {
+        let parsedAnswers = [];
+        try {
+            parsedAnswers = JSON.parse(code);
+        } catch (e) {
+            return res.status(400).json({ error: 'Invalid answers format. Must be JSON.' });
+        }
+        let correctCount = 0;
+        const totalQuestions = task.quizQuestions.length;
+        task.quizQuestions.forEach(q => {
+            const studentAns = parsedAnswers.find(a => a.questionId === q.id)?.answer || '';
+            if (q.answer.trim().toLowerCase() === studentAns.trim().toLowerCase()) {
+                correctCount++;
+            }
+        });
+        marks = correctCount;
+        status = 'Accepted';
+        feedback = `Auto-graded: ${correctCount}/${totalQuestions} correct answers.`;
+        
+        let max = task.maxMarks || totalQuestions;
+        if (max > 0 && marks > 0) {
+            let pct = marks / max;
+            earnedXp = Math.floor(pct * (task.baseXp || 0));
+        }
+        
+        if (earnedXp > 0) {
+            await prisma_1.prisma.leaderboard.upsert({
+                where: { userId },
+                update: { xp: { increment: earnedXp } },
+                create: { userId, xp: earnedXp }
+            });
+        }
+    } else if (task.type === 'CODE' && language && task.sampleInput && task.sampleOutput) {
+        if (language === 'python') {
+            const validation = validatePythonCode(code);
+            if (!validation.valid) {
+                return res.status(400).json({ error: validation.reason });
+            }
+        } else if (language === 'c') {
+            const validation = validateCCode(code);
+            if (!validation.valid) {
+                return res.status(400).json({ error: validation.reason });
+            }
+        }
+        const child_process = require('child_process');
+        const fs = require('fs');
+        const path = require('path');
+        const tempDir = path.join(__dirname, '../../temp_run');
+        if (!fs.existsSync(tempDir)) {
+            fs.mkdirSync(tempDir, { recursive: true });
+        }
+        const fileId = Math.random().toString(36).substring(7);
+        let runStdout = '';
+        if (language === 'python') {
+            const filePath = path.join(tempDir, `run_${fileId}.py`);
+            fs.writeFileSync(filePath, code);
+            try {
+                const out = child_process.spawnSync('python', [filePath], { input: task.sampleInput, timeout: 5000 });
+                runStdout = out.stdout ? out.stdout.toString() : '';
+            } catch (e) {}
+            try { fs.unlinkSync(filePath); } catch(e){}
+        } else if (language === 'c') {
+            const sourcePath = path.join(tempDir, `run_${fileId}.c`);
+            const exePath = path.join(tempDir, `run_${fileId}.exe`);
+            fs.writeFileSync(sourcePath, code);
+            try {
+                child_process.execSync(`clang "${sourcePath}" -o "${exePath}"`, { timeout: 5000 });
+                const out = child_process.spawnSync(exePath, { input: task.sampleInput, timeout: 5000 });
+                runStdout = out.stdout ? out.stdout.toString() : '';
+            } catch (e) {}
+            try { fs.unlinkSync(sourcePath); } catch(e){}
+            try { fs.unlinkSync(exePath); } catch(e){}
+        }
+
+        if (runStdout.trim() === task.sampleOutput.trim()) {
+            marks = task.maxMarks || 10;
+            status = 'Accepted';
+            feedback = 'Auto-graded: Output matches expected sample output.';
+            earnedXp = task.baseXp || 0;
+            
+            if (earnedXp > 0) {
+                await prisma_1.prisma.leaderboard.upsert({
+                    where: { userId },
+                    update: { xp: { increment: earnedXp } },
+                    create: { userId, xp: earnedXp }
+                });
+            }
+        }
+    }
+    const existingSubmission = await prisma_1.prisma.submission.findUnique({
+        where: {
+            taskId_userId: {
+                taskId: id,
+                userId: userId
+            }
+        }
+    });
+    let submission;
+    if (existingSubmission) {
+        submission = await prisma_1.prisma.submission.update({
+            where: { id: existingSubmission.id },
+            data: {
+                status,
+                marks,
+                feedback,
+                timeTaken: timeTaken ? Number(timeTaken) : null,
+                earnedXp,
+                versions: {
+                    create: [{ code, isFinal: true }]
+                }
+            },
+            include: { versions: true }
+        });
+    } else {
+        submission = await prisma_1.prisma.submission.create({
+            data: {
+                taskId: id,
+                userId,
+                status,
+                marks,
+                feedback,
+                timeTaken: timeTaken ? Number(timeTaken) : null,
+                earnedXp,
+                versions: {
+                    create: [{ code, isFinal: true }]
+                }
+            },
+            include: { versions: true }
+        });
+    }
+    let responseMsg;
+    if (task.type === 'QUIZ') {
+        responseMsg = `Quiz graded! You got ${marks}/${task.quizQuestions.length} correct.`;
+    } else if (task.type === 'CODE' && status === 'Accepted') {
+        responseMsg = `✅ Output matches! Auto-graded: ${marks} marks, ⚡ +${earnedXp} XP earned.`;
+    } else {
+        responseMsg = 'Solution submitted successfully! Awaiting manual review.';
+    }
+    res.status(201).json({
+        message: responseMsg,
+        submission
+    });
+});
+
+// /run-code route moved above /:id routes (see above)
+
+router.post('/:id/violation', auth_1.authenticateJWT, async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { reason } = req.body;
+        const userId = req.user?.sub;
+        if (!userId)
+            return res.status(401).json({ error: 'Authentication required' });
+        const task = await prisma_1.prisma.task.findUnique({ where: { id } });
+        if (!task)
+            return res.status(404).json({ error: 'Task not found' });
+        const student = await prisma_1.prisma.user.findUnique({ where: { id: userId } });
+        const studentName = student ? (student.name || student.email) : 'Unknown Student';
+        
+        await prisma_1.prisma.activityLog.create({
+            data: {
+                userId,
+                action: 'TASK_VIOLATION',
+                meta: JSON.stringify({ taskId: id, taskTitle: task.title, reason })
+            }
+        });
+
+        const admins = await prisma_1.prisma.user.findMany({ where: { role: 'ADMIN' } });
+        await Promise.all(admins.map(admin => {
+            return prisma_1.prisma.notification.create({
+                data: {
+                    userId: admin.id,
+                    title: '🚨 Cheat Alert: Task Violation',
+                    body: `Student "${studentName}" triggered a lock-down violation on task "${task.title}". Reason: ${reason || 'Unknown'}`,
+                    kind: 'VIOLATION'
+                }
+            });
+        }));
+        res.json({ success: true });
+    } catch (e) {
+        res.status(500).json({ error: 'Failed to report violation' });
+    }
+});
+
+exports.default = router;
+
+

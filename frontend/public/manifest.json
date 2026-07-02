@@ -1,0 +1,20 @@
+{
+  "name": "Programmer Learner Secure",
+  "short_name": "Programmer",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0f172a",
+  "theme_color": "#06b6d4",
+  "icons": [
+    {
+      "src": "https://via.placeholder.com/192.png?text=Programmer",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "https://via.placeholder.com/512.png?text=Programmer",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

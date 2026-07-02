@@ -1,0 +1,341 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  STUDENT
+}
+
+enum TaskDifficulty {
+  Beginner
+  Intermediate
+  Advanced
+}
+
+enum TaskType {
+  GENERAL
+  CODE
+  QUIZ
+}
+
+enum SubmissionStatus {
+  Pending
+  UnderReview
+  Accepted
+  Rejected
+}
+
+enum AttachmentKind {
+  TASK_REFERENCE
+  SUBMISSION_FILE
+  OTHER
+}
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  name      String?
+  googleId  String?  @unique
+
+  role      Role     @default(STUDENT)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  lessonProgress LessonProgress[]
+  submissions    Submission[]
+  notifications  Notification[]
+  loginLogs      LoginLog[]
+  activityLogs   ActivityLog[]
+  comments       Comment[]
+
+  roleAssignments RoleAssignment[]
+  leaderboard     Leaderboard?
+}
+
+
+model Course {
+  id          String   @id @default(uuid())
+  title       String
+  description String? @db.Text
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  lessons Lesson[]
+
+  @@index([title])
+}
+
+model Lesson {
+  id         String @id @default(uuid())
+  course     Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  courseId   String
+
+  title      String
+  content    String @db.Text
+  notes      String? @db.Text
+  videoUrl   String?
+  difficulty TaskDifficulty @default(Beginner)
+  order      Int
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  lessonProgress LessonProgress[]
+
+  @@unique([courseId, order])
+  @@index([courseId, order])
+}
+
+model LessonProgress {
+  id String @id @default(uuid())
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId String
+  lesson Lesson @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  lessonId String
+
+  completed Boolean @default(false)
+  xp        Int     @default(0)
+
+  // Acknowledgement for UX timeline
+  completedAt DateTime?
+  lastViewedAt DateTime?
+  updatedAt    DateTime @updatedAt
+
+  @@unique([userId, lessonId])
+  @@index([userId, completed])
+}
+
+model Task {
+  id          String   @id @default(uuid())
+  title       String
+  description String  @db.Text
+
+  type        TaskType @default(CODE)
+  difficulty TaskDifficulty @default(Beginner)
+  deadline   DateTime?
+  published   Boolean  @default(false)
+  isDraft     Boolean  @default(true)
+
+  baseXp      Int      @default(0)
+  targetTime  Int?     // Time limit in seconds
+  maxMarks    Int?     // Maximum possible marks
+
+  sampleInput  String? @db.Text
+  sampleOutput String? @db.Text
+  hints         String? @db.Text
+  starterCode  String? @db.Text
+  testCases    String? @db.Text
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  attachments Attachment[]
+  submissions Submission[]
+  comments     Comment[]
+  quizQuestions QuizQuestion[]
+
+  @@index([published, deadline])
+}
+
+model QuizQuestion {
+  id        String   @id @default(uuid())
+  
+  task      Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  taskId    String
+  
+  question  String   @db.Text
+  options   String   @db.Text // JSON string array
+  answer    String   // The correct exact string
+  
+  order     Int      @default(0)
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([taskId])
+}
+
+model Submission {
+  id        String @id @default(uuid())
+
+  task   Task   @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  taskId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId String
+
+  status     SubmissionStatus @default(Pending)
+  submittedAt DateTime?
+  updatedAt   DateTime @updatedAt
+
+  createdAt   DateTime @default(now())
+
+  // Review fields
+  reviewBy      String? // admin userId
+  reviewedAt    DateTime?
+  marks         Int? 
+  feedback      String? @db.Text
+  acceptedAt    DateTime?
+  rejectedAt    DateTime?
+
+  timeTaken     Int?
+  earnedXp      Int @default(0)
+
+  versions SubmissionVersion[]
+  auditTimeline ActivityLog[]
+
+  @@unique([taskId, userId])
+  @@index([userId, status, updatedAt])
+  @@index([taskId, status, updatedAt])
+}
+
+
+model SubmissionVersion {
+  id String @id @default(uuid())
+
+  submission   Submission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+  submissionId String
+
+  code        String @db.LongText
+  createdAt   DateTime @default(now())
+
+  // If the version is a draft vs final submit.
+  isFinal Boolean @default(false)
+}
+
+model Comment {
+  id        String @id @default(uuid())
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId String
+
+  task   Task?  @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  taskId String?
+
+  content String @db.Text
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([taskId])
+}
+
+model Notification {
+  id String @id @default(uuid())
+
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId String
+
+  title   String
+  body    String @db.Text
+  kind     String? 
+  createdAt DateTime @default(now())
+  readAt   DateTime?
+
+  @@index([userId, createdAt])
+}
+
+model Attachment {
+  id        String @id @default(uuid())
+  filename  String
+  mime      String
+  url       String
+  size      Int?
+
+  kind      AttachmentKind @default(TASK_REFERENCE)
+
+  task   Task? @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  taskId String?
+
+  createdAt DateTime @default(now())
+
+  @@index([taskId, kind])
+}
+
+model LoginLog {
+  id        String @id @default(uuid())
+  userId    String?
+  user      User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  ip        String
+  device    String?
+  userAgent String?
+
+  success Boolean @default(false)
+  reason   String?
+
+  createdAt DateTime @default(now())
+
+  // basic lockout support (derived from login logs)
+  @@index([ip, createdAt])
+  @@index([userId, createdAt])
+}
+
+model ActivityLog {
+  id        String @id @default(uuid())
+
+  userId    String?
+  user      User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  submissionId String?
+  submission   Submission? @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+
+  action    String
+  meta       String? @db.Text
+  createdAt  DateTime @default(now())
+
+  @@index([userId, createdAt])
+  @@index([submissionId, createdAt])
+}
+
+model RoleAssignment {
+  id String @id @default(uuid())
+  userId String
+  role Role
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, role])
+  @@index([role])
+}
+
+// Explicit leaderboard materialization (computed or maintained server-side)
+model Leaderboard {
+  id String @id @default(uuid())
+  userId String @unique
+
+  xp Int @default(0)
+  rank Int?
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Feedback {
+  id        String   @id @default(uuid())
+  email     String
+  name      String?
+  rating    Int      @default(5)
+  message   String   @db.Text
+  createdAt DateTime @default(now())
+}
+
+model BlockedIp {
+  id        String   @id @default(uuid())
+  ip        String   @unique
+  reason    String?  @db.Text
+  blockedBy String?
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
+}
+
+

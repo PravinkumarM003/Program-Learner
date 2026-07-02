@@ -1,0 +1,173 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const prisma_1 = require("../prisma");
+const auth_1 = require("../middleware/auth");
+const router = (0, express_1.Router)();
+router.use(auth_1.authenticateJWT, (0, auth_1.authorizeRoles)('ADMIN'));
+router.get('/submissions', async (_req, res) => {
+    const submissions = await prisma_1.prisma.submission.findMany({
+        include: { task: true, user: true, versions: true },
+        orderBy: { createdAt: 'desc' }
+    });
+    res.json({ submissions });
+});
+router.post('/submissions/:id/review', async (req, res) => {
+    const { id } = req.params;
+    const { status, marks, feedback } = req.body;
+    if (!['Accepted', 'Rejected', 'UnderReview'].includes(status)) {
+        return res.status(400).json({ error: 'Invalid status' });
+    }
+    const currentSubmission = await prisma_1.prisma.submission.findUnique({ where: { id }, include: { task: true } });
+    if (!currentSubmission) return res.status(404).json({ error: 'Submission not found' });
+
+    // Only calculate new XP if marks are being set and status is Accepted
+    let newEarnedXp = currentSubmission.earnedXp || 0; // keep existing by default
+    const marksValue = (marks !== undefined && marks !== null && marks !== '') ? Number(marks) : null;
+
+    if (status === 'Accepted' && marksValue !== null && marksValue > 0) {
+        const max = currentSubmission.task.maxMarks || 100;
+        newEarnedXp = Math.floor((marksValue / max) * (currentSubmission.task.baseXp || 0));
+    } else if (status !== 'Accepted') {
+        newEarnedXp = 0; // No XP for rejected/under-review
+    }
+
+    // Compute XP delta to avoid double-counting
+    const oldEarnedXp = currentSubmission.earnedXp || 0;
+    const xpDelta = newEarnedXp - oldEarnedXp;
+
+    const submission = await prisma_1.prisma.submission.update({
+        where: { id },
+        data: {
+            status,
+            marks: marksValue,
+            feedback: feedback || null,
+            earnedXp: newEarnedXp,
+            reviewBy: req.user?.sub,
+            reviewedAt: new Date(),
+            acceptedAt: status === 'Accepted' ? new Date() : (status === 'Rejected' ? null : undefined),
+            rejectedAt: status === 'Rejected' ? new Date() : (status === 'Accepted' ? null : undefined)
+        },
+        include: { task: true, user: true, versions: true }
+    });
+
+    // Update leaderboard with delta only (prevents double-counting)
+    if (xpDelta !== 0) {
+        await prisma_1.prisma.leaderboard.upsert({
+            where: { userId: submission.userId },
+            update: { xp: { increment: xpDelta } },
+            create: { userId: submission.userId, xp: Math.max(0, xpDelta) }
+        });
+    }
+
+    res.json({ submission });
+});
+
+router.get('/users', async (_req, res) => {
+    const users = await prisma_1.prisma.user.findMany({
+        select: { id: true, email: true, name: true, role: true, createdAt: true }
+    });
+    res.json({ users });
+});
+router.post('/lessons', async (req, res) => {
+    try {
+        const { title, content, notes, videoUrl, difficulty } = req.body;
+        let course = await prisma_1.prisma.course.findFirst();
+        if (!course) {
+            course = await prisma_1.prisma.course.create({ data: { title: "Main Course" } });
+        }
+        const count = await prisma_1.prisma.lesson.count({ where: { courseId: course.id } });
+        const lesson = await prisma_1.prisma.lesson.create({
+            data: {
+                title,
+                content,
+                notes,
+                videoUrl,
+                difficulty: difficulty || 'Beginner',
+                order: count + 1,
+                courseId: course.id
+            }
+        });
+        res.json({ lesson });
+    } catch (e) {
+        res.status(500).json({ error: 'Failed to create lesson' });
+    }
+});
+
+router.get('/lessons', async (req, res) => {
+    const lessons = await prisma_1.prisma.lesson.findMany({
+        orderBy: { createdAt: 'desc' }
+    });
+    res.json({ lessons });
+});
+
+router.delete('/lessons/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        await prisma_1.prisma.lesson.delete({ where: { id } });
+        res.json({ ok: true });
+    } catch (e) {
+        res.status(500).json({ error: 'Failed to delete lesson' });
+    }
+});
+
+router.get('/violations', async (req, res) => {
+    try {
+        const userId = req.user?.sub;
+        const violations = await prisma_1.prisma.notification.findMany({
+            where: { userId, kind: { in: ['VIOLATION', 'SECURITY_ALERT'] } },
+            orderBy: { createdAt: 'desc' }
+        });
+        res.json({ violations });
+    } catch (e) {
+        res.status(500).json({ error: 'Failed to fetch violations' });
+    }
+});
+
+router.get('/blocked-ips', async (_req, res) => {
+    try {
+        const blockedIps = await prisma_1.prisma.blockedIp.findMany({
+            orderBy: { createdAt: 'desc' }
+        });
+        res.json({ blockedIps });
+    } catch (e) {
+        res.status(500).json({ error: 'Failed to fetch blocked IPs' });
+    }
+});
+
+router.post('/blocked-ips', async (req, res) => {
+    try {
+        const { ip, reason } = req.body;
+        const normalizedIp = String(ip || '').trim();
+        if (!normalizedIp) {
+            return res.status(400).json({ error: 'IP address is required' });
+        }
+        const blockedIp = await prisma_1.prisma.blockedIp.upsert({
+            where: { ip: normalizedIp },
+            update: {
+                reason: reason || null,
+                blockedBy: req.user?.sub || null
+            },
+            create: {
+                ip: normalizedIp,
+                reason: reason || null,
+                blockedBy: req.user?.sub || null
+            }
+        });
+        res.status(201).json({ blockedIp });
+    } catch (e) {
+        res.status(500).json({ error: 'Failed to block IP' });
+    }
+});
+
+router.delete('/blocked-ips/:ip', async (req, res) => {
+    try {
+        const ip = decodeURIComponent(req.params.ip);
+        await prisma_1.prisma.blockedIp.delete({ where: { ip } });
+        res.json({ ok: true });
+    } catch (e) {
+        res.status(500).json({ error: 'Failed to unblock IP' });
+    }
+});
+
+exports.default = router;
