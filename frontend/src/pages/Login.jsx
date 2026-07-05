@@ -1,5 +1,15 @@
-export default function Login() {
+import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { useStore } from '../store/useStore'
 
+export default function Login() {
+  const navigate = useNavigate()
+  const setUser = useStore(s => s.setUser)
+  const [mode, setMode] = useState('login') // 'login' or 'register'
+  const [username, setUsername] = useState('')
+  const [password, setPassword] = useState('')
+  const [email, setEmail] = useState('')
+  const [error, setError] = useState('')
   return (
     <div className="min-h-[calc(100vh-60px)] flex items-stretch">
       
@@ -88,7 +98,58 @@ export default function Login() {
               </p>
             </div>
 
-            {/* Google sign-in removed */}
+            {/* Local auth form (register/login) */}
+            <div className="mb-4 flex gap-2 justify-center">
+              <button onClick={() => setMode('login')} className={`px-4 py-2 rounded-xl ${mode==='login'?'bg-white text-slate-900':'text-white/60'}`}>Sign in</button>
+              <button onClick={() => setMode('register')} className={`px-4 py-2 rounded-xl ${mode==='register'?'bg-white text-slate-900':'text-white/60'}`}>Create account</button>
+            </div>
+
+            <form onSubmit={async (e) => {
+              e.preventDefault(); setError('')
+              if (!username || !password) { setError('Username and password required'); return }
+              // simple client-side SHA-256 password hashing
+              const enc = new TextEncoder();
+              const hashBuf = await crypto.subtle.digest('SHA-256', enc.encode(password));
+              const hash = Array.from(new Uint8Array(hashBuf)).map(b=>b.toString(16).padStart(2,'0')).join('')
+
+              const raw = localStorage.getItem('local_users')
+              const users = raw ? JSON.parse(raw) : {}
+
+              if (mode === 'register') {
+                if (!email) { setError('Email required for new accounts'); return }
+                if (users[username]) { setError('Username already exists'); return }
+                users[username] = { username, email, passwordHash: hash }
+                localStorage.setItem('local_users', JSON.stringify(users))
+                setUser({ id: `local-${username}`, email, name: username, role: 'STUDENT' })
+                navigate('/dashboard')
+              } else {
+                const u = users[username]
+                if (!u || u.passwordHash !== hash) { setError('Invalid username or password'); return }
+                setUser({ id: `local-${username}`, email: u.email, name: username, role: 'STUDENT' })
+                navigate('/dashboard')
+              }
+            }}>
+              <div className="space-y-3 text-left">
+                <label className="text-xs text-slate-400">Username</label>
+                <input value={username} onChange={e=>setUsername(e.target.value)} className="w-full rounded-lg px-3 py-2" placeholder="username" />
+
+                <label className="text-xs text-slate-400">Password</label>
+                <input value={password} onChange={e=>setPassword(e.target.value)} type="password" className="w-full rounded-lg px-3 py-2" placeholder="password" />
+
+                {mode==='register' && (
+                  <>
+                    <label className="text-xs text-slate-400">Email (Gmail recommended)</label>
+                    <input value={email} onChange={e=>setEmail(e.target.value)} type="email" className="w-full rounded-lg px-3 py-2" placeholder="you@gmail.com" />
+                  </>
+                )}
+
+                {error && <div className="text-sm text-red-400">{error}</div>}
+
+                <button type="submit" className="w-full rounded-2xl px-6 py-3.5 font-semibold text-slate-900" style={{ background: '#ffffff' }}>
+                  {mode==='register' ? 'Create account' : 'Sign in'}
+                </button>
+              </div>
+            </form>
 
             {/* Divider */}
             <div className="my-6 flex items-center gap-3">
