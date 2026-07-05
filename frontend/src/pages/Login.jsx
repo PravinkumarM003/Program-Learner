@@ -1,5 +1,5 @@
 export default function Login() {
-  const authUrl = import.meta.env.VITE_AUTH_URL || 'http://localhost:4000/api/auth/google'
+  const authUrl = import.meta.env.VITE_AUTH_URL || (typeof window !== 'undefined' ? `${window.location.origin}/api/auth/google` : 'http://localhost:4000/api/auth/google')
 
   return (
     <div className="min-h-[calc(100vh-60px)] flex items-stretch">

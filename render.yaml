@@ -30,4 +30,6 @@ services:
     publishPath: dist
     envVars:
       - key: VITE_API_URL
-        value: https://program-learner-backend.onrender.com/api
+        value: https://program-learner.onrender.com/api
+      - key: VITE_AUTH_URL
+        value: https://program-learner.onrender.com/api/auth/google
