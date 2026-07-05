@@ -9,7 +9,7 @@ databases:
 
 services:
   - type: web
-    name: pylearn-backend
+    name: program-learner-backend
     env: node
     root: backend
     buildCommand: npm install && npm run build
@@ -20,14 +20,14 @@ services:
       - key: NODE_ENV
         value: production
       - key: FRONTEND_URL
-        value: https://pylearn-frontend.onrender.com
+        value: https://program-learner.onrender.com
 
   - type: static
-    name: pylearn-frontend
+    name: program-learner
     env: static
     root: frontend
     buildCommand: npm install && npm run build
     publishPath: dist
     envVars:
       - key: VITE_API_URL
-        value: https://pylearn-backend.onrender.com/api
+        value: https://program-learner-backend.onrender.com/api
