@@ -160,6 +160,11 @@ app.use('/api/admin', admin_1.default);
 app.use('/api/attachments', attachments_1.default);
 app.use('/api/feedback', feedback_1.default);
 app.get('/health', (_req, res) => res.json({ status: 'ok' }));
+const PORT = process.env.PORT || 10000; // Render uses port 10000 by default
+app.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
+});
+
 app.use((err, _req, res, _next) => {
     if (err.code === 'EBADCSRFTOKEN') {
         return res.status(403).json({ error: 'CSRF token validation failed or expired. Please refresh the page.' });
