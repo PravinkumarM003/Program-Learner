@@ -1,0 +1,33 @@
+# Render deployment config for this monorepo
+# Backend and frontend services plus a managed MySQL database.
+
+databases:
+  - name: pylearn-db
+    engine: mysql
+    version: 8
+    plan: free
+
+services:
+  - type: web
+    name: pylearn-backend
+    env: node
+    root: backend
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase: pylearn-db
+      - key: NODE_ENV
+        value: production
+      - key: FRONTEND_URL
+        value: https://pylearn-frontend.onrender.com
+
+  - type: static
+    name: pylearn-frontend
+    env: static
+    root: frontend
+    buildCommand: npm install && npm run build
+    publishPath: dist
+    envVars:
+      - key: VITE_API_URL
+        value: https://pylearn-backend.onrender.com/api
