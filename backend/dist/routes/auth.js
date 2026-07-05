@@ -141,7 +141,7 @@ router.get('/google/callback', async (req, res) => {
         res.cookie('refresh_token', refresh, { ...cookieOpts, maxAge: 30 * 24 * 60 * 60 * 1000 });
         await prisma_1.prisma.loginLog.create({ data: { userId: user.id, ip, device: req.headers['user-agent'] || 'unknown' } });
         clearFailedLogins(ip);
-        res.redirect(process.env.FRONTEND_URL || 'http://localhost:5173');
+        res.redirect(process.env.FRONTEND_URL || 'https://program-learner.vercel.app');
     }
     catch (err) {
         logger_1.default.error('OAuth callback error', { error: err });
