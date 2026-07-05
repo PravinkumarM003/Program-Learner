@@ -21,6 +21,8 @@ services:
         value: production
       - key: FRONTEND_URL
         value: https://program-learner.onrender.com
+      - key: GOOGLE_REDIRECT_URI
+        value: https://program-learner.onrender.com/api/auth/google/callback
 
   - type: static
     name: program-learner
@@ -33,3 +35,17 @@ services:
         value: https://program-learner.onrender.com/api
       - key: VITE_AUTH_URL
         value: https://program-learner.onrender.com/api/auth/google
+      - key: VITE_FIREBASE_API_KEY
+        value: AIzaSyBROE5uXMGhYb_v-_ZUwiqeEUVNNtgqRuE
+      - key: VITE_FIREBASE_AUTH_DOMAIN
+        value: py-lerner.firebaseapp.com
+      - key: VITE_FIREBASE_PROJECT_ID
+        value: py-lerner
+      - key: VITE_FIREBASE_STORAGE_BUCKET
+        value: py-lerner.firebasestorage.app
+      - key: VITE_FIREBASE_MESSAGING_SENDER_ID
+        value: 180531370291
+      - key: VITE_FIREBASE_APP_ID
+        value: 1:180531370291:web:cc968dfc52ba3a80a04646
+      - key: VITE_FIREBASE_MEASUREMENT_ID
+        value: G-TNG6JWWQQ5
