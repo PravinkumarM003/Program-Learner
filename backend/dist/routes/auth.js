@@ -61,16 +61,9 @@ router.get('/dev-login', async (req, res) => {
         }
         const access = (0, jwt_1.signAccessToken)({ sub: user.id, role: user.role });
         const refresh = (0, jwt_1.signRefreshToken)({ sub: user.id });
-        const cookieOpts = {
-            httpOnly: true,
-            secure: process.env.NODE_ENV === 'production',
-            sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
-            path: '/'
-        };
-        res.cookie('access_token', access, { ...cookieOpts, maxAge: 15 * 60 * 1000 });
-        res.cookie('refresh_token', refresh, { ...cookieOpts, maxAge: 30 * 24 * 60 * 60 * 1000 });
         clearFailedLogins(ip);
-        res.redirect('http://localhost:5173/dashboard');
+        const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+        res.redirect(`${frontendUrl}/oauth-callback#access_token=${access}&refresh_token=${refresh}`);
     }
     catch (err) {
         trackFailedLogin(ip);
@@ -130,18 +123,10 @@ router.get('/google/callback', async (req, res) => {
         // Sign tokens
         const access = (0, jwt_1.signAccessToken)({ sub: user.id, role: user.role });
         const refresh = (0, jwt_1.signRefreshToken)({ sub: user.id });
-        const cookieOpts = {
-            httpOnly: true,
-            secure: process.env.NODE_ENV === 'production',
-            sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
-            domain: process.env.COOKIE_DOMAIN || undefined,
-            path: '/'
-        };
-        res.cookie('access_token', access, { ...cookieOpts, maxAge: 15 * 60 * 1000 });
-        res.cookie('refresh_token', refresh, { ...cookieOpts, maxAge: 30 * 24 * 60 * 60 * 1000 });
         await prisma_1.prisma.loginLog.create({ data: { userId: user.id, ip, device: req.headers['user-agent'] || 'unknown' } });
         clearFailedLogins(ip);
-        res.redirect(process.env.FRONTEND_URL || 'https://program-learner.vercel.app');
+        const frontendUrl = process.env.FRONTEND_URL || 'https://program-learner.vercel.app';
+        res.redirect(`${frontendUrl}/oauth-callback#access_token=${access}&refresh_token=${refresh}`);
     }
     catch (err) {
         logger_1.default.error('OAuth callback error', { error: err });
@@ -152,7 +137,7 @@ router.get('/google/callback', async (req, res) => {
 
 router.post('/refresh', async (req, res) => {
     try {
-        const token = req.cookies?.refresh_token;
+        const token = req.body.refresh_token || req.headers.authorization?.split(' ')[1];
         if (!token)
             return res.status(401).json({ error: 'No refresh token' });
         
@@ -161,8 +146,6 @@ router.post('/refresh', async (req, res) => {
         // Token Reuse Detection
         if ((0, jwt_1.isTokenRevoked)(data.jti)) {
             logger_1.default.error('Security alert: Refresh token reuse detected!', { jti: data.jti, userId: data.sub });
-            res.clearCookie('access_token');
-            res.clearCookie('refresh_token');
             // Try to log the security event
             try {
                 await prisma_1.prisma.activityLog.create({
@@ -187,15 +170,7 @@ router.post('/refresh', async (req, res) => {
         const access = (0, jwt_1.signAccessToken)({ sub: user.id, role: user.role });
         const refresh = (0, jwt_1.signRefreshToken)({ sub: user.id });
         
-        const cookieOpts = {
-            httpOnly: true,
-            secure: process.env.NODE_ENV === 'production',
-            sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
-            path: '/'
-        };
-        res.cookie('access_token', access, { ...cookieOpts, maxAge: 15 * 60 * 1000 });
-        res.cookie('refresh_token', refresh, { ...cookieOpts, maxAge: 30 * 24 * 60 * 60 * 1000 });
-        res.json({ ok: true });
+        res.json({ ok: true, access_token: access, refresh_token: refresh });
     }
     catch (err) {
         logger_1.default.warn('Refresh token failed', { err: err?.message });
@@ -204,8 +179,6 @@ router.post('/refresh', async (req, res) => {
 });
 
 router.post('/logout', (_req, res) => {
-    res.clearCookie('access_token');
-    res.clearCookie('refresh_token');
     res.json({ ok: true });
 });
 

@@ -5,40 +5,13 @@ const BASE_URL = import.meta.env.VITE_API_URL || 'https://program-learner.onrend
 
 const api = axios.create({
   baseURL: BASE_URL,
-  withCredentials: true,
 })
 
-// ─── CSRF Token Cache ────────────────────────────────────────────────────────
-let csrfToken = null
-let csrfFetchPromise = null
-
-async function fetchCsrfToken() {
-  // If already fetching, wait for the same promise (avoid parallel fetches)
-  if (csrfFetchPromise) return csrfFetchPromise
-  csrfFetchPromise = axios
-    .get(`${BASE_URL.replace('/api', '')}/api/csrf-token`, { withCredentials: true })
-    .then((r) => {
-      csrfToken = r.data?.csrfToken || null
-      csrfFetchPromise = null
-      return csrfToken
-    })
-    .catch(() => {
-      csrfFetchPromise = null
-      return null
-    })
-  return csrfFetchPromise
-}
-
-// ─── Request Interceptor: attach CSRF token on mutations ─────────────────────
-api.interceptors.request.use(async (config) => {
-  const method = (config.method || '').toLowerCase()
-  if (['post', 'put', 'patch', 'delete'].includes(method)) {
-    if (!csrfToken) {
-      await fetchCsrfToken()
-    }
-    if (csrfToken) {
-      config.headers['X-CSRF-Token'] = csrfToken
-    }
+// ─── Request Interceptor: attach Bearer token ───────────────────────────
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem('access_token')
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`
   }
   return config
 })
@@ -47,8 +20,8 @@ api.interceptors.request.use(async (config) => {
 let isRefreshing = false
 let refreshSubscribers = []
 
-function onRefreshed() {
-  refreshSubscribers.forEach((cb) => cb())
+function onRefreshed(token) {
+  refreshSubscribers.forEach((cb) => cb(token))
   refreshSubscribers = []
 }
 
@@ -69,11 +42,13 @@ api.interceptors.response.use(
     const status = error.response?.status
     // Only handle 401 for non-auth endpoints
     const isAuthEndpoint = originalRequest.url?.includes('/auth/')
+    
     if (status === 401 && !isAuthEndpoint) {
       if (isRefreshing) {
         // Queue this request until refresh completes
-        return new Promise((resolve, reject) => {
-          addRefreshSubscriber(() => {
+        return new Promise((resolve) => {
+          addRefreshSubscriber((token) => {
+            originalRequest.headers.Authorization = `Bearer ${token}`
             originalRequest._retry = true
             resolve(api(originalRequest))
           })
@@ -84,36 +59,39 @@ api.interceptors.response.use(
       isRefreshing = true
 
       try {
-        // Fetch fresh CSRF token for the refresh call
-        const freshCsrf = await fetchCsrfToken()
-        await axios.post(
+        const refresh = localStorage.getItem('refresh_token')
+        if (!refresh) throw new Error('No refresh token available')
+
+        const res = await axios.post(
           `${BASE_URL.replace('/api', '')}/api/auth/refresh`,
-          {},
-          {
-            withCredentials: true,
-            headers: freshCsrf ? { 'X-CSRF-Token': freshCsrf } : {},
-          }
+          { refresh_token: refresh }
         )
-        // Invalidate cached CSRF token after rotation (cookies changed)
-        csrfToken = null
+        
+        const newAccess = res.data.access_token
+        const newRefresh = res.data.refresh_token
+        
+        localStorage.setItem('access_token', newAccess)
+        if (newRefresh) {
+          localStorage.setItem('refresh_token', newRefresh)
+        }
+        
         isRefreshing = false
-        onRefreshed()
-        // Retry original request with new tokens
+        onRefreshed(newAccess)
+        
+        // Retry original request with new token
+        originalRequest.headers.Authorization = `Bearer ${newAccess}`
         return api(originalRequest)
       } catch (refreshError) {
         isRefreshing = false
         refreshSubscribers = []
-        csrfToken = null
+        
         // Full session expiry — clear state and redirect to login
+        localStorage.removeItem('access_token')
+        localStorage.removeItem('refresh_token')
         useStore.getState().clearUser()
         window.location.href = '/login'
         return Promise.reject(refreshError)
       }
-    }
-
-    // On 403, the CSRF token may have been invalidated — clear cached token
-    if (status === 403 && error.response?.data?.error?.includes('CSRF')) {
-      csrfToken = null
     }
 
     return Promise.reject(error)

@@ -18,6 +18,7 @@ import Settings from './pages/Settings';
 import Leaderboard from './pages/Leaderboard';
 import About from './pages/About';
 import Playground from './pages/Playground';
+import OAuthCallback from './pages/OAuthCallback';
 
 
 function PrivateRoute({ children, role, allowGuest = false }) {
@@ -66,6 +67,7 @@ export default function App() {
         <Routes>
           <Route path="/" element={ <Landing /> } />
           <Route path="/login" element={<Login />} />
+          <Route path="/oauth-callback" element={<OAuthCallback />} />
           <Route path="/dashboard" element={<PrivateRoute><Dashboard /></PrivateRoute>} />
           <Route path="/courses" element={<PrivateRoute><Courses /></PrivateRoute>} />
           <Route path="/courses/:id" element={<PrivateRoute><CourseDetail /></PrivateRoute>} />

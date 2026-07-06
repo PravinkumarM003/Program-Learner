@@ -4,7 +4,11 @@ exports.authenticateJWT = authenticateJWT;
 exports.authorizeRoles = authorizeRoles;
 const jwt_1 = require("../utils/jwt");
 function authenticateJWT(req, res, next) {
-    const token = req.cookies?.access_token;
+    const authHeader = req.headers.authorization;
+    let token = req.cookies?.access_token;
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+        token = authHeader.split(' ')[1];
+    }
     if (!token)
         return res.status(401).json({ error: 'Authentication required' });
     try {

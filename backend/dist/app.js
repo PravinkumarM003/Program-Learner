@@ -9,7 +9,6 @@ const express_rate_limit_1 = __importDefault(require("express-rate-limit"));
 const cookie_parser_1 = __importDefault(require("cookie-parser"));
 const cors_1 = __importDefault(require("cors"));
 const path_1 = __importDefault(require("path"));
-const csurf_1 = __importDefault(require("csurf"));
 const auth_1 = __importDefault(require("./routes/auth"));
 const user_1 = __importDefault(require("./routes/user"));
 const courses_1 = __importDefault(require("./routes/courses"));
@@ -100,21 +99,7 @@ app.use((0, cors_1.default)({
     credentials: true
 }));
 
-// CSRF Protection
-const csrfProtection = (0, csurf_1.default)({
-    cookie: {
-        key: '_csrf',
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
-        path: '/'
-    }
-});
-app.use(csrfProtection);
-
-app.get('/api/csrf-token', (req, res) => {
-    res.json({ csrfToken: req.csrfToken() });
-});
+// CSRF removed for Bearer token auth
 
 const limiter = (0, express_rate_limit_1.default)({
     windowMs: 15 * 60 * 1000,
@@ -162,9 +147,6 @@ app.use('/api/feedback', feedback_1.default);
 app.get('/health', (_req, res) => res.json({ status: 'ok' }));
 
 app.use((err, _req, res, _next) => {
-    if (err.code === 'EBADCSRFTOKEN') {
-        return res.status(403).json({ error: 'CSRF token validation failed or expired. Please refresh the page.' });
-    }
     // basic error handler
     const status = err.status || 500;
     res.status(status).json({ error: err.message || 'Internal Server Error' });
