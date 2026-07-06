@@ -80,7 +80,18 @@ router.post('/run-code', async (req, res) => {
     if (language === 'python') {
         const filePath = path.join(tempDir, `run_${fileId}.py`);
         fs.writeFileSync(filePath, code);
-        const child = child_process.spawn('python', [filePath]);
+        const antigravityPath = path.join(tempDir, 'antigravity.py');
+        if (!fs.existsSync(antigravityPath)) {
+            fs.writeFileSync(antigravityPath, 'print("🚀 You are now floating in the air! (antigravity module loaded)")\n');
+        }
+
+        let pythonCmd = 'python3';
+        try {
+            const out = child_process.spawnSync('python3', ['--version']);
+            if (out.error || out.status !== 0) pythonCmd = 'python';
+        } catch (e) { pythonCmd = 'python'; }
+
+        const child = child_process.spawn(pythonCmd, [filePath]);
         let stdout = '';
         let stderr = '';
         if (input) {
@@ -102,14 +113,37 @@ router.post('/run-code', async (req, res) => {
         });
     } else if (language === 'c') {
         const sourcePath = path.join(tempDir, `run_${fileId}.c`);
-        const exePath = path.join(tempDir, `run_${fileId}.exe`);
+        const isWin = process.platform === 'win32';
+        const exePath = path.join(tempDir, isWin ? `run_${fileId}.exe` : `run_${fileId}`);
         fs.writeFileSync(sourcePath, code);
-        child_process.exec(`clang "${sourcePath}" -o "${exePath}"`, (compileErr, compileStdout, compileStderr) => {
-            if (compileErr) {
-                try { fs.unlinkSync(sourcePath); } catch (e) {}
-                return res.json({ stdout: '', stderr: compileStderr || compileErr.message, exitCode: 1, compileError: true });
+        // Prefer gcc then clang
+        const compilers = ['gcc', 'clang'];
+        let compiled = false;
+        let compileErrMsg = '';
+        for (const compiler of compilers) {
+            try {
+                child_process.execSync(`${compiler} "${sourcePath}" -o "${exePath}"`, { stdio: 'pipe', timeout: 10000 });
+                compiled = true;
+                break;
+            } catch (ce) {
+                compileErrMsg = (ce && ce.stderr) ? ce.stderr.toString() : (ce && ce.message) ? ce.message : String(ce);
+                // If it was a real compile error and not a missing command, don't try the next compiler
+                if (ce.status !== undefined && compileErrMsg.trim() && !compileErrMsg.includes('not recognized') && !compileErrMsg.includes('not found')) {
+                    break;
+                }
             }
-            const child = child_process.spawn(exePath);
+        }
+        if (!compiled) {
+            try { fs.unlinkSync(sourcePath); } catch (e) {}
+            return res.json({ stdout: '', stderr: compileErrMsg || 'Compilation failed (no compiler available)', exitCode: 1, compileError: true });
+        }
+        try {
+            if (!isWin) {
+                // ensure executable bit
+                fs.chmodSync(exePath, 0o755);
+            }
+        } catch (e) {}
+        const child = child_process.spawn(exePath);
             let stdout = '';
             let stderr = '';
             if (input) {
@@ -131,7 +165,6 @@ router.post('/run-code', async (req, res) => {
                 try { fs.unlinkSync(exePath); } catch (e) {}
                 res.json({ stdout, stderr, exitCode: 1, error: err.message });
             });
-        });
     }
 });
 
@@ -330,22 +363,55 @@ router.post('/:id/submit', auth_1.authenticateJWT, async (req, res) => {
         if (language === 'python') {
             const filePath = path.join(tempDir, `run_${fileId}.py`);
             fs.writeFileSync(filePath, code);
+            const antigravityPath = path.join(tempDir, 'antigravity.py');
+            if (!fs.existsSync(antigravityPath)) {
+                fs.writeFileSync(antigravityPath, 'print("🚀 You are now floating in the air! (antigravity module loaded)")\n');
+            }
+
+            let pythonCmd = 'python3';
             try {
-                const out = child_process.spawnSync('python', [filePath], { input: task.sampleInput, timeout: 5000 });
-                runStdout = out.stdout ? out.stdout.toString() : '';
+                const out = child_process.spawnSync('python3', ['--version']);
+                if (out.error || out.status !== 0) pythonCmd = 'python';
+            } catch (e) { pythonCmd = 'python'; }
+
+            try {
+                const out = child_process.spawnSync(pythonCmd, [filePath], { input: task.sampleInput, timeout: 5000 });
+                if (out && out.status !== null) {
+                    runStdout = out.stdout ? out.stdout.toString() : '';
+                }
             } catch (e) {}
-            try { fs.unlinkSync(filePath); } catch(e){}
+            try { fs.unlinkSync(filePath); } catch (e) {}
         } else if (language === 'c') {
             const sourcePath = path.join(tempDir, `run_${fileId}.c`);
-            const exePath = path.join(tempDir, `run_${fileId}.exe`);
+            const isWin = process.platform === 'win32';
+            const exePath = path.join(tempDir, isWin ? `run_${fileId}.exe` : `run_${fileId}`);
             fs.writeFileSync(sourcePath, code);
-            try {
-                child_process.execSync(`clang "${sourcePath}" -o "${exePath}"`, { timeout: 5000 });
-                const out = child_process.spawnSync(exePath, { input: task.sampleInput, timeout: 5000 });
-                runStdout = out.stdout ? out.stdout.toString() : '';
-            } catch (e) {}
-            try { fs.unlinkSync(sourcePath); } catch(e){}
-            try { fs.unlinkSync(exePath); } catch(e){}
+            // Prefer gcc then clang
+            const compilers = ['gcc', 'clang'];
+            let compiled = false;
+            for (const compiler of compilers) {
+                try {
+                    child_process.execSync(`${compiler} "${sourcePath}" -o "${exePath}"`, { stdio: 'pipe', timeout: 5000 });
+                    compiled = true;
+                    break;
+                } catch (ce) {
+                    const errMsg = (ce && ce.stderr) ? ce.stderr.toString() : (ce && ce.message) ? ce.message : String(ce);
+                    if (ce.status !== undefined && errMsg.trim() && !errMsg.includes('not recognized') && !errMsg.includes('not found')) {
+                        break; // syntax error, don't try fallback
+                    }
+                }
+            }
+            if (compiled) {
+                try {
+                    if (!isWin) fs.chmodSync(exePath, 0o755);
+                    const out = child_process.spawnSync(exePath, { input: task.sampleInput, timeout: 5000 });
+                    runStdout = out.stdout ? out.stdout.toString() : '';
+                } catch (e) {
+                    // ignore runtime errors here
+                }
+            }
+            try { fs.unlinkSync(sourcePath); } catch (e) {}
+            try { fs.unlinkSync(exePath); } catch (e) {}
         }
 
         if (runStdout.trim() === task.sampleOutput.trim()) {

@@ -77,7 +77,7 @@ export default function App() {
           <Route path="/about" element={<PrivateRoute><About /></PrivateRoute>} />
           <Route path="/admin" element={<PrivateRoute role="ADMIN"><AdminDashboard /></PrivateRoute>} />
           <Route path="/settings" element={<PrivateRoute><Settings /></PrivateRoute>} />
-          <Route path="/playground" element={<PrivateRoute allowGuest><Playground /></PrivateRoute>} />
+          <Route path="/playground" element={<PrivateRoute><Playground /></PrivateRoute>} />
 
           <Route path="*" element={
             <div className="min-h-[80vh] flex flex-col items-center justify-center gap-4 text-center px-4">

@@ -20,6 +20,7 @@ router.post('/', (0, validation_1.validateBody)(validation_1.createFeedbackSchem
         });
         res.status(201).json({ success: true, feedback });
     } catch (e) {
+        console.error('Feedback submit error:', e);
         res.status(500).json({ error: 'Failed to submit feedback' });
     }
 });
