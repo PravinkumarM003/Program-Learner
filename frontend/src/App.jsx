@@ -19,6 +19,7 @@ import Leaderboard from './pages/Leaderboard';
 import About from './pages/About';
 import Playground from './pages/Playground';
 import OAuthCallback from './pages/OAuthCallback';
+import StreakPopup from './components/StreakPopup';
 
 
 function PrivateRoute({ children, role, allowGuest = false }) {
@@ -63,6 +64,7 @@ export default function App() {
   return (
     <div className={theme === 'dark' ? "min-h-screen bg-slate-950 text-white" : "min-h-screen bg-white text-slate-950"}>
       <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+        <StreakPopup />
         <Navbar />
         <Routes>
           <Route path="/" element={ <Landing /> } />

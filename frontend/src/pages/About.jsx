@@ -36,15 +36,17 @@ export default function About() {
         <div className="space-y-6">
           {/* Developer Card (First) */}
           <div className="glass-card rounded-3xl p-6 border border-cyan-500/20 bg-gradient-to-br from-cyan-500/10 to-violet-500/5 flex flex-col sm:flex-row items-center gap-4">
-            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-cyan-400 to-violet-600 text-white font-black text-2xl shadow-lg shrink-0">
-              PK
-            </div>
+            <img 
+              src="/images/pravin-photo.jpg" 
+              alt="Pravin kumar M" 
+              className="h-16 w-16 rounded-full object-cover shadow-lg shrink-0 border-2 border-cyan-500/50"
+            />
             <div className="space-y-2 text-center sm:text-left">
               <div>
                 <h4 className="font-extrabold text-white text-xl">Pravin kumar M</h4>
                 <p className="text-xs text-slate-400">Creator & Developer of Programmer Learner</p>
               </div>
-              <div className="flex justify-center sm:justify-start gap-4">
+              <div className="flex flex-wrap justify-center sm:justify-start gap-4">
                 <a href="https://www.linkedin.com/in/pravinkumar-m/" target="_blank" rel="noopener noreferrer" className="text-sm font-bold text-cyan-400 hover:text-cyan-300 transition-colors flex items-center gap-1">
                   <span>🔗</span> LinkedIn
                 </a>
@@ -52,7 +54,10 @@ export default function About() {
                   <span>🐙</span> GitHub
                 </a>
                 <a href="https://www.instagram.com/pravin.a.i" target="_blank" rel="noopener noreferrer" className="text-sm font-bold text-violet-400 hover:text-violet-300 transition-colors flex items-center gap-1">
-                  <span>🐙</span> instagram
+                  <span>📸</span> Instagram
+                </a>
+                <a href="https://your-portfolio-link.com" target="_blank" rel="noopener noreferrer" className="text-sm font-bold text-cyan-400 hover:text-cyan-300 transition-colors flex items-center gap-1">
+                  <span>🌐</span> Portfolio
                 </a>
               </div>
             </div>
