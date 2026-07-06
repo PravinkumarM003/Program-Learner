@@ -45,6 +45,8 @@ model User {
 
   role      Role     @default(STUDENT)
 
+  unlockedThemes String? @db.Text // JSON string array of unlocked theme IDs
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -57,6 +59,7 @@ model User {
 
   roleAssignments RoleAssignment[]
   leaderboard     Leaderboard?
+  userAchievements UserAchievement[]
 }
 
 
@@ -338,4 +341,26 @@ model BlockedIp {
   @@index([createdAt])
 }
 
+model Achievement {
+  id          String   @id @default(uuid())
+  title       String
+  description String
+  icon        String
+  criteria    String?
+  xpReward    Int      @default(0)
+  createdAt   DateTime @default(now())
 
+  userAchievements UserAchievement[]
+}
+
+model UserAchievement {
+  id            String   @id @default(uuid())
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId        String
+  achievement   Achievement @relation(fields: [achievementId], references: [id], onDelete: Cascade)
+  achievementId String
+  unlockedAt    DateTime @default(now())
+
+  @@unique([userId, achievementId])
+  @@index([userId])
+}

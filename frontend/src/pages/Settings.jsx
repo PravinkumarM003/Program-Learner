@@ -76,6 +76,45 @@ export default function Settings() {
         </form>
       </div>
 
+      {/* Theme Store (Mock UI Phase 1) */}
+      <div className="glass-card rounded-2xl p-8 mb-6">
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="font-bold text-white flex items-center gap-2">🎨 IDE Themes</h2>
+          <span className="text-xs font-bold text-amber-400 bg-amber-500/10 px-2 py-1 rounded-lg">Your Balance: 150 XP</span>
+        </div>
+        
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {[
+            { id: 'vs-dark', name: 'Default Dark', price: 0, unlocked: true, colors: ['#1e1e1e', '#d4d4d4', '#569cd6'] },
+            { id: 'dracula', name: 'Dracula', price: 100, unlocked: false, colors: ['#282a36', '#f8f8f2', '#ff79c6'] },
+            { id: 'monokai', name: 'Monokai', price: 150, unlocked: false, colors: ['#272822', '#f8f8f2', '#a6e22e'] },
+            { id: 'synthwave', name: 'Synthwave 84', price: 300, unlocked: false, colors: ['#262335', '#ff7edb', '#36f9f6'] }
+          ].map(theme => (
+            <div key={theme.id} className={`p-4 rounded-xl border flex items-center justify-between transition-all ${theme.unlocked ? 'bg-white/5 border-white/10' : 'bg-black/20 border-white/5 grayscale'}`}>
+              <div className="flex items-center gap-3">
+                <div className="flex gap-0.5 rounded overflow-hidden">
+                  {theme.colors.map(c => <div key={c} style={{ backgroundColor: c }} className="w-2 h-6" />)}
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-white">{theme.name}</h3>
+                  <p className="text-[10px] text-slate-400">{theme.price === 0 ? 'Free' : `${theme.price} XP`}</p>
+                </div>
+              </div>
+              
+              <button 
+                className={`text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors ${
+                  theme.unlocked 
+                    ? theme.id === 'vs-dark' ? 'bg-cyan-500/20 text-cyan-400' : 'bg-white/5 text-white hover:bg-white/10'
+                    : 'bg-amber-500/10 text-amber-400 hover:bg-amber-500/20'
+                }`}
+              >
+                {theme.unlocked ? (theme.id === 'vs-dark' ? 'Active' : 'Apply') : 'Unlock'}
+              </button>
+            </div>
+          ))}
+        </div>
+      </div>
+
       {/* Danger */}
       <div className="glass-card rounded-2xl p-6 border border-red-500/10">
         <h2 className="font-bold text-white mb-4">⚠️ Account</h2>

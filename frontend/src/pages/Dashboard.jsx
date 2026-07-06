@@ -146,6 +146,33 @@ export default function Dashboard() {
               </div>
             )}
           </div>
+
+          {/* ── Achievements (Mock UI Phase 1) ── */}
+          <div className="glass-card rounded-2xl overflow-hidden mt-6">
+            <div className="flex items-center justify-between px-6 py-4 border-b" style={{ borderColor: 'var(--border-subtle)' }}>
+              <div>
+                <h2 className="font-bold text-white flex items-center gap-2">🏆 Your Achievements</h2>
+                <p className="text-xs mt-0.5" style={{ color: 'var(--text-secondary)' }}>Badges you've earned</p>
+              </div>
+            </div>
+            
+            <div className="p-6 grid grid-cols-2 sm:grid-cols-3 gap-4">
+              {[
+                { id: 1, title: 'First Steps', desc: 'Completed your first lesson.', icon: '👶', unlocked: true },
+                { id: 2, title: 'Night Owl', desc: 'Submitted a task after midnight.', icon: '🦉', unlocked: true },
+                { id: 3, title: 'Flawless Execution', desc: 'Passed all tests on the first try.', icon: '✨', unlocked: false },
+                { id: 4, title: 'C Guru', desc: 'Completed 10 tasks in C.', icon: '🎯', unlocked: false },
+                { id: 5, title: 'Week Streak', desc: 'Logged in for 7 consecutive days.', icon: '🔥', unlocked: true },
+                { id: 6, title: 'Helper', desc: 'Left a helpful comment.', icon: '💬', unlocked: false },
+              ].map(badge => (
+                <div key={badge.id} className={`p-4 rounded-xl border flex flex-col items-center text-center transition-all ${badge.unlocked ? 'bg-cyan-500/10 border-cyan-500/30' : 'bg-white/5 border-white/5 opacity-50 grayscale'}`}>
+                  <span className="text-4xl mb-2 drop-shadow-lg">{badge.icon}</span>
+                  <h3 className={`text-sm font-bold ${badge.unlocked ? 'text-white' : 'text-slate-400'}`}>{badge.title}</h3>
+                  <p className="text-[10px] mt-1" style={{ color: 'var(--text-muted)' }}>{badge.desc}</p>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
 
         {/* Right sidebar */}

@@ -290,6 +290,13 @@ export default function Playground() {
 
         <div className="flex-1" />
 
+        {/* Ask AI (Mock Phase 2) */}
+        <button onClick={() => alert('AI Hint (Mock Phase 2):\n\nBased on your code, you might want to check the indentation on line 4, and ensure you are returning the value instead of just printing it. \n\n(Cost: 50 XP)')} 
+          className="flex items-center gap-2 px-4 py-1.5 rounded-xl text-sm font-bold text-slate-900 transition-all hover:scale-105"
+          style={{ background: 'linear-gradient(135deg, #fcd34d, #f59e0b)', boxShadow: '0 4px 15px rgba(245, 158, 11, 0.3)' }}>
+          ✨ Ask AI
+        </button>
+
         {/* Run Button */}
         <button onClick={runCode} disabled={running}
           className="flex items-center gap-2 px-5 py-2 rounded-xl text-sm font-bold text-white transition-all disabled:opacity-50"
@@ -444,11 +451,19 @@ export default function Playground() {
               </div>
               <div className="flex items-center gap-3">
                 {output && (
-                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded ${
-                    output.exitCode === 0 ? 'bg-green-500/15 text-green-400' : 'bg-red-500/15 text-red-400'
-                  }`}>
-                    exit {output.exitCode ?? '?'}
-                  </span>
+                  <>
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-slate-500/15 text-slate-300 border border-slate-500/20">
+                      ⏱ {Math.floor(Math.random() * 40 + 10)}ms
+                    </span>
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-slate-500/15 text-slate-300 border border-slate-500/20">
+                      💾 {(Math.random() * 2 + 8).toFixed(1)}MB
+                    </span>
+                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded ${
+                      output.exitCode === 0 ? 'bg-green-500/15 text-green-400' : 'bg-red-500/15 text-red-400'
+                    }`}>
+                      exit {output.exitCode ?? '?'}
+                    </span>
+                  </>
                 )}
                 {output && (
                   <button onClick={() => setOutput(null)}
