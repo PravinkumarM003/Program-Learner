@@ -85,11 +85,10 @@ api.interceptors.response.use(
         isRefreshing = false
         refreshSubscribers = []
         
-        // Full session expiry — clear state and redirect to login
+        // Full session expiry — clear state
         localStorage.removeItem('access_token')
         localStorage.removeItem('refresh_token')
         useStore.getState().clearUser()
-        window.location.href = '/login'
         return Promise.reject(refreshError)
       }
     }

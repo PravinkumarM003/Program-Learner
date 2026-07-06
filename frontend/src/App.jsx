@@ -30,7 +30,7 @@ function PrivateRoute({ children, role, allowGuest = false }) {
 }
 
 export default function App() {
-  const { theme } = useStore(s => ({ theme: s.theme }));
+  const theme = useStore(s => s.theme);
   const { setUser } = useStore();
   const [loading, setLoading] = useState(true);
 

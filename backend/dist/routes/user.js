@@ -7,7 +7,11 @@ const router = (0, express_1.Router)();
 router.get('/me', async (req, res) => {
     try {
         const jwt_1 = require("../utils/jwt");
-        const token = req.cookies?.access_token;
+        const authHeader = req.headers.authorization;
+        let token = req.cookies?.access_token;
+        if (authHeader && authHeader.startsWith('Bearer ')) {
+            token = authHeader.split(' ')[1];
+        }
         if (!token) return res.json({ user: null });
         
         const payload = (0, jwt_1.verifyAccessToken)(token);
