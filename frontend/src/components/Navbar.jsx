@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { useStore } from '../store/useStore'
 import api from '../api/client'
+import { useStreak } from '../hooks/useStreak'
 
 const NAV_LINKS = [
   { to: '/dashboard',   label: 'Dashboard',   icon: '🏠' },
@@ -18,6 +19,7 @@ export default function Navbar() {
   const setUser = useStore(s => s.setUser)
   const { theme, toggleTheme } = useStore(s => ({ theme: s.theme, toggleTheme: s.toggleTheme }))
   const location = useLocation()
+  const { streakData } = useStreak()
   const [menuOpen, setMenuOpen] = useState(false)
   const [dropdownOpen, setDropdownOpen] = useState(false)
   const dropdownRef = useRef(null)
@@ -91,6 +93,12 @@ export default function Navbar() {
 
           {/* Right side controls */}
           <div className="hidden md:flex items-center gap-2">
+            {user && streakData && streakData.currentStreak > 0 && (
+              <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-orange-500/10 text-orange-400 text-sm font-bold border border-orange-500/20 mr-1" title="Daily Streak">
+                🔥 {streakData.currentStreak} Day{streakData.currentStreak !== 1 ? 's' : ''}
+              </div>
+            )}
+            
             {/* Theme toggle */}
             <button
               onClick={toggleTheme}
