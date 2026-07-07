@@ -537,48 +537,38 @@ export default function Playground() {
               </div>
             </div>
 
-            {/* Split Content: Stdin on Left, Stdout on Right */}
-            <div className="flex flex-col md:flex-row flex-1 overflow-hidden" style={{ background: '#0d1117' }}>
-              {/* Stdin Panel */}
-              <div className="w-full md:w-[30%] border-b md:border-b-0 md:border-r border-white/5 flex flex-col p-3">
-                <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1.5 flex items-center gap-1">
-                  📥 Input (stdin)
-                </label>
+            {/* Unified Terminal View (stdin + stdout) */}
+            <div className="flex-1 overflow-auto font-mono text-xs p-4 space-y-3 flex flex-col" style={{ background: '#0d1117' }}>
+              {/* Output Logs */}
+              <div className="flex-1 overflow-y-auto space-y-1 min-h-[80px]">
+                {running && (
+                  <div className="flex items-center gap-2 text-cyan-400">
+                    <span className="w-3 h-3 border border-cyan-400 border-t-transparent rounded-full animate-spin" />
+                    Executing {langCfg.label} code...
+                  </div>
+                )}
+                {!running && !output && (
+                  <p className="text-slate-600 italic">Run your code to see output here…</p>
+                )}
+                {outputLines.map((line, i) => (
+                  <pre key={i} className={`whitespace-pre-wrap leading-relaxed ${
+                    line.type === 'err' ? 'text-red-400' : 'text-green-300'
+                  }`}>{line.text}</pre>
+                ))}
+              </div>
+
+              {/* Inline Input (stdin) at the bottom */}
+              <div className="border-t border-white/5 pt-3 flex flex-col md:flex-row items-start gap-2 flex-shrink-0">
+                <div className="flex items-center gap-1.5 text-cyan-500 font-bold flex-shrink-0 mt-1">
+                  <span>pylearn:~$</span>
+                  <span className="text-[9px] text-slate-500 font-medium normal-case font-sans">(stdin)</span>
+                </div>
                 <textarea
                   value={input}
                   onChange={e => setInput(e.target.value)}
-                  placeholder={`Provide input values here (e.g. 5\n10)`}
-                  className="flex-1 w-full rounded-xl text-xs font-mono px-3 py-2 resize-none focus:outline-none focus:ring-1 focus:ring-cyan-500/30"
-                  style={{
-                    background: 'rgba(255,255,255,0.03)',
-                    border: '1px solid rgba(255,255,255,0.08)',
-                    color: 'var(--text-primary)',
-                    minHeight: '60px'
-                  }}
+                  placeholder="Provide input for execution (e.g. 5 or multiple lines)..."
+                  className="flex-1 w-full bg-transparent border-0 focus:ring-0 focus:outline-none text-green-300 placeholder-slate-600 font-mono resize-none h-16 md:h-10 text-xs"
                 />
-              </div>
-
-              {/* Stdout Panel */}
-              <div className="flex-1 overflow-auto font-mono text-xs p-3 space-y-1 flex flex-col">
-                <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1">
-                  📤 Output (stdout)
-                </label>
-                <div className="flex-1 overflow-y-auto min-h-[80px]">
-                  {running && (
-                    <div className="flex items-center gap-2 text-cyan-400">
-                      <span className="w-3 h-3 border border-cyan-400 border-t-transparent rounded-full animate-spin" />
-                      Executing {langCfg.label} code...
-                    </div>
-                  )}
-                  {!running && !output && (
-                    <p className="text-slate-600 italic">Run your code to see output here…</p>
-                  )}
-                  {outputLines.map((line, i) => (
-                    <pre key={i} className={`whitespace-pre-wrap leading-relaxed ${
-                      line.type === 'err' ? 'text-red-400' : 'text-green-300'
-                    }`}>{line.text}</pre>
-                  ))}
-                </div>
               </div>
             </div>
           </div>
