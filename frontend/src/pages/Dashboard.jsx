@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { Link } from 'react-router-dom'
 import { useStore } from '../store/useStore'
 import api from '../api/client'
@@ -10,7 +10,33 @@ const STATUS_CLASSES = {
   Rejected:    { badge: 'badge badge-rejected', icon: '❌' },
 }
 
+// Animated counter hook
+function useCountUp(target, duration = 800) {
+  const [count, setCount] = useState(0)
+  const ref = useRef(null)
+  useEffect(() => {
+    if (target == null || isNaN(Number(target))) { setCount(target); return }
+    const num = Number(target)
+    if (num === 0) { setCount(0); return }
+    let start = 0
+    const startTime = performance.now()
+    const step = (now) => {
+      const elapsed = now - startTime
+      const progress = Math.min(elapsed / duration, 1)
+      const eased = 1 - Math.pow(1 - progress, 3) // ease-out cubic
+      setCount(Math.round(eased * num))
+      if (progress < 1) ref.current = requestAnimationFrame(step)
+    }
+    ref.current = requestAnimationFrame(step)
+    return () => cancelAnimationFrame(ref.current)
+  }, [target, duration])
+  return count
+}
+
 function StatCard({ label, value, icon, gradient, sub, loading }) {
+  const animatedValue = useCountUp(loading ? 0 : value)
+  const displayValue = typeof value === 'string' && isNaN(Number(value)) ? value : animatedValue
+
   return (
     <div className="glass-card card-hover rounded-2xl p-5 flex flex-col gap-2 animate-fade-up">
       <div className="flex items-center justify-between">
@@ -20,8 +46,8 @@ function StatCard({ label, value, icon, gradient, sub, loading }) {
         </span>
       </div>
       <div>
-        <p className="text-2xl font-black text-white mt-1">
-          {loading ? <span className="skeleton inline-block w-16 h-7 rounded-lg" /> : value}
+        <p className="text-2xl font-black text-white mt-1 animate-count-up">
+          {loading ? <span className="skeleton inline-block w-16 h-7 rounded-lg" /> : displayValue}
         </p>
         <p className="text-xs font-semibold mt-0.5" style={{ color: 'var(--text-secondary)' }}>{label}</p>
         {sub && !loading && (
@@ -38,6 +64,7 @@ export default function Dashboard() {
   const [progress, setProgress] = useState([])
   const [xpData, setXpData] = useState({ xp: 0, lessonXp: 0, taskXp: 0 })
   const [leaderboard, setLeaderboard] = useState([])
+  const [achievements, setAchievements] = useState([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -46,6 +73,7 @@ export default function Dashboard() {
       api.get('/progress').then(r => setProgress(r.data?.progress || [])).catch(() => {}),
       api.get('/user/xp').then(r => setXpData(r.data || {})).catch(() => {}),
       api.get('/user/leaderboard').then(r => setLeaderboard(r.data?.leaderboard || [])).catch(() => {}),
+      api.get('/user/achievements').then(r => setAchievements(r.data?.achievements || [])).catch(() => {}),
     ]).finally(() => setLoading(false))
   }, [])
 
@@ -157,20 +185,17 @@ export default function Dashboard() {
             </div>
             
             <div className="p-6 grid grid-cols-2 sm:grid-cols-3 gap-4">
-              {[
-                { id: 1, title: 'First Steps', desc: 'Completed your first lesson.', icon: '👶', unlocked: true },
-                { id: 2, title: 'Night Owl', desc: 'Submitted a task after midnight.', icon: '🦉', unlocked: true },
-                { id: 3, title: 'Flawless Execution', desc: 'Passed all tests on the first try.', icon: '✨', unlocked: false },
-                { id: 4, title: 'C Guru', desc: 'Completed 10 tasks in C.', icon: '🎯', unlocked: false },
-                { id: 5, title: 'Week Streak', desc: 'Logged in for 7 consecutive days.', icon: '🔥', unlocked: true },
-                { id: 6, title: 'Helper', desc: 'Left a helpful comment.', icon: '💬', unlocked: false },
-              ].map(badge => (
-                <div key={badge.id} className={`p-4 rounded-xl border flex flex-col items-center text-center transition-all ${badge.unlocked ? 'bg-cyan-500/10 border-cyan-500/30' : 'bg-white/5 border-white/5 opacity-50 grayscale'}`}>
-                  <span className="text-4xl mb-2 drop-shadow-lg">{badge.icon}</span>
-                  <h3 className={`text-sm font-bold ${badge.unlocked ? 'text-white' : 'text-slate-400'}`}>{badge.title}</h3>
-                  <p className="text-[10px] mt-1" style={{ color: 'var(--text-muted)' }}>{badge.desc}</p>
-                </div>
-              ))}
+              {achievements.length > 0 ? (
+                achievements.map(badge => (
+                  <div key={badge.id} className={`p-4 rounded-xl border flex flex-col items-center text-center transition-all ${badge.unlocked ? 'bg-cyan-500/10 border-cyan-500/30' : 'bg-white/5 border-white/5 opacity-50 grayscale'}`}>
+                    <span className="text-4xl mb-2 drop-shadow-lg">{badge.icon}</span>
+                    <h3 className={`text-sm font-bold ${badge.unlocked ? 'text-white' : 'text-slate-400'}`}>{badge.title}</h3>
+                    <p className="text-[10px] mt-1" style={{ color: 'var(--text-muted)' }}>{badge.description}</p>
+                  </div>
+                ))
+              ) : (
+                <p className="col-span-full text-center text-sm text-slate-500 py-4">No achievements loaded.</p>
+              )}
             </div>
           </div>
         </div>

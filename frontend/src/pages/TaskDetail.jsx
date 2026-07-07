@@ -1,6 +1,6 @@
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useState, useRef, lazy, Suspense } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
-import Editor from '@monaco-editor/react'
+const Editor = lazy(() => import('@monaco-editor/react'))
 import { useStore } from '../store/useStore'
 import api from '../api/client'
 
@@ -42,6 +42,7 @@ export default function TaskDetail() {
   const editorRef = useRef(null)
   const navigate = useNavigate()
   const ideTheme = useStore(s => s.ideTheme)
+  const showToast = useStore(s => s.showToast)
 
   // Restricted Exam Mode States
   const [restrictedModeActive, setRestrictedModeActive] = useState(false)
@@ -243,7 +244,7 @@ export default function TaskDetail() {
     let submissionPayload = ''
     if (task.type === 'GENERAL') {
       if (!generalAnswer.trim()) {
-        alert('Please write your answer before submitting.')
+        showToast('Please write your answer before submitting.', 'warning')
         setSubmitting(false)
         return
       }

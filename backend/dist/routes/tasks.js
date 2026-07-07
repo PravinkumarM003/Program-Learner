@@ -59,7 +59,16 @@ function validateCCode(code) {
 }
 
 router.get('/', async (_req, res) => {
-    const tasks = await prisma_1.prisma.task.findMany({ where: { published: true }, orderBy: { deadline: 'asc' } });
+    const tasks = await prisma_1.prisma.task.findMany({
+        where: { published: true },
+        select: {
+            id: true, title: true, type: true, difficulty: true,
+            baseXp: true, deadline: true, targetTime: true, maxMarks: true,
+            published: true, isDraft: true,
+            createdAt: true, updatedAt: true
+        },
+        orderBy: { deadline: 'asc' }
+    });
     res.json({ tasks });
 });
 

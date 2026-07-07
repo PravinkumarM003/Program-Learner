@@ -39,5 +39,12 @@ export const useStore = create((set) => ({
       window.localStorage.setItem('ideTheme', newTheme)
     }
     return { ideTheme: newTheme }
-  })
+  }),
+
+  // Toast Notification System
+  toast: null,
+  showToast: (msg, type = 'info') => {
+    set({ toast: { msg, type, id: Date.now() } })
+  },
+  clearToast: () => set({ toast: null }),
 }))

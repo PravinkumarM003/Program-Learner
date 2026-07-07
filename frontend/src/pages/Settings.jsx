@@ -7,6 +7,7 @@ export default function Settings() {
   const setUser = useStore(s => s.setUser)
   const setIdeTheme = useStore(s => s.setIdeTheme)
   const currentIdeTheme = useStore(s => s.ideTheme)
+  const showToast = useStore(s => s.showToast)
   const [name, setName] = useState(user?.name || '')
   const [saving, setSaving] = useState(false)
   const [msg, setMsg] = useState(null)
@@ -26,7 +27,7 @@ export default function Settings() {
     }
 
     if (!xpData || xpData.currentXp < theme.price) {
-      alert(`Not enough XP! You need ${theme.price} XP.`)
+      showToast(`Not enough XP! You need ${theme.price} XP.`, 'error')
       return
     }
 
@@ -34,9 +35,9 @@ export default function Settings() {
       const r = await api.post('/user/unlock-theme', { themeId: theme.id, price: theme.price })
       setUser({ ...user, unlockedThemes: JSON.stringify(r.data.unlockedThemes) })
       setXpData(prev => ({ ...prev, currentXp: prev.currentXp - theme.price }))
-      alert(`Unlocked ${theme.name}!`)
+      showToast(`Unlocked ${theme.name}!`, 'success')
     } catch (e) {
-      alert('Failed to unlock theme.')
+      showToast('Failed to unlock theme.', 'error')
     }
   }
 

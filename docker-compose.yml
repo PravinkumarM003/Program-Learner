@@ -22,6 +22,7 @@ services:
       - DATABASE_URL=mysql://pylearn:pylearnpw@db:3306/pylearn
       - NODE_ENV=production
       - FRONTEND_URL=http://localhost:3000
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
       - JWT_ACCESS_SECRET=access_secret_change_me
       - JWT_REFRESH_SECRET=refresh_secret_change_me
     ports:

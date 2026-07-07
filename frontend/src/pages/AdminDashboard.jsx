@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import api from '../api/client'
+import { useStore } from '../store/useStore'
 
 const STATUS_MAP = {
   Pending:     'bg-yellow-500/10 text-yellow-400',
@@ -32,6 +33,7 @@ const getDateLabel = (value) => {
 }
 
 export default function AdminDashboard() {
+  const showToast = useStore(s => s.showToast)
   const [subs, setSubs] = useState([])
   const [users, setUsers] = useState([])
   const [tasks, setTasks] = useState([])
@@ -247,7 +249,7 @@ export default function AdminDashboard() {
   const saveTask = (e) => {
     e.preventDefault()
     if (!taskTitle || !taskDesc) {
-      alert('Please fill out Title and Description.')
+      showToast('Please fill out Title and Description.', 'warning')
       return
     }
     setSavingTask(true)
@@ -311,7 +313,7 @@ export default function AdminDashboard() {
   const saveLesson = (e) => {
     e.preventDefault()
     if (!lessonTitle || !lessonContent) {
-      alert('Please fill out Title and Content.')
+      showToast('Please fill out Title and Content.', 'warning')
       return
     }
     setSavingLesson(true)

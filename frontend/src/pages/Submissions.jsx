@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, lazy, Suspense } from 'react'
 import { Link } from 'react-router-dom'
-import Editor from '@monaco-editor/react'
+const Editor = lazy(() => import('@monaco-editor/react'))
 import { useStore } from '../store/useStore'
 import api from '../api/client'
 

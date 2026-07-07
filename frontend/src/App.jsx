@@ -20,6 +20,8 @@ import About from './pages/About';
 import Playground from './pages/Playground';
 import OAuthCallback from './pages/OAuthCallback';
 import StreakPopup from './components/StreakPopup';
+import Toast from './components/Toast';
+import AchievementPopup from './components/AchievementPopup';
 
 
 function PrivateRoute({ children, role, allowGuest = false }) {
@@ -62,9 +64,12 @@ export default function App() {
   }
 
   return (
-    <div className={theme === 'dark' ? "min-h-screen bg-slate-950 text-white" : "min-h-screen bg-white text-slate-950"}>
+    <div className={theme === 'dark' ? "min-h-screen bg-slate-950 text-white" : "min-h-screen bg-white text-slate-950"}
+      style={{ transition: 'background-color 0.3s ease, color 0.3s ease' }}>
       <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+        <Toast />
         <StreakPopup />
+        <AchievementPopup />
         <Navbar />
         <Routes>
           <Route path="/" element={ <Landing /> } />

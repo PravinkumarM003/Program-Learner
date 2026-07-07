@@ -3,7 +3,15 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = require("express");
 const prisma_1 = require("../prisma");
 const auth_1 = require("../middleware/auth");
+const express_rate_limit_1 = require("express-rate-limit");
 const router = (0, express_1.Router)();
+
+// Stricter rate limit for AI endpoint (5 requests per minute)
+const aiLimiter = (0, express_rate_limit_1.default)({
+    windowMs: 60 * 1000,
+    max: 5,
+    message: { error: 'Too many AI requests. Please wait a minute before trying again.' }
+});
 router.get('/me', async (req, res) => {
     try {
         const jwt_1 = require("../utils/jwt");
@@ -73,7 +81,7 @@ router.get('/leaderboard', async (req, res) => {
     }
 });
 
-router.post('/ask-ai', auth_1.authenticateJWT, async (req, res) => {
+router.post('/ask-ai', aiLimiter, auth_1.authenticateJWT, async (req, res) => {
     try {
         const userId = req.user?.sub;
         if (!userId) return res.status(401).json({ error: 'Authentication required' });
@@ -201,6 +209,97 @@ router.post('/notifications/read', auth_1.authenticateJWT, async (req, res) => {
         res.json({ success: true });
     } catch (e) {
         res.status(500).json({ error: 'Failed to mark as read' });
+    }
+});
+
+// ── Achievements ──────────────────────────────────────────
+router.get('/achievements', auth_1.authenticateJWT, async (req, res) => {
+    try {
+        const userId = req.user?.sub;
+        if (!userId) return res.status(401).json({ error: 'Authentication required' });
+
+        const allAchievements = await prisma_1.prisma.achievement.findMany({
+            orderBy: { createdAt: 'asc' }
+        });
+        const userAchievements = await prisma_1.prisma.userAchievement.findMany({
+            where: { userId },
+            select: { achievementId: true, unlockedAt: true }
+        });
+        const unlockedMap = {};
+        userAchievements.forEach(ua => { unlockedMap[ua.achievementId] = ua.unlockedAt; });
+
+        const achievements = allAchievements.map(a => ({
+            ...a,
+            unlocked: !!unlockedMap[a.id],
+            unlockedAt: unlockedMap[a.id] || null
+        }));
+
+        res.json({ achievements });
+    } catch (e) {
+        res.status(500).json({ error: 'Failed to fetch achievements' });
+    }
+});
+
+// Check and award achievements after actions
+router.post('/achievements/check', auth_1.authenticateJWT, async (req, res) => {
+    try {
+        const userId = req.user?.sub;
+        if (!userId) return res.status(401).json({ error: 'Authentication required' });
+
+        const newlyUnlocked = [];
+
+        // Fetch user stats
+        const [submissions, lessonProgress, leaderboard] = await Promise.all([
+            prisma_1.prisma.submission.findMany({ where: { userId } }),
+            prisma_1.prisma.lessonProgress.findMany({ where: { userId, completed: true } }),
+            prisma_1.prisma.leaderboard.findUnique({ where: { userId } })
+        ]);
+
+        const allAchievements = await prisma_1.prisma.achievement.findMany();
+        const existing = await prisma_1.prisma.userAchievement.findMany({
+            where: { userId },
+            select: { achievementId: true }
+        });
+        const existingIds = new Set(existing.map(e => e.achievementId));
+
+        const totalSubs = submissions.length;
+        const acceptedSubs = submissions.filter(s => s.status === 'Accepted').length;
+        const perfectSubs = submissions.filter(s => s.marks != null && s.task?.maxMarks != null && s.marks >= s.task?.maxMarks).length;
+        const totalLessons = lessonProgress.length;
+
+        // Define criteria checks
+        const checks = {
+            'first_submission': totalSubs >= 1,
+            'five_submissions': totalSubs >= 5,
+            'ten_accepted': acceptedSubs >= 10,
+            'lesson_5': totalLessons >= 5,
+            'lesson_10': totalLessons >= 10,
+            'xp_100': (leaderboard?.xp || 0) >= 100,
+            'xp_500': (leaderboard?.xp || 0) >= 500,
+            'xp_1000': (leaderboard?.xp || 0) >= 1000,
+        };
+
+        for (const achievement of allAchievements) {
+            if (existingIds.has(achievement.id)) continue;
+            const criteriaKey = achievement.criteria;
+            if (criteriaKey && checks[criteriaKey]) {
+                await prisma_1.prisma.userAchievement.create({
+                    data: { userId, achievementId: achievement.id }
+                });
+                // Award XP bonus
+                if (achievement.xpReward > 0 && leaderboard) {
+                    await prisma_1.prisma.leaderboard.update({
+                        where: { userId },
+                        data: { xp: { increment: achievement.xpReward } }
+                    });
+                }
+                newlyUnlocked.push(achievement);
+            }
+        }
+
+        res.json({ newlyUnlocked });
+    } catch (e) {
+        res.status(500).json({ error: 'Failed to check achievements' });
     }
 });
 
