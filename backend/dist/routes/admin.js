@@ -6,11 +6,11 @@ const auth_1 = require("../middleware/auth");
 const router = (0, express_1.Router)();
 
 async function notifyStudents(title, body) {
-    const students = await prisma_1.prisma.user.findMany({ where: { role: 'STUDENT' } });
-    await Promise.all(students.map(student => {
+    const users = await prisma_1.prisma.user.findMany();
+    await Promise.all(users.map(user => {
         return prisma_1.prisma.notification.create({
             data: {
-                userId: student.id,
+                userId: user.id,
                 title,
                 body,
                 kind: 'SYSTEM'
@@ -18,15 +18,14 @@ async function notifyStudents(title, body) {
         });
     }));
 }
-router.use(auth_1.authenticateJWT, (0, auth_1.authorizeRoles)('ADMIN'));
-router.get('/submissions', async (_req, res) => {
+router.get('/submissions', auth_1.authenticateJWT, (0, auth_1.authorizeRoles)('ADMIN', 'TEACHER'), async (_req, res) => {
     const submissions = await prisma_1.prisma.submission.findMany({
         include: { task: true, user: true, versions: true },
         orderBy: { createdAt: 'desc' }
     });
     res.json({ submissions });
 });
-router.post('/submissions/:id/review', async (req, res) => {
+router.post('/submissions/:id/review', auth_1.authenticateJWT, (0, auth_1.authorizeRoles)('ADMIN', 'TEACHER'), async (req, res) => {
     const { id } = req.params;
     const { status, marks, feedback } = req.body;
     if (!['Accepted', 'Rejected', 'UnderReview'].includes(status)) {
@@ -77,13 +76,13 @@ router.post('/submissions/:id/review', async (req, res) => {
     res.json({ submission });
 });
 
-router.get('/users', async (_req, res) => {
+router.get('/users', auth_1.authenticateJWT, (0, auth_1.authorizeRoles)('ADMIN'), async (_req, res) => {
     const users = await prisma_1.prisma.user.findMany({
         select: { id: true, email: true, name: true, role: true, createdAt: true }
     });
     res.json({ users });
 });
-router.post('/lessons', async (req, res) => {
+router.post('/lessons', auth_1.authenticateJWT, (0, auth_1.authorizeRoles)('ADMIN', 'TEACHER'), async (req, res) => {
     try {
         const { title, content, notes, videoUrl, difficulty } = req.body;
         let course = await prisma_1.prisma.course.findFirst();
@@ -111,14 +110,14 @@ router.post('/lessons', async (req, res) => {
     }
 });
 
-router.get('/lessons', async (req, res) => {
+router.get('/lessons', auth_1.authenticateJWT, (0, auth_1.authorizeRoles)('ADMIN', 'TEACHER'), async (req, res) => {
     const lessons = await prisma_1.prisma.lesson.findMany({
         orderBy: { createdAt: 'desc' }
     });
     res.json({ lessons });
 });
 
-router.delete('/lessons/:id', async (req, res) => {
+router.delete('/lessons/:id', auth_1.authenticateJWT, (0, auth_1.authorizeRoles)('ADMIN', 'TEACHER'), async (req, res) => {
     try {
         const { id } = req.params;
         await prisma_1.prisma.lesson.delete({ where: { id } });
@@ -128,7 +127,7 @@ router.delete('/lessons/:id', async (req, res) => {
     }
 });
 
-router.get('/violations', async (req, res) => {
+router.get('/violations', auth_1.authenticateJWT, (0, auth_1.authorizeRoles)('ADMIN'), async (req, res) => {
     try {
         const userId = req.user?.sub;
         const violations = await prisma_1.prisma.notification.findMany({
@@ -141,7 +140,7 @@ router.get('/violations', async (req, res) => {
     }
 });
 
-router.get('/blocked-ips', async (_req, res) => {
+router.get('/blocked-ips', auth_1.authenticateJWT, (0, auth_1.authorizeRoles)('ADMIN'), async (_req, res) => {
     try {
         const blockedIps = await prisma_1.prisma.blockedIp.findMany({
             orderBy: { createdAt: 'desc' }
@@ -152,7 +151,7 @@ router.get('/blocked-ips', async (_req, res) => {
     }
 });
 
-router.post('/blocked-ips', async (req, res) => {
+router.post('/blocked-ips', auth_1.authenticateJWT, (0, auth_1.authorizeRoles)('ADMIN'), async (req, res) => {
     try {
         const { ip, reason } = req.body;
         const normalizedIp = String(ip || '').trim();
@@ -177,7 +176,7 @@ router.post('/blocked-ips', async (req, res) => {
     }
 });
 
-router.delete('/blocked-ips/:ip', async (req, res) => {
+router.delete('/blocked-ips/:ip', auth_1.authenticateJWT, (0, auth_1.authorizeRoles)('ADMIN'), async (req, res) => {
     try {
         const ip = decodeURIComponent(req.params.ip);
         await prisma_1.prisma.blockedIp.delete({ where: { ip } });
@@ -187,7 +186,7 @@ router.delete('/blocked-ips/:ip', async (req, res) => {
     }
 });
 
-router.post('/notifications/broadcast', async (req, res) => {
+router.post('/notifications/broadcast', auth_1.authenticateJWT, (0, auth_1.authorizeRoles)('ADMIN'), async (req, res) => {
     try {
         const { title, message } = req.body;
         if (!title || !message) return res.status(400).json({ error: 'Title and message required' });

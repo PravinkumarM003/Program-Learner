@@ -34,29 +34,35 @@ export default function About() {
         
         {/* Info Column */}
         <div className="space-y-6">
-          {/* Developer Card (First) */}
-          <div className="glass-card rounded-3xl p-6 border border-cyan-500/20 bg-gradient-to-br from-cyan-500/10 to-violet-500/5 flex flex-col sm:flex-row items-center gap-4">
+          {/* Developer Profile Card */}
+          <div className="glass-card rounded-3xl p-8 border border-cyan-500/30 bg-gradient-to-br from-cyan-900/20 to-violet-900/20 flex flex-col sm:flex-row items-center sm:items-start gap-6 relative overflow-hidden shadow-2xl">
+            {/* Background Glow */}
+            <div className="absolute -top-10 -right-10 w-40 h-40 bg-cyan-500/20 blur-3xl rounded-full pointer-events-none"></div>
+            
             <img 
-              src="/images/pravin-photo.jpg" 
+              src="/images/pravin-photo.png" 
               alt="Pravin kumar M" 
-              className="h-16 w-16 rounded-full object-cover shadow-lg shrink-0 border-2 border-cyan-500/50"
+              className="h-28 w-28 rounded-full object-cover shadow-[0_0_20px_rgba(6,182,212,0.3)] shrink-0 border-2 border-cyan-400/60 relative z-10"
             />
-            <div className="space-y-2 text-center sm:text-left">
+            <div className="space-y-3 text-center sm:text-left relative z-10 flex-1">
               <div>
-                <h4 className="font-extrabold text-white text-xl">Pravin kumar M</h4>
-                <p className="text-xs text-slate-400">Creator & Developer of Programmer Learner</p>
+                <h4 className="font-black text-white text-2xl tracking-tight mb-1">Pravin Kumar M</h4>
+                <p className="text-sm font-semibold text-cyan-400 uppercase tracking-wider">Creator & Lead Developer</p>
               </div>
-              <div className="flex flex-wrap justify-center sm:justify-start gap-4">
-                <a href="https://www.linkedin.com/in/pravinkumar-m/" target="_blank" rel="noopener noreferrer" className="text-sm font-bold text-cyan-400 hover:text-cyan-300 transition-colors flex items-center gap-1">
+              <p className="text-sm text-slate-300 leading-relaxed max-w-sm">
+                Passionate software engineer focused on building interactive, secure, and scalable web experiences to empower the next generation of developers.
+              </p>
+              <div className="flex flex-wrap justify-center sm:justify-start gap-3 pt-2">
+                <a href="https://www.linkedin.com/in/pravinkumar-m/" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/5 hover:bg-cyan-500/20 text-xs font-bold text-cyan-400 transition-all border border-transparent hover:border-cyan-500/30">
                   <span>🔗</span> LinkedIn
                 </a>
-                <a href="https://github.com/pravinkumar-m" target="_blank" rel="noopener noreferrer" className="text-sm font-bold text-violet-400 hover:text-violet-300 transition-colors flex items-center gap-1">
+                <a href="https://github.com/pravinkumar-m" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/5 hover:bg-violet-500/20 text-xs font-bold text-violet-400 transition-all border border-transparent hover:border-violet-500/30">
                   <span>🐙</span> GitHub
                 </a>
-                <a href="https://www.instagram.com/pravin.a.i" target="_blank" rel="noopener noreferrer" className="text-sm font-bold text-violet-400 hover:text-violet-300 transition-colors flex items-center gap-1">
+                <a href="https://www.instagram.com/pravin.a.i" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/5 hover:bg-pink-500/20 text-xs font-bold text-pink-400 transition-all border border-transparent hover:border-pink-500/30">
                   <span>📸</span> Instagram
                 </a>
-                <a href="https://your-portfolio-link.com" target="_blank" rel="noopener noreferrer" className="text-sm font-bold text-cyan-400 hover:text-cyan-300 transition-colors flex items-center gap-1">
+                <a href="https://your-portfolio-link.com" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/5 hover:bg-cyan-500/20 text-xs font-bold text-cyan-400 transition-all border border-transparent hover:border-cyan-500/30">
                   <span>🌐</span> Portfolio
                 </a>
               </div>

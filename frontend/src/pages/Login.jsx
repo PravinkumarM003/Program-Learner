@@ -43,8 +43,7 @@ export default function Login() {
 
         {/* Logo */}
         <div className="relative z-10 flex items-center gap-3">
-          <span className="flex h-9 w-9 items-center justify-center rounded-xl text-white font-black text-sm"
-            style={{ background: 'linear-gradient(135deg, #06b6d4, #8b5cf6)' }}>PL</span>
+          <img src="/images/logo.png" alt="Programmer Learner Logo" className="h-12 w-auto rounded-lg shadow-lg" />
           <div>
             <span className="block text-white font-bold text-sm leading-tight">Programmer Learner</span>
             <span className="block text-[10px] text-cyan-500 font-semibold leading-tight">Secure Platform</span>
@@ -96,10 +95,9 @@ export default function Login() {
         <div className="w-full max-w-sm animate-fade-up">
 
           {/* Mobile logo */}
-          <div className="lg:hidden flex items-center justify-center gap-2 mb-8">
-            <span className="flex h-10 w-10 items-center justify-center rounded-xl text-white font-black"
-              style={{ background: 'linear-gradient(135deg, #06b6d4, #8b5cf6)' }}>PL</span>
-            <span className="text-lg font-bold text-white">Programmer Learner</span>
+          <div className="lg:hidden flex items-center justify-center gap-3 mb-8">
+            <img src="/images/logo.png" alt="Programmer Learner Logo" className="h-12 w-auto rounded-lg shadow-lg" />
+            <span className="text-xl font-bold text-white">Programmer Learner</span>
           </div>
 
           {/* Card */}

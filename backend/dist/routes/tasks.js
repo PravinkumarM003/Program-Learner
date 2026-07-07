@@ -7,11 +7,11 @@ const validation_1 = require("../middleware/validation");
 const router = (0, express_1.Router)();
 
 async function notifyStudents(title, body) {
-    const students = await prisma_1.prisma.user.findMany({ where: { role: 'STUDENT' } });
-    await Promise.all(students.map(student => {
+    const users = await prisma_1.prisma.user.findMany();
+    await Promise.all(users.map(user => {
         return prisma_1.prisma.notification.create({
             data: {
-                userId: student.id,
+                userId: user.id,
                 title,
                 body,
                 kind: 'NEW_TASK'
@@ -64,7 +64,7 @@ router.get('/', async (_req, res) => {
         select: {
             id: true, title: true, type: true, difficulty: true,
             baseXp: true, deadline: true, targetTime: true, maxMarks: true,
-            published: true, isDraft: true,
+            published: true, isDraft: true, courseId: true,
             createdAt: true, updatedAt: true
         },
         orderBy: { deadline: 'asc' }
@@ -216,7 +216,7 @@ router.get('/:id', async (req, res) => {
     res.json({ task });
 });
 
-router.get('/admin/:id', auth_1.authenticateJWT, (0, auth_1.authorizeRoles)('ADMIN'), async (req, res) => {
+router.get('/admin/:id', auth_1.authenticateJWT, (0, auth_1.authorizeRoles)('ADMIN', 'TEACHER'), async (req, res) => {
     const task = await prisma_1.prisma.task.findUnique({
         where: { id: String(req.params.id) },
         include: {
@@ -230,12 +230,13 @@ router.get('/admin/:id', auth_1.authenticateJWT, (0, auth_1.authorizeRoles)('ADM
     res.json({ task });
 });
 
-router.post('/', auth_1.authenticateJWT, (0, auth_1.authorizeRoles)('ADMIN'), (0, validation_1.validateBody)(validation_1.createTaskSchema), async (req, res) => {
-    const { title, description, type, difficulty, deadline, testCases, sampleInput, sampleOutput, hints, starterCode, isDraft, quizQuestions, baseXp, targetTime, maxMarks } = req.body;
+router.post('/', auth_1.authenticateJWT, (0, auth_1.authorizeRoles)('ADMIN', 'TEACHER'), (0, validation_1.validateBody)(validation_1.createTaskSchema), async (req, res) => {
+    const { title, description, courseId, type, difficulty, deadline, testCases, sampleInput, sampleOutput, hints, starterCode, isDraft, quizQuestions, baseXp, targetTime, maxMarks } = req.body;
     const task = await prisma_1.prisma.task.create({
         data: {
             title,
             description,
+            courseId: courseId || null,
             type: type || 'CODE',
             difficulty: difficulty || 'Beginner',
             deadline: deadline ? new Date(deadline) : null,
@@ -268,12 +269,13 @@ router.post('/', auth_1.authenticateJWT, (0, auth_1.authorizeRoles)('ADMIN'), (0
     res.status(201).json({ task });
 });
 
-router.put('/:id', auth_1.authenticateJWT, (0, auth_1.authorizeRoles)('ADMIN'), (0, validation_1.validateBody)(validation_1.updateTaskSchema), async (req, res) => {
+router.put('/:id', auth_1.authenticateJWT, (0, auth_1.authorizeRoles)('ADMIN', 'TEACHER'), (0, validation_1.validateBody)(validation_1.updateTaskSchema), async (req, res) => {
     const { id } = req.params;
     const updates = req.body;
     const taskData = {
         title: updates.title,
         description: updates.description,
+        courseId: updates.courseId !== undefined ? updates.courseId : undefined,
         type: updates.type,
         difficulty: updates.difficulty,
         deadline: updates.deadline ? new Date(updates.deadline) : undefined,
@@ -307,7 +309,7 @@ router.put('/:id', auth_1.authenticateJWT, (0, auth_1.authorizeRoles)('ADMIN'), 
     res.json({ task });
 });
 
-router.delete('/:id', auth_1.authenticateJWT, (0, auth_1.authorizeRoles)('ADMIN'), async (req, res) => {
+router.delete('/:id', auth_1.authenticateJWT, (0, auth_1.authorizeRoles)('ADMIN', 'TEACHER'), async (req, res) => {
     const { id } = req.params;
     await prisma_1.prisma.task.delete({ where: { id } });
     res.json({ ok: true });

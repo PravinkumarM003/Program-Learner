@@ -83,12 +83,7 @@ export default function Navbar() {
         <div className="glass-nav mx-auto flex max-w-7xl items-center justify-between px-4 md:px-6 py-3 gap-4">
           {/* Logo */}
           <Link to="/" className="flex items-center gap-2.5 group flex-shrink-0">
-            <span
-              className="flex h-8 w-8 items-center justify-center rounded-xl text-white font-black text-sm shadow-lg transition-shadow group-hover:shadow-cyan-500/30"
-              style={{ background: 'linear-gradient(135deg, #06b6d4, #8b5cf6)' }}
-            >
-              PL
-            </span>
+            <img src="/images/logo.png" alt="Programmer Learner Logo" className="h-10 w-auto rounded-lg shadow-lg transition-shadow group-hover:shadow-cyan-500/30" />
             <div className="hidden sm:block">
               <span className="block font-bold text-white text-sm leading-tight tracking-tight">Programmer Learner</span>
               <span className="block text-[10px] font-semibold text-cyan-500 leading-tight">Secure Platform</span>
@@ -229,6 +224,12 @@ export default function Navbar() {
                           <span className="text-base">🛡️</span> Admin Panel
                         </Link>
                       )}
+                      {user?.role === 'TEACHER' && (
+                        <Link to="/admin" onClick={() => setDropdownOpen(false)}
+                          className="flex items-center gap-2.5 px-4 py-2 text-sm text-fuchsia-400 hover:text-fuchsia-300 hover:bg-fuchsia-500/5 transition-colors">
+                          <span className="text-base">👩‍🏫</span> Teacher Dashboard
+                        </Link>
+                      )}
                     </div>
                     <div className="border-t py-1.5" style={{ borderColor: 'var(--border-subtle)' }}>
                       <button onClick={logout}
@@ -303,11 +304,20 @@ export default function Navbar() {
           {user?.role === 'ADMIN' && (
             <Link to="/admin"
               className={`flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium transition-colors ${
-                isActive('/admin') ? 'bg-violet-500/10 text-violet-400' : 'text-slate-300 hover:text-violet-400 hover:bg-violet-500/5'
+                isActive('/admin') ? 'bg-violet-500/10 text-violet-400' : 'text-slate-300 hover:text-white hover:bg-white/5'
               }`}
             >
               <span className="text-base w-6 text-center">🛡️</span>
               Admin Panel
+            </Link>
+          )}
+          {user?.role === 'TEACHER' && (
+            <Link to="/admin"
+              className={`flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium transition-colors ${
+                isActive('/admin') ? 'bg-fuchsia-500/10 text-fuchsia-400' : 'text-slate-300 hover:text-white hover:bg-white/5'
+              }`}
+            >
+              <span className="text-base w-6 text-center">👩‍🏫</span> Teacher Dashboard
             </Link>
           )}
         </nav>

@@ -12,7 +12,7 @@ router.get('/', async (_req, res) => {
 router.get('/:id', async (req, res) => {
     const course = await prisma_1.prisma.course.findUnique({
         where: { id: String(req.params.id) },
-        include: { lessons: { orderBy: { order: 'asc' } } }
+        include: { lessons: { orderBy: { order: 'asc' } }, tasks: { orderBy: { createdAt: 'asc' } } }
     });
     if (!course)
         return res.status(404).json({ error: 'Course not found' });

@@ -8,10 +8,23 @@ const DIFF_COLOR = {
   Advanced: 'bg-red-500/10 text-red-400',
 }
 
+const TASK_DIFF_CONFIG = {
+  Beginner:     { cls: 'badge badge-accepted', bar: 'bg-emerald-500', width: '33%' },
+  Intermediate: { cls: 'badge badge-pending',  bar: 'bg-amber-500',   width: '66%' },
+  Advanced:     { cls: 'badge badge-rejected', bar: 'bg-red-500',     width: '100%' },
+}
+
+const TYPE_CONFIG = {
+  CODE:    { cls: 'badge badge-code',    icon: '💻', label: 'Code' },
+  QUIZ:    { cls: 'badge badge-quiz',    icon: '❓', label: 'Quiz' },
+  GENERAL: { cls: 'badge badge-general', icon: '📝', label: 'General' },
+}
+
 export default function CourseDetail() {
   const { id } = useParams()
   const [course, setCourse] = useState(null)
   const [progress, setProgress] = useState([]) // array of LessonProgress objects
+  const [submittedTaskIds, setSubmittedTaskIds] = useState(new Set())
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
 
@@ -19,6 +32,7 @@ export default function CourseDetail() {
     Promise.all([
       api.get(`/courses/${id}`).then(r => setCourse(r.data?.course)),
       api.get('/progress').then(r => setProgress(r.data?.progress || [])).catch(() => {}),
+      api.get('/submissions').then(r => setSubmittedTaskIds(new Set((r.data?.submissions || []).map(s => s.taskId)))).catch(() => {})
     ])
       .catch(() => setError('Course not found.'))
       .finally(() => setLoading(false))
@@ -134,6 +148,64 @@ export default function CourseDetail() {
           <p>Lessons coming soon!</p>
         </div>
       )}
+
+      {/* Tasks Section */}
+      <div className="mt-12">
+        <h2 className="font-bold text-white mb-4">Tasks</h2>
+        {course.tasks?.length ? (
+          <div className="grid sm:grid-cols-2 gap-5">
+            {course.tasks.map(t => {
+              const done = submittedTaskIds.has(t.id)
+              const type = TYPE_CONFIG[t.type] || { cls: 'badge', icon: '📄', label: t.type }
+              const diff = TASK_DIFF_CONFIG[t.difficulty] || { cls: 'badge', bar: 'bg-slate-500', width: '50%' }
+              return (
+                <Link key={t.id} to={`/tasks/${t.id}`}
+                  className={`card-hover glass-card rounded-2xl p-5 flex flex-col gap-4 group relative overflow-hidden animate-fade-up gradient-border ${done ? 'opacity-70' : ''}`}>
+                  
+                  {done && (
+                    <div className="absolute top-4 right-4 z-10">
+                      <span className="badge badge-accepted">✓ Done</span>
+                    </div>
+                  )}
+
+                  <div className="flex items-start justify-between">
+                    <span className="flex h-10 w-10 items-center justify-center rounded-xl text-xl"
+                      style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid var(--border-subtle)' }}>
+                      {type.icon}
+                    </span>
+                    {t.baseXp > 0 && (
+                      <span className="text-xs font-bold text-amber-400 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded-full">
+                        ⚡ {t.baseXp} XP
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="flex-1">
+                    <h3 className="font-bold text-white text-sm leading-snug group-hover:text-cyan-400 transition-colors line-clamp-2 mb-1.5">
+                      {t.title}
+                    </h3>
+                  </div>
+
+                  <div>
+                    <div className="flex items-center justify-between mb-1.5">
+                      <span className={type.cls}>{type.label}</span>
+                      <span className={diff.cls}>{t.difficulty}</span>
+                    </div>
+                    <div className="h-1 rounded-full bg-white/5 overflow-hidden">
+                      <div className={`h-full rounded-full transition-all ${diff.bar}`} style={{ width: diff.width }} />
+                    </div>
+                  </div>
+                </Link>
+              )
+            })}
+          </div>
+        ) : (
+          <div className="glass-card rounded-2xl p-10 text-center text-slate-600">
+            <p className="text-3xl mb-2">🎯</p>
+            <p>No tasks available for this course yet.</p>
+          </div>
+        )}
+      </div>
     </div>
   )
 }

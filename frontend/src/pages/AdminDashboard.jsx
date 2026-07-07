@@ -33,13 +33,15 @@ const getDateLabel = (value) => {
 }
 
 export default function AdminDashboard() {
+  const user = useStore(s => s.user)
   const showToast = useStore(s => s.showToast)
   const [subs, setSubs] = useState([])
   const [users, setUsers] = useState([])
   const [tasks, setTasks] = useState([])
   const [lessons, setLessons] = useState([])
+  const [courses, setCourses] = useState([])
   const [loading, setLoading] = useState(true)
-  const [tab, setTab] = useState('user-monitor') // Default to User Monitor
+  const [tab, setTab] = useState(user?.role === 'TEACHER' ? 'tasks' : 'user-monitor')
   const [selectedSub, setSelectedSub] = useState(null)
   const [feedback, setFeedback] = useState('')
   const [marks, setMarks] = useState('')
@@ -82,6 +84,7 @@ export default function AdminDashboard() {
   const [taskBaseXp, setTaskBaseXp] = useState(0)
   const [taskTargetTime, setTaskTargetTime] = useState('')
   const [taskMaxMarks, setTaskMaxMarks] = useState('')
+  const [taskCourseId, setTaskCourseId] = useState('')
   const [quizQuestions, setQuizQuestions] = useState([])
   const [savingTask, setSavingTask] = useState(false)
 
@@ -110,29 +113,43 @@ export default function AdminDashboard() {
 
   const fetchAllData = () => {
     setLoading(true)
-    Promise.all([
+    const requests = [
       api.get('/admin/submissions').catch(() => ({ data: { submissions: [] } })),
-      api.get('/admin/users').catch(() => ({ data: { users: [] } })),
       api.get('/tasks/admin').catch(() => ({ data: { tasks: [] } })),
       api.get('/admin/lessons').catch(() => ({ data: { lessons: [] } })),
-      api.get('/user/leaderboard').catch(() => ({ data: { leaderboard: [] } })),
-      api.get('/admin/violations').catch(() => ({ data: { violations: [] } })),
-      api.get('/admin/blocked-ips').catch(() => ({ data: { blockedIps: [] } })),
-      api.get('/feedback').catch(() => ({ data: { feedbacks: [] } }))
-    ]).then(([s, u, t, l, lb, v, b, f]) => {
-      setSubs(s.data?.submissions || [])
-      setTasks(t.data?.tasks || [])
-      setLessons(l.data?.lessons || [])
-      setViolations(v.data?.violations || [])
-      setBlockedIps(b.data?.blockedIps || [])
-      setFeedbacks(f.data?.feedbacks || [])
+      api.get('/courses').catch(() => ({ data: { courses: [] } }))
+    ]
+    if (user?.role === 'ADMIN') {
+      requests.push(api.get('/admin/users').catch(() => ({ data: { users: [] } })))
+      requests.push(api.get('/user/leaderboard').catch(() => ({ data: { leaderboard: [] } })))
+      requests.push(api.get('/admin/violations').catch(() => ({ data: { violations: [] } })))
+      requests.push(api.get('/admin/blocked-ips').catch(() => ({ data: { blockedIps: [] } })))
+      requests.push(api.get('/feedback').catch(() => ({ data: { feedbacks: [] } })))
+    }
+    
+    Promise.all(requests).then((responses) => {
+      setSubs(responses[0].data?.submissions || [])
+      setTasks(responses[1].data?.tasks || [])
+      setLessons(responses[2].data?.lessons || [])
+      setCourses(responses[3].data?.courses || [])
       
-      const leaderboard = lb.data?.leaderboard || []
-      const usersData = (u.data?.users || []).map(user => {
-        const boardMatch = leaderboard.find(x => x.id === user.id)
-        return { ...user, combinedScore: boardMatch ? boardMatch.score : 0 }
-      })
-      setUsers(usersData)
+      if (user?.role === 'ADMIN') {
+        const u = responses[4]
+        const lb = responses[5]
+        const v = responses[6]
+        const b = responses[7]
+        const f = responses[8]
+        setViolations(v.data?.violations || [])
+        setBlockedIps(b.data?.blockedIps || [])
+        setFeedbacks(f.data?.feedbacks || [])
+        
+        const leaderboard = lb.data?.leaderboard || []
+        const usersData = (u.data?.users || []).map(usr => {
+          const boardMatch = leaderboard.find(x => x.id === usr.id)
+          return { ...usr, combinedScore: boardMatch ? boardMatch.score : 0 }
+        })
+        setUsers(usersData)
+      }
     }).finally(() => setLoading(false))
   }
 
@@ -198,6 +215,7 @@ export default function AdminDashboard() {
     setTaskBaseXp(0)
     setTaskTargetTime('')
     setTaskMaxMarks('')
+    setTaskCourseId('')
     setQuizQuestions([])
     setTaskModalOpen(true)
   }
@@ -229,6 +247,7 @@ export default function AdminDashboard() {
       setTaskBaseXp(fullTask.baseXp || 0)
       setTaskTargetTime(fullTask.targetTime || '')
       setTaskMaxMarks(fullTask.maxMarks || '')
+      setTaskCourseId(fullTask.courseId || '')
       
       const parsedQuestions = (fullTask.quizQuestions || []).map(q => {
         let opts = ['', '', '', '']
@@ -266,6 +285,7 @@ export default function AdminDashboard() {
       baseXp: Number(taskBaseXp) || 0,
       targetTime: taskTargetTime ? Number(taskTargetTime) : null,
       maxMarks: taskMaxMarks ? Number(taskMaxMarks) : null,
+      courseId: taskCourseId || null,
       quizQuestions: formattedQuestions, isDraft: false
     }
 
@@ -379,7 +399,9 @@ export default function AdminDashboard() {
       .catch(() => setMsg({ ok: false, text: 'Failed to unblock IP.' }))
   }
 
-  const TABS = ['overview', 'user-monitor', 'submissions', 'tasks', 'lessons', 'violations', 'feedbacks', 'analytics']
+  const TABS = user?.role === 'TEACHER' 
+    ? ['submissions', 'tasks', 'lessons']
+    : ['overview', 'user-monitor', 'submissions', 'tasks', 'lessons', 'violations', 'feedbacks', 'analytics']
 
   // User Monitoring Calculation
   const userStats = users.map(user => {
@@ -1036,7 +1058,7 @@ export default function AdminDashboard() {
                   </div>
                 </div>
 
-                <div className="grid sm:grid-cols-2 gap-5">
+                <div className="grid sm:grid-cols-3 gap-5">
                   <div>
                     <label className="text-xs text-slate-400 font-semibold block mb-1.5">Difficulty</label>
                     <select value={taskDiff} onChange={e => setTaskDiff(e.target.value)}
@@ -1044,6 +1066,14 @@ export default function AdminDashboard() {
                       <option value="Beginner">Beginner</option>
                       <option value="Intermediate">Intermediate</option>
                       <option value="Advanced">Advanced</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="text-xs text-slate-400 font-semibold block mb-1.5">Course (Optional)</label>
+                    <select value={taskCourseId} onChange={e => setTaskCourseId(e.target.value)}
+                      className="w-full rounded-xl bg-black/20 border border-white/10 px-4 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-cyan-500/50 transition-shadow">
+                      <option value="">No Course (Global)</option>
+                      {courses.map(c => <option key={c.id} value={c.id}>{c.title}</option>)}
                     </select>
                   </div>
                   <div>

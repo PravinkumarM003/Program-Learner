@@ -9,6 +9,7 @@ datasource db {
 
 enum Role {
   ADMIN
+  TEACHER
   STUDENT
 }
 
@@ -72,6 +73,7 @@ model Course {
   updatedAt DateTime @updatedAt
 
   lessons Lesson[]
+  tasks   Task[]
 
   @@index([title])
 }
@@ -141,12 +143,16 @@ model Task {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  courseId  String?
+  course    Course? @relation(fields: [courseId], references: [id], onDelete: SetNull)
+
   attachments Attachment[]
   submissions Submission[]
   comments     Comment[]
   quizQuestions QuizQuestion[]
 
   @@index([published, deadline])
+  @@index([courseId])
 }
 
 model QuizQuestion {
