@@ -630,6 +630,12 @@ export default function TaskDetail() {
                         rows={2}
                         value={customInput}
                         onChange={e => setCustomInput(e.target.value)}
+                        onKeyDown={e => {
+                          if (e.key === 'Enter' && !e.shiftKey) {
+                            e.preventDefault()
+                            runCode()
+                          }
+                        }}
                         placeholder="Provide stdin input for compilation/execution here..."
                         className="w-full rounded-xl bg-white/5 border border-white/10 px-3 py-2 text-xs font-mono text-slate-300 focus:outline-none focus:ring-1 focus:ring-cyan-500/40 resize-none"
                       />

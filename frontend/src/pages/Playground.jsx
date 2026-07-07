@@ -566,6 +566,12 @@ export default function Playground() {
                 <textarea
                   value={input}
                   onChange={e => setInput(e.target.value)}
+                  onKeyDown={e => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                      e.preventDefault()
+                      runCode()
+                    }
+                  }}
                   placeholder="Provide input for execution (e.g. 5 or multiple lines)..."
                   className="flex-1 w-full bg-transparent border-0 focus:ring-0 focus:outline-none text-green-300 placeholder-slate-600 font-mono resize-none h-16 md:h-10 text-xs"
                 />
