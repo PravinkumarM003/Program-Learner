@@ -4,60 +4,81 @@ import { useStore } from '../store/useStore'
 const FEATURES = [
   {
     icon: '💻',
-    title: 'Structured Learning Path',
-    desc: 'Courses from beginner to advanced with hands-on exercises and XP rewards for every milestone.',
+    title: 'C & Python Courses',
+    desc: 'Separate structured learning paths for C and Python — from beginner to advanced, with lessons, quizzes, and tasks.',
     color: 'from-cyan-500/20 to-cyan-500/5',
     accent: '#06b6d4',
   },
   {
-    icon: '⚡',
-    title: 'Live Code Editor & Ask AI',
-    desc: 'Monaco-powered IDE with real-time compilation. Spend XP to get AI hints when you are stuck.',
+    icon: '🔥',
+    title: 'Daily Challenges',
+    desc: 'A new coding challenge every day. Solve it to climb the leaderboard and earn bonus XP before time runs out.',
+    color: 'from-orange-500/20 to-orange-500/5',
+    accent: '#f97316',
+  },
+  {
+    icon: '🏆',
+    title: 'Levels, Ranks & Leaderboard',
+    desc: 'Earn XP to level up from Bronze to Grandmaster. Compete on a live leaderboard to see where you stand.',
+    color: 'from-amber-500/20 to-amber-500/5',
+    accent: '#f59e0b',
+  },
+  {
+    icon: '🤖',
+    title: 'AI Hints & Live Code Editor',
+    desc: 'Monaco-powered IDE with real-time compilation. Spend XP to unlock AI hints when you get stuck.',
     color: 'from-violet-500/20 to-violet-500/5',
     accent: '#8b5cf6',
   },
   {
     icon: '🔐',
-    title: 'Enterprise-Grade Security',
-    desc: 'Google OAuth, HTTP-only cookies, CSRF tokens, rate limiting and JWT refresh rotation.',
-    color: 'from-emerald-500/20 to-emerald-500/5',
-    accent: '#10b981',
-  },
-  {
-    icon: '📊',
-    title: 'XP & Progress Tracking',
-    desc: 'Earn XP for lessons and tasks. Track your total earned, used, and available XP directly on your Dashboard.',
-    color: 'from-amber-500/20 to-amber-500/5',
-    accent: '#f59e0b',
-  },
-  {
-    icon: '🧑‍⚖️',
-    title: 'Admin Review System',
-    desc: 'Instructors review submissions, provide feedback, assign marks, and run plagiarism detection.',
+    title: 'Anti-Cheat & Exam Mode',
+    desc: 'Copy-paste detection, IP-based auto-ban, and a lockdown exam mode that hides the navbar during timed tasks.',
     color: 'from-rose-500/20 to-rose-500/5',
     accent: '#f43f5e',
   },
   {
-    icon: '📱',
-    title: 'PWA & Offline Ready',
-    desc: 'Installable as an app on any device. Works offline with cached lessons.',
+    icon: '🏅',
+    title: 'Completion Certificates',
+    desc: 'Finish all lessons in a course and instantly download a beautiful certificate with your name, XP, and date.',
+    color: 'from-emerald-500/20 to-emerald-500/5',
+    accent: '#10b981',
+  },
+  {
+    icon: '👩‍🏫',
+    title: 'Teacher & Admin Dashboard',
+    desc: 'Teachers create lessons and tasks. Admins review submissions, manage roles, broadcast announcements, and block cheaters.',
+    color: 'from-fuchsia-500/20 to-fuchsia-500/5',
+    accent: '#d946ef',
+  },
+  {
+    icon: '📊',
+    title: 'Progress Tracking',
+    desc: 'Visual progress bars per course on your dashboard. See exactly how many lessons you\'ve completed at a glance.',
     color: 'from-sky-500/20 to-sky-500/5',
     accent: '#0ea5e9',
+  },
+  {
+    icon: '🔔',
+    title: 'Real-Time Notifications',
+    desc: 'Get notified when a new lesson drops, a task is graded, or a daily challenge goes live — all inside the app.',
+    color: 'from-yellow-500/20 to-yellow-500/5',
+    accent: '#eab308',
   },
 ]
 
 const STATS = [
-  { value: '12+',  label: 'Structured Lessons' },
+  { value: '2',    label: 'Language Courses (C & Python)' },
   { value: '50+',  label: 'Coding Challenges' },
-  { value: 'XP',   label: 'Gamified Rewards' },
-  { value: '100%', label: 'Secure & Private' },
+  { value: 'XP',   label: 'Gamified Levels & Ranks' },
+  { value: '100%', label: 'Secure & Anti-Cheat' },
 ]
 
 const STEPS = [
-  { step: '01', title: 'Sign in with Google', desc: 'One-click authentication, no passwords needed.' },
-  { step: '02', title: 'Complete Lessons',     desc: 'Work through structured courses and earn XP.' },
-  { step: '03', title: 'Solve Tasks',          desc: 'Submit code or answers and get reviewed instantly.' },
-  { step: '04', title: 'Climb the Leaderboard', desc: 'Track your rank against other students in real time.' },
+  { step: '01', title: 'Sign in with Google', desc: 'One-click authentication. No passwords, no hassle.' },
+  { step: '02', title: 'Pick C or Python',    desc: 'Choose your language and start structured lessons at your own pace.' },
+  { step: '03', title: 'Solve Tasks & Earn XP', desc: 'Submit code, take quizzes, and beat daily challenges to level up.' },
+  { step: '04', title: 'Get Certified',       desc: 'Complete a course to download your personalised certificate.' },
 ]
 
 export default function Landing() {
@@ -232,7 +253,7 @@ export default function Landing() {
           </div>
           <p className="text-xs" style={{ color: 'var(--text-muted)' }}>© 2025 Programmer Learner. Built with ❤️ for developers.</p>
           <div className="flex gap-4 text-xs" style={{ color: 'var(--text-muted)' }}>
-            <Link to="/about" className="hover:text-white transition-colors">Feedback</Link>
+            <Link to="/about" className="hover:text-white transition-colors">About</Link>
             <Link to="/courses" className="hover:text-white transition-colors">Lessons</Link>
             <Link to="/tasks" className="hover:text-white transition-colors">Tasks</Link>
           </div>

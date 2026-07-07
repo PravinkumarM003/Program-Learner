@@ -12,7 +12,7 @@ const NAV_LINKS = [
   { to: '/playground',  label: 'Playground',   icon: '⚡' },
   { to: '/submissions', label: 'Submissions',  icon: '📝' },
   { to: '/leaderboard', label: 'Leaderboard',  icon: '🏆' },
-  { to: '/about',       label: 'Feedback',     icon: '💬' },
+  { to: '/about',       label: 'About',        icon: '💬' },
 ]
 
 export default function Navbar() {

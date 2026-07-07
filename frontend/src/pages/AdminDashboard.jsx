@@ -53,6 +53,8 @@ export default function AdminDashboard() {
       setTab('overview')
     }
   }, [user])
+  const [selectedSub, setSelectedSub] = useState(null)
+  const [feedback, setFeedback] = useState('')
   const [marks, setMarks] = useState('')
   const [savingSub, setSavingSub] = useState(false)
   const [msg, setMsg] = useState(null)

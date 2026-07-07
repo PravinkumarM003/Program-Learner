@@ -83,7 +83,7 @@ export default function App() {
           <Route path="/tasks/:id" element={<PrivateRoute><TaskDetail /></PrivateRoute>} />
           <Route path="/submissions" element={<PrivateRoute><Submissions /></PrivateRoute>} />
           <Route path="/leaderboard" element={<PrivateRoute><Leaderboard /></PrivateRoute>} />
-          <Route path="/about" element={<PrivateRoute><About /></PrivateRoute>} />
+          <Route path="/about" element={<About />} />
           <Route path="/admin" element={<PrivateRoute role="ADMIN"><AdminDashboard /></PrivateRoute>} />
           <Route path="/settings" element={<PrivateRoute><Settings /></PrivateRoute>} />
           <Route path="/playground" element={<PrivateRoute><Playground /></PrivateRoute>} />
