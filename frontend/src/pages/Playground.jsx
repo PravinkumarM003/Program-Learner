@@ -494,42 +494,17 @@ export default function Playground() {
             )}
           </div>
 
-          {/* Input Toggle */}
-          <div className="flex-shrink-0 border-t" style={{ borderColor: 'var(--border-subtle)' }}>
-            <button onClick={() => setShowInputPanel(p => !p)}
-              className="w-full flex items-center justify-between px-4 py-2 text-xs hover:bg-white/5 transition-colors"
-              style={{ color: 'var(--text-secondary)' }}>
-              <span className="font-semibold">📥 Standard Input (stdin)</span>
-              <span className={`transition-transform ${showInputPanel ? 'rotate-180' : ''}`}>▾</span>
-            </button>
-            {showInputPanel && (
-              <div className="px-4 pb-3">
-                <textarea
-                  value={input}
-                  onChange={e => setInput(e.target.value)}
-                  rows={3}
-                  placeholder={`Provide input for your ${langCfg.label} program (e.g. 5\n10)`}
-                  className="w-full rounded-xl text-xs font-mono px-3 py-2 resize-none focus:outline-none focus:ring-2 focus:ring-cyan-500/40"
-                  style={{
-                    background: 'var(--bg-elevated)',
-                    border: '1px solid var(--border-default)',
-                    color: 'var(--text-primary)'
-                  }}
-                />
-              </div>
-            )}
-          </div>
-
-          {/* Output Console */}
-          <div className="flex-shrink-0 border-t" style={{ borderColor: 'var(--border-subtle)', minHeight: 140, maxHeight: 280 }}>
-            <div className="flex items-center justify-between px-4 py-2 border-b"
+          {/* Integrated Terminal Panel (stdin + stdout) */}
+          <div className="flex-shrink-0 border-t flex flex-col" style={{ borderColor: 'var(--border-subtle)', minHeight: 180, maxHeight: 320 }}>
+            {/* Header bar */}
+            <div className="flex items-center justify-between px-4 py-2 border-b flex-shrink-0"
               style={{ borderColor: 'var(--border-subtle)', background: 'var(--bg-elevated)' }}>
               <div className="flex items-center gap-2">
                 <span className="w-2.5 h-2.5 rounded-full bg-red-500" />
                 <span className="w-2.5 h-2.5 rounded-full bg-yellow-500" />
                 <span className="w-2.5 h-2.5 rounded-full bg-green-500" />
                 <span className="text-xs font-semibold ml-2" style={{ color: 'var(--text-secondary)' }}>
-                  Console Output
+                  Interactive Terminal
                 </span>
                 {output?.compileError && (
                   <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-orange-500/15 text-orange-400">
@@ -562,22 +537,49 @@ export default function Playground() {
               </div>
             </div>
 
-            <div className="overflow-auto font-mono text-xs p-4 space-y-1"
-              style={{ background: '#0d1117', maxHeight: 220 }}>
-              {running && (
-                <div className="flex items-center gap-2 text-cyan-400">
-                  <span className="w-3 h-3 border border-cyan-400 border-t-transparent rounded-full animate-spin" />
-                  Executing {langCfg.label} code...
+            {/* Split Content: Stdin on Left, Stdout on Right */}
+            <div className="flex flex-col md:flex-row flex-1 overflow-hidden" style={{ background: '#0d1117' }}>
+              {/* Stdin Panel */}
+              <div className="w-full md:w-[30%] border-b md:border-b-0 md:border-r border-white/5 flex flex-col p-3">
+                <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1.5 flex items-center gap-1">
+                  📥 Input (stdin)
+                </label>
+                <textarea
+                  value={input}
+                  onChange={e => setInput(e.target.value)}
+                  placeholder={`Provide input values here (e.g. 5\n10)`}
+                  className="flex-1 w-full rounded-xl text-xs font-mono px-3 py-2 resize-none focus:outline-none focus:ring-1 focus:ring-cyan-500/30"
+                  style={{
+                    background: 'rgba(255,255,255,0.03)',
+                    border: '1px solid rgba(255,255,255,0.08)',
+                    color: 'var(--text-primary)',
+                    minHeight: '60px'
+                  }}
+                />
+              </div>
+
+              {/* Stdout Panel */}
+              <div className="flex-1 overflow-auto font-mono text-xs p-3 space-y-1 flex flex-col">
+                <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1">
+                  📤 Output (stdout)
+                </label>
+                <div className="flex-1 overflow-y-auto min-h-[80px]">
+                  {running && (
+                    <div className="flex items-center gap-2 text-cyan-400">
+                      <span className="w-3 h-3 border border-cyan-400 border-t-transparent rounded-full animate-spin" />
+                      Executing {langCfg.label} code...
+                    </div>
+                  )}
+                  {!running && !output && (
+                    <p className="text-slate-600 italic">Run your code to see output here…</p>
+                  )}
+                  {outputLines.map((line, i) => (
+                    <pre key={i} className={`whitespace-pre-wrap leading-relaxed ${
+                      line.type === 'err' ? 'text-red-400' : 'text-green-300'
+                    }`}>{line.text}</pre>
+                  ))}
                 </div>
-              )}
-              {!running && !output && (
-                <p className="text-slate-600 italic">Run your code to see output here…</p>
-              )}
-              {outputLines.map((line, i) => (
-                <pre key={i} className={`whitespace-pre-wrap leading-relaxed ${
-                  line.type === 'err' ? 'text-red-400' : 'text-green-300'
-                }`}>{line.text}</pre>
-              ))}
+              </div>
             </div>
           </div>
 

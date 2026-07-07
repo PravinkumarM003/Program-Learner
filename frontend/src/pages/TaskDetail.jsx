@@ -43,11 +43,21 @@ export default function TaskDetail() {
   const navigate = useNavigate()
   const ideTheme = useStore(s => s.ideTheme)
   const showToast = useStore(s => s.showToast)
+  const setIsExamMode = useStore(s => s.setIsExamMode)
 
   // Restricted Exam Mode States
   const [restrictedModeActive, setRestrictedModeActive] = useState(false)
   const [warningMsg, setWarningMsg] = useState(null)
   const lastViolationTime = useRef(0)
+
+  useEffect(() => {
+    if (restrictedModeActive) {
+      setIsExamMode(true)
+    }
+    return () => {
+      setIsExamMode(false)
+    }
+  }, [restrictedModeActive, setIsExamMode])
 
   const showWarning = (msg) => {
     setWarningMsg(msg)

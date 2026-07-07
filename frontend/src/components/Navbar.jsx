@@ -17,6 +17,7 @@ const NAV_LINKS = [
 export default function Navbar() {
   const user = useStore(s => s.user)
   const setUser = useStore(s => s.setUser)
+  const isExamMode = useStore(s => s.isExamMode)
   const { theme, toggleTheme } = useStore(s => ({ theme: s.theme, toggleTheme: s.toggleTheme }))
   const location = useLocation()
   const { streakData } = useStreak()
@@ -73,7 +74,11 @@ export default function Navbar() {
 
   return (
     <>
-      <header className="sticky top-0 z-40 w-full">
+      <header className={`z-40 w-full transition-all duration-300 ${
+        isExamMode
+          ? 'fixed top-0 left-0 right-0 h-4 overflow-hidden opacity-0 hover:h-[72px] hover:opacity-100 hover:bg-[#030712]/95 border-b border-transparent hover:border-white/10 z-[100] backdrop-blur-md'
+          : 'sticky top-0'
+      }`}>
         {/* Glass bar */}
         <div className="glass-nav mx-auto flex max-w-7xl items-center justify-between px-4 md:px-6 py-3 gap-4">
           {/* Logo */}

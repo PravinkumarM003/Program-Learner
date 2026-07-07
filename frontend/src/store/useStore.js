@@ -47,4 +47,8 @@ export const useStore = create((set) => ({
     set({ toast: { msg, type, id: Date.now() } })
   },
   clearToast: () => set({ toast: null }),
+
+  // Exam Mode state (hides Navbar unless hovered)
+  isExamMode: false,
+  setIsExamMode: (isExamMode) => set({ isExamMode }),
 }))
