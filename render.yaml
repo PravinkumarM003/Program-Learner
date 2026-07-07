@@ -23,6 +23,12 @@ services:
         value: https://program-learner.onrender.com
       - key: GOOGLE_REDIRECT_URI
         value: https://program-learner.onrender.com/api/auth/google/callback
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: JWT_ACCESS_SECRET
+        generateValue: true
+      - key: JWT_REFRESH_SECRET
+        generateValue: true
 
   - type: static
     name: program-learner
