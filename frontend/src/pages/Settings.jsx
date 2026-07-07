@@ -5,8 +5,8 @@ import api from '../api/client'
 export default function Settings() {
   const user = useStore(s => s.user)
   const setUser = useStore(s => s.setUser)
-  const setTheme = useStore(s => s.setTheme)
-  const currentTheme = useStore(s => s.theme)
+  const setIdeTheme = useStore(s => s.setIdeTheme)
+  const currentIdeTheme = useStore(s => s.ideTheme)
   const [name, setName] = useState(user?.name || '')
   const [saving, setSaving] = useState(false)
   const [msg, setMsg] = useState(null)
@@ -21,7 +21,7 @@ export default function Settings() {
     const isUnlocked = theme.id === 'vs-dark' || unlockedThemes.includes(theme.id)
 
     if (isUnlocked) {
-      setTheme(theme.id)
+      setIdeTheme(theme.id)
       return
     }
 
@@ -123,7 +123,7 @@ export default function Settings() {
           ].map(theme => {
             const unlockedThemes = user?.unlockedThemes ? JSON.parse(user.unlockedThemes) : []
             const isUnlocked = theme.id === 'vs-dark' || unlockedThemes.includes(theme.id)
-            const isActive = currentTheme === theme.id
+            const isActive = currentIdeTheme === theme.id
 
             return (
             <div key={theme.id} className={`p-4 rounded-xl border flex items-center justify-between transition-all ${isUnlocked ? 'bg-white/5 border-white/10' : 'bg-black/20 border-white/5 grayscale'}`}>

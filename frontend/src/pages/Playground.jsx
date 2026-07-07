@@ -69,7 +69,7 @@ function persistSnippets(snippets) {
 }
 
 export default function Playground() {
-  const theme = useStore(s => s.theme)
+  const ideTheme = useStore(s => s.ideTheme)
   const [language, setLanguage] = useState('python')
   const [code, setCode] = useState(LANG_CONFIGS.python.defaultCode)
   const [input, setInput] = useState('')
@@ -432,7 +432,7 @@ export default function Playground() {
               <Editor
                 height="100%"
                 language={langCfg.monacoLang}
-                theme={theme === 'dark' ? 'vs-dark' : (theme === 'light' ? 'light' : theme)}
+                theme={ideTheme === 'dark' ? 'vs-dark' : ideTheme}
                 value={code}
                 onChange={v => setCode(v || '')}
                 onMount={e => { editorRef.current = e }}

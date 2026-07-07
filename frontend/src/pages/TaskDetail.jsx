@@ -41,11 +41,17 @@ export default function TaskDetail() {
   const [history, setHistory] = useState([])
   const editorRef = useRef(null)
   const navigate = useNavigate()
-  const theme = useStore(s => s.theme)
+  const ideTheme = useStore(s => s.ideTheme)
 
   // Restricted Exam Mode States
   const [restrictedModeActive, setRestrictedModeActive] = useState(false)
+  const [warningMsg, setWarningMsg] = useState(null)
   const lastViolationTime = useRef(0)
+
+  const showWarning = (msg) => {
+    setWarningMsg(msg)
+    setTimeout(() => setWarningMsg(null), 3000)
+  }
 
   const reportViolation = async (reason) => {
     // Throttling to prevent alert loops or double logging
@@ -68,7 +74,7 @@ export default function TaskDetail() {
     const handleContextMenu = (e) => {
       e.preventDefault();
       reportViolation('Attempted to right-click (open context menu)');
-      alert('⚠️ Right-click is disabled in Restricted Exam Mode!');
+      showWarning('⚠️ Right-click is disabled in Restricted Exam Mode!');
     };
 
     // Prevent key combinations
@@ -77,28 +83,28 @@ export default function TaskDetail() {
       if (e.key === 'F12') {
         e.preventDefault();
         reportViolation('Pressed F12 (Developer Tools)');
-        alert('⚠️ Developer tools are disabled!');
+        showWarning('⚠️ Developer tools are disabled!');
       }
 
       // Ctrl + Shift + I/J/C
       if (e.ctrlKey && e.shiftKey && ['I', 'J', 'C', 'i', 'j', 'c'].includes(e.key)) {
         e.preventDefault();
         reportViolation('Pressed Ctrl+Shift+I/J/C (Developer Tools)');
-        alert('⚠️ Developer tools are disabled!');
+        showWarning('⚠️ Developer tools are disabled!');
       }
 
       // Ctrl + U (View Source)
       if (e.ctrlKey && (e.key === 'u' || e.key === 'U')) {
         e.preventDefault();
         reportViolation('Pressed Ctrl+U (View Source)');
-        alert('⚠️ View Page Source is disabled!');
+        showWarning('⚠️ View Page Source is disabled!');
       }
 
       // Ctrl + R, F5 (Reload)
       if (e.key === 'F5' || (e.ctrlKey && (e.key === 'r' || e.key === 'R'))) {
         e.preventDefault();
         reportViolation('Attempted to reload the page');
-        alert('⚠️ Reloading is disabled during the task!');
+        showWarning('⚠️ Reloading is disabled during the task!');
       }
 
       // Ctrl + T, Ctrl + N, Ctrl + W
@@ -117,14 +123,14 @@ export default function TaskDetail() {
     const handleVisibilityChange = () => {
       if (document.hidden) {
         reportViolation('Tab switched / window minimized');
-        alert('⚠️ Warning: Leaving the task tab is a violation! Reported to admin.');
+        showWarning('⚠️ Warning: Leaving the task tab is a violation! Reported to admin.');
       }
     };
 
     // Detect Window Blur (clicking outside, Alt+Tab, opening another app)
     const handleBlur = () => {
       reportViolation('Window lost focus');
-      alert('⚠️ Warning: You left the application! Reported to admin.');
+      showWarning('⚠️ Warning: You left the application! Reported to admin.');
     };
 
     // Detect Fullscreen Exit
@@ -355,7 +361,12 @@ export default function TaskDetail() {
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 py-6">
+    <div className="max-w-7xl mx-auto px-4 py-6 relative">
+      {warningMsg && (
+        <div className="fixed top-20 left-1/2 -translate-x-1/2 z-[100] bg-red-500/90 text-white px-6 py-3 rounded-2xl shadow-2xl font-bold animate-pulse text-sm">
+          {warningMsg}
+        </div>
+      )}
       {/* Breadcrumb */}
       <Link to="/tasks" className="text-sm text-slate-500 hover:text-slate-300 transition-colors mb-4 inline-flex items-center gap-1">
         ← All Tasks
@@ -502,7 +513,7 @@ export default function TaskDetail() {
                 <Editor
                   height="100%"
                   language="plaintext"
-                  theme={theme === 'dark' ? 'vs-dark' : 'light'}
+                  theme={ideTheme === 'dark' ? 'vs-dark' : ideTheme}
                   value={generalAnswer}
                   onChange={v => setGeneralAnswer(v || '')}
                   options={{
@@ -549,7 +560,7 @@ export default function TaskDetail() {
                   <Editor
                     height="320px"
                     language={lang}
-                    theme={theme === 'dark' ? 'vs-dark' : 'light'}
+                    theme={ideTheme === 'dark' ? 'vs-dark' : ideTheme}
                     value={code}
                     onChange={v => setCode(v || '')}
                     onMount={e => { editorRef.current = e }}

@@ -89,22 +89,36 @@ router.post('/ask-ai', auth_1.authenticateJWT, async (req, res) => {
             return res.status(400).json({ error: 'Not enough XP to use Ask AI (requires 50 XP).' });
         }
 
-        // Deduct 50 XP
+        const apiKey = process.env.GEMINI_API_KEY;
+        if (!apiKey) {
+            return res.json({ answer: "⚠️ GEMINI_API_KEY is not configured on the server. Please contact your administrator." });
+        }
+
+        const { GoogleGenAI } = require("@google/genai");
+        const ai = new GoogleGenAI({ apiKey });
+        const userQuery = messages && messages.length > 0 ? messages[messages.length - 1].content : "help";
+        
+        let aiText = "";
+        try {
+            const response = await ai.models.generateContent({
+                model: 'gemini-2.5-flash',
+                contents: `You are an expert programming assistant helping a student. Be concise and helpful. Query: ${userQuery}`,
+            });
+            aiText = response.text;
+        } catch (apiError) {
+            console.error("AI API Error:", apiError);
+            return res.json({ answer: "⚠️ Failed to reach the AI service. Please try again later." });
+        }
+
+        // Deduct 50 XP only if AI request succeeded
         await prisma_1.prisma.leaderboard.update({
             where: { userId },
             data: { spentXp: { increment: 50 } }
         });
 
-        const userQuery = messages && messages.length > 0 ? messages[messages.length - 1].content : "help";
-        let answer = `Here is a hint for your query: "${userQuery.substring(0, 30)}..."\n\n`;
-        if (userQuery.toLowerCase().includes('error')) {
-            answer += `I notice you might be facing a syntax issue. Double check your code structure.\n\n\`\`\`python\ndef fixed_function():\n    return "This works!"\n\`\`\``;
-        } else {
-            answer += `Consider trying a loop to iterate through the data more efficiently.\n\n\`\`\`python\nfor i in range(5):\n    print("Optimized!")\n\`\`\``;
-        }
-
-        res.json({ answer });
+        res.json({ answer: aiText });
     } catch (e) {
+        console.error("Ask AI Error:", e);
         res.status(500).json({ error: 'Failed to process AI request' });
     }
 });

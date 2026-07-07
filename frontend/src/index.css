@@ -4,6 +4,13 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer utilities {
+  /* Increase brightness of slate text in dark mode for WCAG contrast */
+  .text-slate-500 { color: #94a3b8; } /* mapped to slate-400 */
+  .text-slate-400 { color: #cbd5e1; } /* mapped to slate-300 */
+  .text-slate-300 { color: #e2e8f0; } /* mapped to slate-200 */
+}
+
 /* ============================================================
    DESIGN SYSTEM — CSS CUSTOM PROPERTIES
    ============================================================ */
