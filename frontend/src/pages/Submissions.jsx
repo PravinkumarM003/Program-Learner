@@ -12,7 +12,7 @@ const STATUS_MAP = {
 }
 
 export default function Submissions() {
-  const theme = useStore(s => s.theme)
+  const ideTheme = useStore(s => s.ideTheme)
   const [subs, setSubs] = useState([])
   const [loading, setLoading] = useState(true)
   const [selected, setSelected] = useState(null)
@@ -129,7 +129,7 @@ export default function Submissions() {
                           <Editor
                             height="250px"
                             language={lang}
-                            theme={theme === 'dark' ? 'vs-dark' : 'light'}
+                            theme={ideTheme === 'dark' ? 'vs-dark' : ideTheme}
                             value={latestCode}
                             options={{
                               readOnly: true,

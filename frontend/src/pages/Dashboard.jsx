@@ -89,7 +89,7 @@ export default function Dashboard() {
       </div>
 
       {/* ── Stats Grid ── */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-10 stagger">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-10 stagger">
         {STATS.map((s) => (
           <StatCard key={s.label} {...s} loading={loading} />
         ))}

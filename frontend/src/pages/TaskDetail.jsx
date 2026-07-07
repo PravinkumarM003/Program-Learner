@@ -122,15 +122,15 @@ export default function TaskDetail() {
     // Detect Tab switching / Minimizing
     const handleVisibilityChange = () => {
       if (document.hidden) {
-        reportViolation('Tab switched / window minimized');
-        showWarning('⚠️ Warning: Leaving the task tab is a violation! Reported to admin.');
+        api.post(`/tasks/${id}/violation`, { reason: 'Tab switched / window minimized' }).catch(()=>{});
+        navigate('/dashboard');
       }
     };
 
     // Detect Window Blur (clicking outside, Alt+Tab, opening another app)
     const handleBlur = () => {
-      reportViolation('Window lost focus');
-      showWarning('⚠️ Warning: You left the application! Reported to admin.');
+      api.post(`/tasks/${id}/violation`, { reason: 'Window lost focus' }).catch(()=>{});
+      navigate('/dashboard');
     };
 
     // Detect Fullscreen Exit
@@ -398,7 +398,7 @@ export default function TaskDetail() {
           </div>
 
           {/* Tabs */}
-          <div className="flex gap-1 glass-card rounded-xl p-1">
+          <div className="flex gap-1 glass-card rounded-xl p-1 overflow-x-auto scrollbar-hide">
             {['problem', 'hints', 'history', 'result'].map(t => (
               (t === 'hints' && task.type === 'QUIZ') ? null : (
                 <button key={t} onClick={() => setTab(t)}

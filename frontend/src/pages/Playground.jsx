@@ -276,10 +276,10 @@ export default function Playground() {
   ]
 
   return (
-    <div className="flex flex-col h-[calc(100vh-60px)] overflow-hidden" style={{ background: 'var(--bg-base)' }}>
+    <div className="flex flex-col h-[100dvh] md:h-[calc(100vh-60px)] overflow-hidden" style={{ background: 'var(--bg-base)' }}>
 
       {/* ── Top Bar ── */}
-      <div className="glass-nav flex items-center gap-3 px-4 py-2.5 flex-shrink-0">
+      <div className="glass-nav flex flex-wrap items-center gap-3 px-4 py-2.5 flex-shrink-0">
 
         {/* Brand */}
         <div className="flex items-center gap-2">
