@@ -626,7 +626,7 @@ export default function TaskDetail() {
                     {/* Custom Input */}
                     {(lang === 'python' ? /input\s*\(/.test(code) : /(scanf|gets|fgets|getchar)\s*\(/.test(code)) && (
                       <div className="space-y-1.5">
-                        <label className="text-[10px] text-cyan-500 font-bold uppercase tracking-wider block">pylearn input:</label>
+                        <label className="text-[10px] text-cyan-500 font-bold uppercase tracking-wider block">input:</label>
                         <textarea
                           rows={2}
                           value={customInput}

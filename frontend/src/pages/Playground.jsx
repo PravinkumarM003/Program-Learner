@@ -561,7 +561,7 @@ export default function Playground() {
               {(language === 'python' ? /input\s*\(/.test(code) : /(scanf|gets|fgets|getchar)\s*\(/.test(code)) && (
                 <div className="border-t border-white/5 pt-3 flex flex-col md:flex-row items-start gap-2 flex-shrink-0">
                   <div className="flex items-center gap-1.5 text-cyan-500 font-bold flex-shrink-0 mt-1">
-                    <span>pylearn input:</span>
+                    <span>input:</span>
                   </div>
                   <textarea
                     value={input}
