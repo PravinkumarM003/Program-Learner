@@ -16,11 +16,19 @@ export default defineConfig({
   build: {
     outDir: 'dist',
     sourcemap: false,
+    // Warn if any single chunk exceeds 600 KB
+    chunkSizeWarningLimit: 600,
     rollupOptions: {
       output: {
-        // Give Monaco workers their own chunks
-        manualChunks: {
-          'monaco-editor': ['monaco-editor'],
+        manualChunks(id) {
+          // Monaco editor gets its own huge chunk (loaded only on Playground page)
+          if (id.includes('monaco-editor')) return 'monaco-editor'
+          // React core — tiny, always needed
+          if (id.includes('node_modules/react') || id.includes('node_modules/react-dom')) return 'react-vendor'
+          // Router
+          if (id.includes('react-router')) return 'router'
+          // Everything else from node_modules in one vendor chunk
+          if (id.includes('node_modules')) return 'vendor'
         }
       }
     }
@@ -33,4 +41,3 @@ export default defineConfig({
     format: 'es'
   }
 })
-

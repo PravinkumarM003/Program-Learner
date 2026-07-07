@@ -1,27 +1,38 @@
 import './index.css';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { useStore } from './store/useStore';
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, lazy, Suspense } from 'react';
 import api from './api/client';
 import Navbar from './components/Navbar';
-import Landing from './pages/Landing';
-import Login from './pages/Login';
-import Dashboard from './pages/Dashboard';
-import Courses from './pages/Courses';
-import CourseDetail from './pages/CourseDetail';
-import LessonDetail from './pages/LessonDetail';
-import Tasks from './pages/Tasks';
-import TaskDetail from './pages/TaskDetail';
-import Submissions from './pages/Submissions';
-import AdminDashboard from './pages/AdminDashboard';
-import Settings from './pages/Settings';
-import Leaderboard from './pages/Leaderboard';
-import About from './pages/About';
-import Playground from './pages/Playground';
-import OAuthCallback from './pages/OAuthCallback';
 import StreakPopup from './components/StreakPopup';
 import Toast from './components/Toast';
 import AchievementPopup from './components/AchievementPopup';
+
+// ── Lazy-loaded pages (only download when first visited) ──────────────────────
+const Landing        = lazy(() => import('./pages/Landing'))
+const Login          = lazy(() => import('./pages/Login'))
+const Dashboard      = lazy(() => import('./pages/Dashboard'))
+const Courses        = lazy(() => import('./pages/Courses'))
+const CourseDetail   = lazy(() => import('./pages/CourseDetail'))
+const LessonDetail   = lazy(() => import('./pages/LessonDetail'))
+const Tasks          = lazy(() => import('./pages/Tasks'))
+const TaskDetail     = lazy(() => import('./pages/TaskDetail'))
+const Submissions    = lazy(() => import('./pages/Submissions'))
+const AdminDashboard = lazy(() => import('./pages/AdminDashboard'))
+const Settings       = lazy(() => import('./pages/Settings'))
+const Leaderboard    = lazy(() => import('./pages/Leaderboard'))
+const About          = lazy(() => import('./pages/About'))
+const Playground     = lazy(() => import('./pages/Playground'))
+const OAuthCallback  = lazy(() => import('./pages/OAuthCallback'))
+
+// Lightweight full-page loading spinner shown while a chunk is downloading
+function PageLoader() {
+  return (
+    <div className="min-h-[60vh] flex items-center justify-center">
+      <div className="w-8 h-8 rounded-full border-4 border-cyan-500 border-t-transparent animate-spin" />
+    </div>
+  )
+}
 
 
 function PrivateRoute({ children, role, allowGuest = false }) {
@@ -71,6 +82,7 @@ export default function App() {
         <StreakPopup />
         <AchievementPopup />
         <Navbar />
+        <Suspense fallback={<PageLoader />}>
         <Routes>
           <Route path="/" element={ <Landing /> } />
           <Route path="/login" element={<Login />} />
@@ -96,6 +108,7 @@ export default function App() {
             </div>
           } />
         </Routes>
+        </Suspense>
       </BrowserRouter>
     </div>
   );

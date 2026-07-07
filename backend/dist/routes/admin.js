@@ -126,7 +126,7 @@ router.patch('/users/:id/role', auth_1.authenticateJWT, (0, auth_1.authorizeRole
 
 router.post('/lessons', auth_1.authenticateJWT, (0, auth_1.authorizeRoles)('ADMIN', 'TEACHER'), async (req, res) => {
     try {
-        const { title, content, notes, videoUrl, difficulty } = req.body;
+        const { title, content, notes, videoUrl, difficulty, category } = req.body;
         let course = await prisma_1.prisma.course.findFirst();
         if (!course) {
             course = await prisma_1.prisma.course.create({ data: { title: "Main Course" } });
@@ -138,6 +138,7 @@ router.post('/lessons', auth_1.authenticateJWT, (0, auth_1.authorizeRoles)('ADMI
                 content,
                 notes,
                 videoUrl,
+                category: category || 'C',
                 difficulty: difficulty || 'Beginner',
                 order: count + 1,
                 courseId: course.id

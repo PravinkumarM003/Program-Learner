@@ -61,20 +61,28 @@ router.get('/xp', auth_1.authenticateJWT, async (req, res) => {
     }
 });
 
+// ── In-memory cache for leaderboard (refreshes every 2 minutes) ───────────────
+const _lbCache = { data: null, expiresAt: 0 };
+
 router.get('/leaderboard', async (req, res) => {
     try {
+        // Serve from cache if still valid
+        if (_lbCache.data && Date.now() < _lbCache.expiresAt) {
+            return res.json({ leaderboard: _lbCache.data, cached: true });
+        }
         const leaderboards = await prisma_1.prisma.leaderboard.findMany({
             include: { user: { select: { name: true, email: true } } },
             orderBy: { xp: 'desc' },
             take: 50
         });
-        
         const leaderboard = leaderboards.map(lb => ({
             id: lb.userId,
             name: lb.user.name || lb.user.email,
             score: lb.xp
         }));
-        
+        // Cache for 2 minutes
+        _lbCache.data = leaderboard;
+        _lbCache.expiresAt = Date.now() + 2 * 60 * 1000;
         res.json({ leaderboard });
     } catch (e) {
         res.status(500).json({ error: 'Failed to fetch leaderboard' });

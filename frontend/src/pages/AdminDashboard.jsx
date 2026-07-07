@@ -96,6 +96,7 @@ export default function AdminDashboard() {
   const [taskTargetTime, setTaskTargetTime] = useState('')
   const [taskMaxMarks, setTaskMaxMarks] = useState('')
   const [taskCourseId, setTaskCourseId] = useState('')
+  const [taskCategory, setTaskCategory] = useState('C')
   const [quizQuestions, setQuizQuestions] = useState([])
   const [savingTask, setSavingTask] = useState(false)
 
@@ -112,7 +113,11 @@ export default function AdminDashboard() {
   const [lessonNotes, setLessonNotes] = useState('')
   const [lessonVideoUrl, setLessonVideoUrl] = useState('')
   const [lessonDifficulty, setLessonDifficulty] = useState('Beginner')
+  const [lessonCategory, setLessonCategory] = useState('C')
   const [savingLesson, setSavingLesson] = useState(false)
+
+  // Content Manager State
+  const [contentTrack, setContentTrack] = useState('C')
 
 
   // Violations & Feedback State
@@ -315,6 +320,7 @@ export default function AdminDashboard() {
       setTaskStarterCode(fullTask.starterCode || '')
       setTaskSampleInput(fullTask.sampleInput || '')
       setTaskSampleOutput(fullTask.sampleOutput || '')
+      setTaskCategory(fullTask.category || 'C')
       
       let parsedTC = []
       try {
@@ -365,6 +371,7 @@ export default function AdminDashboard() {
       targetTime: taskTargetTime ? Number(taskTargetTime) : null,
       maxMarks: taskMaxMarks ? Number(taskMaxMarks) : null,
       courseId: taskCourseId || null,
+      category: taskCategory,
       quizQuestions: formattedQuestions, isDraft: false
     }
 
@@ -405,6 +412,7 @@ export default function AdminDashboard() {
     setLessonNotes('')
     setLessonVideoUrl('')
     setLessonDifficulty('Beginner')
+    setLessonCategory('C')
     setLessonModalOpen(true)
   }
 
@@ -422,7 +430,8 @@ export default function AdminDashboard() {
       content: lessonContent, 
       notes: lessonNotes,
       videoUrl: lessonVideoUrl,
-      difficulty: lessonDifficulty
+      difficulty: lessonDifficulty,
+      category: lessonCategory
     }
 
 
@@ -479,8 +488,8 @@ export default function AdminDashboard() {
   }
 
   const TABS = user?.role === 'TEACHER' 
-    ? ['submissions', 'tasks', 'lessons']
-    : ['overview', 'user-monitor', 'submissions', 'tasks', 'lessons', 'violations', 'feedbacks', 'analytics']
+    ? ['submissions', 'content-manager']
+    : ['overview', 'user-monitor', 'broadcast', 'submissions', 'content-manager', 'violations', 'feedbacks', 'analytics']
 
   // User Monitoring Calculation
   const userStats = users.map(user => {
@@ -564,8 +573,7 @@ export default function AdminDashboard() {
     { id: 'user-monitor', icon: '👥', label: 'Users',          group: 'Main' },
     { id: 'broadcast',    icon: '📢', label: 'Broadcast',      group: 'Main' },
     { id: 'submissions',  icon: '📝', label: 'Submissions',    group: 'Main', badge: pendingCount },
-    { id: 'tasks',        icon: '🎯', label: 'Tasks',          group: 'Content' },
-    { id: 'lessons',      icon: '📚', label: 'Lessons',        group: 'Content' },
+    { id: 'content-manager', icon: '📚', label: 'Content Manager', group: 'Content' },
     { id: 'violations',   icon: '🚨', label: 'Violations',     group: 'Security' },
     { id: 'feedbacks',    icon: '💬', label: 'Feedbacks',      group: 'Security' },
     { id: 'analytics',   icon: '📈', label: 'Analytics',      group: 'Security' },
@@ -821,52 +829,92 @@ export default function AdminDashboard() {
             </div>
           )}
         </div>
-      ) : tab === 'tasks' ? (
-        <div className="space-y-2">
-          {tasks.length === 0 && <p className="text-slate-500 text-center py-10">No tasks yet.</p>}
-          {tasks.map(t => (
-            <div key={t.id} className="glass-card rounded-xl px-4 py-2.5 flex items-center justify-between gap-3 flex-wrap">
-              <div className="min-w-0">
-                <p className="text-sm font-medium text-white truncate">{t.title}</p>
-                <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-                  <span className={`px-2 py-0.5 rounded text-[9px] font-bold ring-1 uppercase ${TYPE_MAP[t.type] || 'bg-white/5 text-slate-400'}`}>
-                    {t.type || 'CODE'}
-                  </span>
-                  <span className="text-[10px] text-slate-500">· Difficulty: {t.difficulty}</span>
-                </div>
+      ) : tab === 'content-manager' ? (
+        <div className="space-y-6">
+          <div className="flex justify-center border-b border-white/10 pb-4">
+            <div className="flex bg-black/40 p-1 rounded-xl">
+              <button 
+                onClick={() => setContentTrack('C')}
+                className={`px-8 py-2 rounded-lg text-sm font-bold transition-all ${
+                  contentTrack === 'C' ? 'bg-cyan-500 text-black shadow-lg shadow-cyan-500/20' : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                C Track
+              </button>
+              <button 
+                onClick={() => setContentTrack('Python')}
+                className={`px-8 py-2 rounded-lg text-sm font-bold transition-all ${
+                  contentTrack === 'Python' ? 'bg-cyan-500 text-black shadow-lg shadow-cyan-500/20' : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                Python Track
+              </button>
+            </div>
+          </div>
+
+          <div className="grid lg:grid-cols-2 gap-6">
+            {/* Lessons Column */}
+            <div className="space-y-4">
+              <div className="flex items-center justify-between pb-2 border-b border-white/10">
+                <h3 className="font-bold text-white flex items-center gap-2">
+                  <span className="text-xl">📚</span> {contentTrack} Lessons
+                </h3>
+                <button onClick={openCreateLesson}
+                  className="rounded-lg bg-cyan-500/10 text-cyan-400 px-3 py-1 text-xs font-bold hover:bg-cyan-500/20 transition-colors">
+                  ➕ New Lesson
+                </button>
               </div>
-              <div className="flex items-center gap-2 shrink-0">
-                {t.isDailyChallenge && <span className="text-[9px] px-1.5 py-0.5 rounded bg-orange-500/20 text-orange-400 font-bold ring-1 ring-orange-500/30">🔥 Daily</span>}
-                <button onClick={() => openEditTask(t)}
-                  className="rounded-md bg-cyan-500/10 text-cyan-400 px-3 py-1 text-[11px] font-semibold hover:bg-cyan-500/20 transition-colors">
-                  Edit
-                </button>
-                <button onClick={() => setDailyChallenge(t.id)} disabled={settingDailyId === t.id || t.isDailyChallenge}
-                  className="rounded-md bg-orange-500/10 text-orange-400 px-3 py-1 text-[11px] font-semibold hover:bg-orange-500/20 transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
-                  {settingDailyId === t.id ? '...' : '🔥 Daily'}
-                </button>
-                <button onClick={() => deleteTask(t.id)}
-                  className="rounded-md bg-red-500/10 text-red-400 px-3 py-1 text-[11px] font-semibold hover:bg-red-500/20 transition-colors">
-                  Delete
-                </button>
+              <div className="space-y-2">
+                {lessons.filter(l => (l.category || 'C') === contentTrack).length === 0 && <p className="text-slate-500 text-center py-4 text-sm">No lessons in {contentTrack} track yet.</p>}
+                {lessons.filter(l => (l.category || 'C') === contentTrack).map(l => (
+                  <div key={l.id} className="glass-card rounded-xl px-4 py-3 flex flex-col gap-2 relative group border border-white/5 hover:border-white/10 transition-colors">
+                    <div className="flex items-start justify-between">
+                      <p className="text-sm font-medium text-white">{l.title}</p>
+                      <button onClick={() => deleteLesson(l.id)} className="opacity-0 group-hover:opacity-100 rounded bg-red-500/10 text-red-400 px-2 py-0.5 text-[10px] font-semibold hover:bg-red-500/20 transition-all absolute right-4 top-3">Delete</button>
+                    </div>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-[10px] text-slate-500 font-semibold bg-white/5 px-2 py-0.5 rounded">Difficulty: {l.difficulty}</span>
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
-          ))}
-        </div>
-      ) : tab === 'lessons' ? (
-        <div className="space-y-2">
-          {lessons.length === 0 && <p className="text-slate-500 text-center py-10">No lessons yet.</p>}
-          {lessons.map(l => (
-            <div key={l.id} className="glass-card rounded-xl px-4 py-2.5 flex items-center justify-between gap-3 flex-wrap">
-              <div className="min-w-0">
-                <p className="text-sm font-medium text-white truncate">{l.title}</p>
-                <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-                  <span className="text-[10px] text-slate-500">Difficulty: {l.difficulty}</span>
-                </div>
+
+            {/* Tasks Column */}
+            <div className="space-y-4">
+              <div className="flex items-center justify-between pb-2 border-b border-white/10">
+                <h3 className="font-bold text-white flex items-center gap-2">
+                  <span className="text-xl">🎯</span> {contentTrack} Tasks
+                </h3>
+                <button onClick={openCreateTask}
+                  className="rounded-lg bg-violet-500/10 text-violet-400 px-3 py-1 text-xs font-bold hover:bg-violet-500/20 transition-colors">
+                  ➕ New Task
+                </button>
               </div>
-              <button onClick={() => deleteLesson(l.id)} className="rounded-md bg-red-500/10 text-red-400 px-3 py-1 text-[11px] font-semibold hover:bg-red-500/20 transition-colors">Delete</button>
+              <div className="space-y-2">
+                {tasks.filter(t => (t.category || 'C') === contentTrack).length === 0 && <p className="text-slate-500 text-center py-4 text-sm">No tasks in {contentTrack} track yet.</p>}
+                {tasks.filter(t => (t.category || 'C') === contentTrack).map(t => (
+                  <div key={t.id} className="glass-card rounded-xl px-4 py-3 flex flex-col gap-2 relative group border border-white/5 hover:border-white/10 transition-colors">
+                    <div className="flex items-start justify-between pr-12">
+                      <p className="text-sm font-medium text-white line-clamp-1">{t.title}</p>
+                    </div>
+                    <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                      <span className={`px-2 py-0.5 rounded text-[9px] font-bold uppercase ${TYPE_MAP[t.type] || 'bg-white/5 text-slate-400'}`}>
+                        {t.type || 'CODE'}
+                      </span>
+                      <span className="text-[10px] text-slate-500 font-semibold bg-white/5 px-2 py-0.5 rounded">{t.difficulty}</span>
+                      {t.isDailyChallenge && <span className="text-[9px] px-1.5 py-0.5 rounded bg-orange-500/20 text-orange-400 font-bold border border-orange-500/30">🔥 Daily</span>}
+                    </div>
+                    <div className="opacity-0 group-hover:opacity-100 flex items-center gap-1 absolute right-2 top-2.5 transition-all bg-black/80 pl-2 backdrop-blur-sm rounded-l">
+                      <button onClick={() => openEditTask(t)} className="p-1.5 text-cyan-400 hover:bg-cyan-500/20 rounded" title="Edit">✏️</button>
+                      <button onClick={() => setDailyChallenge(t.id)} disabled={settingDailyId === t.id || t.isDailyChallenge} className="p-1.5 text-orange-400 hover:bg-orange-500/20 rounded disabled:opacity-40" title="Set Daily">🔥</button>
+                      <button onClick={() => deleteTask(t.id)} className="p-1.5 text-red-400 hover:bg-red-500/20 rounded" title="Delete">🗑️</button>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
-          ))}
+          </div>
         </div>
       ) : tab === 'violations' ? (
         <div className="space-y-6">
@@ -1189,6 +1237,14 @@ export default function AdminDashboard() {
                     </select>
                   </div>
                   <div>
+                    <label className="text-xs text-slate-400 font-semibold block mb-1.5">Language Track</label>
+                    <select value={taskCategory} onChange={e => setTaskCategory(e.target.value)}
+                      className="w-full rounded-xl bg-black/20 border border-white/10 px-4 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-cyan-500/50 transition-shadow">
+                      <option value="C">C Track</option>
+                      <option value="Python">Python Track</option>
+                    </select>
+                  </div>
+                  <div>
                     <label className="text-xs text-slate-400 font-semibold block mb-1.5">Course (Optional)</label>
                     <select value={taskCourseId} onChange={e => setTaskCourseId(e.target.value)}
                       className="w-full rounded-xl bg-black/20 border border-white/10 px-4 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-cyan-500/50 transition-shadow">
@@ -1401,6 +1457,14 @@ export default function AdminDashboard() {
                       <option value="Beginner">Beginner</option>
                       <option value="Intermediate">Intermediate</option>
                       <option value="Advanced">Advanced</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="text-xs text-slate-400 font-semibold block mb-1.5">Language Track</label>
+                    <select value={lessonCategory} onChange={e => setLessonCategory(e.target.value)}
+                      className="w-full rounded-xl bg-black/20 border border-white/10 px-4 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-cyan-500/50 transition-shadow">
+                      <option value="C">C Track</option>
+                      <option value="Python">Python Track</option>
                     </select>
                   </div>
                 </div>

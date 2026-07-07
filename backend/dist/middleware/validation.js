@@ -22,6 +22,7 @@ exports.createTaskSchema = zod_1.z.object({
     title: zod_1.z.string().min(1, "Title is required").max(100),
     description: zod_1.z.string().min(1, "Description is required"),
     courseId: zod_1.z.string().uuid("Invalid courseId").optional().nullable(),
+    category: zod_1.z.string().default('C'),
     type: zod_1.z.enum(['GENERAL', 'CODE', 'QUIZ']).default('CODE'),
     difficulty: zod_1.z.enum(['Beginner', 'Intermediate', 'Advanced']).default('Beginner'),
     deadline: zod_1.z.string().datetime({ nullable: true }).or(zod_1.z.null()).optional(),

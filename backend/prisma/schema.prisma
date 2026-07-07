@@ -85,6 +85,7 @@ model Lesson {
 
   title      String
   content    String @db.Text
+  category   String @default("C")
   notes      String? @db.Text
   videoUrl   String?
   difficulty TaskDifficulty @default(Beginner)
@@ -126,6 +127,7 @@ model Task {
 
   type        TaskType @default(CODE)
   difficulty TaskDifficulty @default(Beginner)
+  category   String @default("C")
   deadline   DateTime?
   published   Boolean  @default(false)
   isDraft     Boolean  @default(true)

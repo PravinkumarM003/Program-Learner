@@ -231,12 +231,13 @@ router.get('/admin/:id', auth_1.authenticateJWT, (0, auth_1.authorizeRoles)('ADM
 });
 
 router.post('/', auth_1.authenticateJWT, (0, auth_1.authorizeRoles)('ADMIN', 'TEACHER'), (0, validation_1.validateBody)(validation_1.createTaskSchema), async (req, res) => {
-    const { title, description, courseId, type, difficulty, deadline, testCases, sampleInput, sampleOutput, hints, starterCode, isDraft, quizQuestions, baseXp, targetTime, maxMarks } = req.body;
+    const { title, description, courseId, category, type, difficulty, deadline, testCases, sampleInput, sampleOutput, hints, starterCode, isDraft, quizQuestions, baseXp, targetTime, maxMarks } = req.body;
     const task = await prisma_1.prisma.task.create({
         data: {
             title,
             description,
             courseId: courseId || null,
+            category: category || 'C',
             type: type || 'CODE',
             difficulty: difficulty || 'Beginner',
             deadline: deadline ? new Date(deadline) : null,
@@ -276,6 +277,7 @@ router.put('/:id', auth_1.authenticateJWT, (0, auth_1.authorizeRoles)('ADMIN', '
         title: updates.title,
         description: updates.description,
         courseId: updates.courseId !== undefined ? updates.courseId : undefined,
+        category: updates.category !== undefined ? updates.category : undefined,
         type: updates.type,
         difficulty: updates.difficulty,
         deadline: updates.deadline ? new Date(updates.deadline) : undefined,
