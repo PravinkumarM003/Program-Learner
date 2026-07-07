@@ -70,8 +70,10 @@ function persistSnippets(snippets) {
 
 export default function Playground() {
   const ideTheme = useStore(s => s.ideTheme)
+  const showToast = useStore(s => s.showToast)
   const [language, setLanguage] = useState('python')
   const [code, setCode] = useState(LANG_CONFIGS.python.defaultCode)
+  const [showInput, setShowInput] = useState(false)
   const [input, setInput] = useState('')
   const [running, setRunning] = useState(false)
   const [output, setOutput] = useState(null)
@@ -139,6 +141,18 @@ export default function Playground() {
   }, [code, language, input])
 
   const runCode = async () => {
+    const expectsInput = language === 'python' ? /input\s*\(/.test(code) : /(scanf|gets|fgets|getchar)\s*\(/.test(code)
+    
+    if (expectsInput && !showInput) {
+      setShowInput(true)
+      showToast("This code requires input. Please enter it below and run again.", "info")
+      return
+    }
+
+    if (!expectsInput) {
+      setShowInput(false)
+    }
+
     setRunning(true)
     setOutput(null)
     try {
@@ -558,7 +572,7 @@ export default function Playground() {
               </div>
 
               {/* Inline Input (stdin) at the bottom */}
-              {(language === 'python' ? /input\s*\(/.test(code) : /(scanf|gets|fgets|getchar)\s*\(/.test(code)) && (
+              {showInput && (
                 <div className="border-t border-white/5 pt-3 flex flex-col md:flex-row items-start gap-2 flex-shrink-0">
                   <div className="flex items-center gap-1.5 text-cyan-500 font-bold flex-shrink-0 mt-1">
                     <span>input:</span>

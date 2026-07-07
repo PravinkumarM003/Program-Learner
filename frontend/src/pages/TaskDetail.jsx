@@ -34,6 +34,7 @@ export default function TaskDetail() {
   const [customInput, setCustomInput] = useState('')
   const [runResult, setRunResult] = useState(null) // { stdout, stderr, exitCode, compileError, error }
   const [showConsole, setShowConsole] = useState(false)
+  const [showInput, setShowInput] = useState(false)
 
   const [submitting, setSubmitting] = useState(false)
   const [result, setResult] = useState(null)
@@ -237,6 +238,19 @@ export default function TaskDetail() {
   }
 
   const runCode = async () => {
+    const expectsInput = lang === 'python' ? /input\s*\(/.test(code) : /(scanf|gets|fgets|getchar)\s*\(/.test(code)
+    
+    if (expectsInput && !showInput) {
+      setShowConsole(true)
+      setShowInput(true)
+      showToast("This code requires input. Please enter it below and run again.", "info")
+      return
+    }
+
+    if (!expectsInput) {
+      setShowInput(false)
+    }
+
     setRunning(true)
     setRunResult(null)
     setShowConsole(true)
@@ -624,7 +638,7 @@ export default function TaskDetail() {
                 {showConsole && (
                   <div className="border-t border-white/5 bg-slate-950 p-4 space-y-4 max-h-60 overflow-y-auto">
                     {/* Custom Input */}
-                    {(lang === 'python' ? /input\s*\(/.test(code) : /(scanf|gets|fgets|getchar)\s*\(/.test(code)) && (
+                    {showInput && (
                       <div className="space-y-1.5">
                         <label className="text-[10px] text-cyan-500 font-bold uppercase tracking-wider block">input:</label>
                         <textarea
