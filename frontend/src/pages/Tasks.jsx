@@ -166,67 +166,92 @@ export default function Tasks() {
 
       {/* ── Tasks grid ── */}
       {!loading && !error && filtered.length > 0 && (
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5 stagger">
-          {filtered.map(t => {
-            const done = submittedTaskIds.has(t.id)
-            const type = TYPE_CONFIG[t.type] || { cls: 'badge', icon: '📄', label: t.type }
-            const diff = DIFF_CONFIG[t.difficulty] || { cls: 'badge', bar: 'bg-slate-500', width: '50%' }
+        <div className="space-y-10">
+          {['Python', 'C', 'Other'].map(categoryGroup => {
+            const catTasks = filtered.filter(t => {
+              const cat = t.category?.toLowerCase() || 'c';
+              if (categoryGroup === 'Python') return cat === 'python';
+              if (categoryGroup === 'C') return cat === 'c';
+              return !['python', 'c'].includes(cat);
+            });
+
+            if (catTasks.length === 0) return null;
+
             return (
-              <Link key={t.id} to={`/tasks/${t.id}`}
-                className={`card-hover glass-card rounded-2xl p-6 flex flex-col gap-4 group relative overflow-hidden animate-fade-up gradient-border ${done ? 'opacity-70' : ''}`}>
-                
-                {/* Done overlay badge */}
-                {done && (
-                  <div className="absolute top-4 right-4 z-10">
-                    <span className="badge badge-accepted">✓ Done</span>
-                  </div>
-                )}
-
-                {/* Type + XP row */}
-                <div className="flex items-start justify-between">
-                  <span className="flex h-10 w-10 items-center justify-center rounded-xl text-xl"
-                    style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid var(--border-subtle)' }}>
-                    {type.icon}
+              <div key={categoryGroup}>
+                <div className="flex items-center gap-4 mb-6">
+                  <div className="h-px bg-white/10 flex-1"></div>
+                  <span className="text-white font-bold tracking-wider uppercase text-sm">
+                    {categoryGroup === 'Other' ? 'General' : categoryGroup}
                   </span>
-                  {t.baseXp > 0 && (
-                    <span className="text-xs font-bold text-amber-400 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded-full">
-                      ⚡ {t.baseXp} XP
-                    </span>
-                  )}
+                  <div className="h-px bg-white/10 flex-1"></div>
                 </div>
+                
+                <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5 stagger">
+                  {catTasks.map(t => {
+                    const done = submittedTaskIds.has(t.id)
+                    const type = TYPE_CONFIG[t.type] || { cls: 'badge', icon: '📄', label: t.type }
+                    const diff = DIFF_CONFIG[t.difficulty] || { cls: 'badge', bar: 'bg-slate-500', width: '50%' }
+                    return (
+                      <Link key={t.id} to={`/tasks/${t.id}`}
+                        className={`card-hover glass-card rounded-2xl p-6 flex flex-col gap-4 group relative overflow-hidden animate-fade-up gradient-border ${done ? 'opacity-70' : ''}`}>
+                        
+                        {/* Done overlay badge */}
+                        {done && (
+                          <div className="absolute top-4 right-4 z-10">
+                            <span className="badge badge-accepted">✓ Done</span>
+                          </div>
+                        )}
 
-                {/* Title & description */}
-                <div className="flex-1">
-                  <h2 className="font-bold text-white text-base leading-snug group-hover:text-cyan-400 transition-colors line-clamp-2 mb-1.5">
-                    {t.title}
-                  </h2>
-                  {t.description && (
-                    <p className="text-sm line-clamp-2 leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
-                      {t.description}
-                    </p>
-                  )}
-                </div>
+                        {/* Type + XP row */}
+                        <div className="flex items-start justify-between">
+                          <span className="flex h-10 w-10 items-center justify-center rounded-xl text-xl"
+                            style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid var(--border-subtle)' }}>
+                            {type.icon}
+                          </span>
+                          {t.baseXp > 0 && (
+                            <span className="text-xs font-bold text-amber-400 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded-full">
+                              ⚡ {t.baseXp} XP
+                            </span>
+                          )}
+                        </div>
 
-                {/* Difficulty bar */}
-                <div>
-                  <div className="flex items-center justify-between mb-1.5">
-                    <span className={type.cls}>{type.label}</span>
-                    <span className={diff.cls}>{t.difficulty}</span>
-                  </div>
-                  <div className="h-1 rounded-full bg-white/5 overflow-hidden">
-                    <div className={`h-full rounded-full transition-all ${diff.bar}`} style={{ width: diff.width }} />
-                  </div>
-                </div>
+                        {/* Title & description */}
+                        <div className="flex-1">
+                          <h2 className="font-bold text-white text-base leading-snug group-hover:text-cyan-400 transition-colors line-clamp-2 mb-1.5">
+                            {t.title}
+                          </h2>
+                          {t.description && (
+                            <p className="text-sm line-clamp-2 leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
+                              {t.description}
+                            </p>
+                          )}
+                        </div>
 
-                {/* Footer */}
-                <div className="flex items-center justify-between text-xs border-t pt-3" style={{ borderColor: 'var(--border-subtle)', color: 'var(--text-muted)' }}>
-                  {t.deadline
-                    ? <span>⏰ Due {new Date(t.deadline).toLocaleDateString()}</span>
-                    : <span>{t.submissions?.length ?? 0} submissions</span>
-                  }
-                  <span className="text-cyan-400 group-hover:translate-x-1 transition-transform inline-block font-bold">→</span>
+                        {/* Difficulty bar */}
+                        <div>
+                          <div className="flex items-center justify-between mb-1.5">
+                            <span className={type.cls}>{type.label}</span>
+                            <span className={diff.cls}>{t.difficulty}</span>
+                          </div>
+                          <div className="h-1 rounded-full bg-white/5 overflow-hidden">
+                            <div className={`h-full rounded-full transition-all ${diff.bar}`} style={{ width: diff.width }} />
+                          </div>
+                        </div>
+
+                        {/* Footer */}
+                        <div className="flex items-center justify-between text-xs border-t pt-3" style={{ borderColor: 'var(--border-subtle)', color: 'var(--text-muted)' }}>
+                          {t.deadline
+                            ? <span>⏰ Due {new Date(t.deadline).toLocaleDateString()}</span>
+                            : <span>{t.submissions?.length ?? 0} submissions</span>
+                          }
+                          <span className="text-cyan-400 group-hover:translate-x-1 transition-transform inline-block font-bold">→</span>
+                        </div>
+                      </Link>
+                    )
+                  })}
                 </div>
-              </Link>
+              </div>
             )
           })}
         </div>

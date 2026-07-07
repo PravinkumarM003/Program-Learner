@@ -232,12 +232,23 @@ router.get('/admin/:id', auth_1.authenticateJWT, (0, auth_1.authorizeRoles)('ADM
 
 router.post('/', auth_1.authenticateJWT, (0, auth_1.authorizeRoles)('ADMIN', 'TEACHER'), (0, validation_1.validateBody)(validation_1.createTaskSchema), async (req, res) => {
     const { title, description, courseId, category, type, difficulty, deadline, testCases, sampleInput, sampleOutput, hints, starterCode, isDraft, quizQuestions, baseXp, targetTime, maxMarks } = req.body;
+    
+    const taskCategory = category || 'C';
+    let resolvedCourseId = courseId || null;
+    if (!resolvedCourseId) {
+        let course = await prisma_1.prisma.course.findFirst({ where: { title: taskCategory } });
+        if (!course) {
+            course = await prisma_1.prisma.course.create({ data: { title: taskCategory } });
+        }
+        resolvedCourseId = course.id;
+    }
+
     const task = await prisma_1.prisma.task.create({
         data: {
             title,
             description,
-            courseId: courseId || null,
-            category: category || 'C',
+            courseId: resolvedCourseId,
+            category: taskCategory,
             type: type || 'CODE',
             difficulty: difficulty || 'Beginner',
             deadline: deadline ? new Date(deadline) : null,

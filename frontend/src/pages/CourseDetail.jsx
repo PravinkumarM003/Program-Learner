@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import api from '../api/client'
 import { useStore } from '../store/useStore'
@@ -66,7 +66,7 @@ export default function CourseDetail() {
   const progressPct = totalLessons > 0 ? Math.round((completedCount / totalLessons) * 100) : 0
   const totalXpEarned = (course.lessons || []).reduce((sum, l) => sum + (progressMap[l.id]?.xp || 0), 0)
 
-  const downloadCertificate = useCallback(() => {
+  const downloadCertificate = () => {
     setDownloading(true)
     const studentName = user?.name || user?.email || 'Student'
     const date = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
@@ -120,7 +120,7 @@ export default function CourseDetail() {
     a.click()
     URL.revokeObjectURL(url)
     setTimeout(() => setDownloading(false), 1000)
-  }, [course, user, completedCount, totalXpEarned])
+  }
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-10">
