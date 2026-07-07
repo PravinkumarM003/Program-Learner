@@ -82,8 +82,15 @@ export default function Playground() {
   const [nameModalError, setNameModalError] = useState('')
   const [showInputPanel, setShowInputPanel] = useState(false)
   const [saveStatus, setSaveStatus] = useState(null) // 'ok' | 'err'
+  const [xpData, setXpData] = useState(null)
+  const [showAiPopup, setShowAiPopup] = useState(false)
+  const [aiPopupMsg, setAiPopupMsg] = useState('')
   const editorRef = useRef(null)
   const nameInputRef = useRef(null)
+
+  useEffect(() => {
+    api.get('/user/xp').then(r => setXpData(r.data)).catch(() => {})
+  }, [])
 
   const langCfg = LANG_CONFIGS[language]
   const activeSnippetData = snippets.find(s => s.id === activeSnippet)
@@ -124,6 +131,22 @@ export default function Playground() {
       })
     } finally {
       setRunning(false)
+    }
+  }
+
+  const handleAskAi = async () => {
+    if (!xpData || xpData.currentXp < 50) {
+      setAiPopupMsg('You do not have enough XP! You need at least 50 XP to use Ask AI.')
+      setShowAiPopup(true)
+      return
+    }
+    try {
+      const res = await api.post('/user/ask-ai')
+      setXpData(prev => ({ ...prev, currentXp: prev.currentXp - 50, spentXp: (prev.spentXp || 0) + 50 }))
+      alert(res.data.answer)
+    } catch (e) {
+      setAiPopupMsg(e.response?.data?.error || 'Failed to connect to AI.')
+      setShowAiPopup(true)
     }
   }
 
@@ -291,7 +314,7 @@ export default function Playground() {
         <div className="flex-1" />
 
         {/* Ask AI (Mock Phase 2) */}
-        <button onClick={() => alert('AI Hint (Mock Phase 2):\n\nBased on your code, you might want to check the indentation on line 4, and ensure you are returning the value instead of just printing it. \n\n(Cost: 50 XP)')} 
+        <button onClick={handleAskAi} 
           className="flex items-center gap-2 px-4 py-1.5 rounded-xl text-sm font-bold text-slate-900 transition-all hover:scale-105"
           style={{ background: 'linear-gradient(135deg, #fcd34d, #f59e0b)', boxShadow: '0 4px 15px rgba(245, 158, 11, 0.3)' }}>
           ✨ Ask AI
@@ -587,6 +610,35 @@ export default function Playground() {
             @keyframes fadeIn { from { opacity: 0 } to { opacity: 1 } }
             @keyframes slideUp { from { opacity: 0; transform: translateY(16px) scale(0.97) } to { opacity: 1; transform: translateY(0) scale(1) } }
           `}</style>
+        </div>
+      )}
+
+      {/* ── AI Popup Modal ── */}
+      {showAiPopup && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          style={{ background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(4px)', animation: 'fadeIn 0.15s ease' }}
+          onMouseDown={(e) => { if (e.target === e.currentTarget) setShowAiPopup(false) }}
+        >
+          <div
+            className="w-full max-w-sm rounded-2xl p-6 shadow-[0_24px_60px_rgba(0,0,0,0.5)] text-center"
+            style={{
+              background: 'var(--bg-surface, #0f172a)',
+              border: '1px solid var(--border-default, rgba(255,255,255,0.08))',
+              animation: 'slideUp 0.2s cubic-bezier(0.34,1.56,0.64,1)'
+            }}
+          >
+            <div className="text-4xl mb-4">⚠️</div>
+            <h3 className="text-lg font-bold text-white mb-2">Insufficient XP</h3>
+            <p className="text-sm mb-6" style={{ color: 'var(--text-secondary)' }}>{aiPopupMsg}</p>
+            <button
+              onClick={() => setShowAiPopup(false)}
+              className="w-full py-2.5 rounded-xl text-sm font-bold text-white transition-all"
+              style={{ background: 'linear-gradient(135deg, #06b6d4, #8b5cf6)' }}
+            >
+              Close
+            </button>
+          </div>
         </div>
       )}
     </div>

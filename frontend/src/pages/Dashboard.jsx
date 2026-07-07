@@ -60,7 +60,7 @@ export default function Dashboard() {
   const acceptedCount = subs.filter(s => s.status === 'Accepted').length
 
   const STATS = [
-    { label: 'Total XP Earned',   value: totalXp,       icon: '⚡', gradient: '#f59e0b, #ef4444', sub: `📚 ${displayLessonXp} lesson · 🎯 ${displayTaskXp} task` },
+    { label: 'Available XP', value: xpData.currentXp !== undefined ? xpData.currentXp : totalXp, icon: '⚡', gradient: '#f59e0b, #ef4444', sub: `Total Earned: ${totalXp} · Used: ${xpData.spentXp || 0}` },
     { label: 'Lessons Completed', value: lessonsDone,   icon: '📚', gradient: '#10b981, #059669', sub: null },
     { label: 'Tasks Accepted',    value: acceptedCount, icon: '✅', gradient: '#06b6d4, #3b82f6', sub: `of ${subs.length} total submissions` },
     { label: 'Leaderboard Rank',  value: myRank,        icon: '🏆', gradient: '#8b5cf6, #7c3aed', sub: myRankIndex >= 0 ? 'Keep climbing!' : 'Submit tasks to rank' },

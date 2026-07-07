@@ -96,8 +96,8 @@ export default function About() {
             </div>
           </div>
 
-          {/* Platform Features (Gems Tier Removed) */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          {/* Platform Features */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <div className="glass-card rounded-2xl p-5 border border-white/5 space-y-2">
               <span className="text-2xl">💻</span>
               <h3 className="font-bold text-white text-sm">Coding Sandbox</h3>
@@ -112,6 +112,11 @@ export default function About() {
               <span className="text-2xl">🔒</span>
               <h3 className="font-bold text-white text-sm">Lock-down Mode</h3>
               <p className="text-xs text-slate-500">Protected, secure layout preventing cheats and outside references.</p>
+            </div>
+            <div className="glass-card rounded-2xl p-5 border border-white/5 space-y-2">
+              <span className="text-2xl">🤖</span>
+              <h3 className="font-bold text-white text-sm">Ask AI</h3>
+              <p className="text-xs text-slate-500">Spend earned XP to get intelligent AI hints and explanations when stuck on a task.</p>
             </div>
           </div>
         </div>

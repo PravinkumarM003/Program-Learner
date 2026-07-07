@@ -37,15 +37,17 @@ router.get('/xp', auth_1.authenticateJWT, async (req, res) => {
         const [lessonProgress, submissions, leaderboard] = await Promise.all([
             prisma_1.prisma.lessonProgress.findMany({ where: { userId }, select: { xp: true } }),
             prisma_1.prisma.submission.findMany({ where: { userId }, select: { earnedXp: true, marks: true, status: true } }),
-            prisma_1.prisma.leaderboard.findUnique({ where: { userId }, select: { xp: true } })
+            prisma_1.prisma.leaderboard.findUnique({ where: { userId }, select: { xp: true, spentXp: true } })
         ]);
 
         const lessonXp = lessonProgress.reduce((sum, p) => sum + (p.xp || 0), 0);
         const taskXp = submissions.reduce((sum, s) => sum + (s.earnedXp || 0), 0);
-        const totalXp = lessonXp + taskXp;
+        const totalXp = leaderboard ? leaderboard.xp : (lessonXp + taskXp);
+        const spentXp = leaderboard ? leaderboard.spentXp : 0;
+        const currentXp = Math.max(0, totalXp - spentXp);
         const totalMarks = submissions.reduce((sum, s) => sum + (s.marks || 0), 0);
 
-        res.json({ xp: totalXp, lessonXp, taskXp, totalMarks });
+        res.json({ xp: totalXp, currentXp, spentXp, lessonXp, taskXp, totalMarks });
     } catch (e) {
         res.status(500).json({ error: 'Failed to fetch XP' });
     }
@@ -80,6 +82,33 @@ router.get('/leaderboard', async (req, res) => {
         res.json({ leaderboard });
     } catch (e) {
         res.status(500).json({ error: 'Failed to fetch leaderboard' });
+    }
+});
+
+router.post('/ask-ai', auth_1.authenticateJWT, async (req, res) => {
+    try {
+        const userId = req.user?.sub;
+        if (!userId) return res.status(401).json({ error: 'Authentication required' });
+
+        const leaderboard = await prisma_1.prisma.leaderboard.findUnique({ where: { userId } });
+        const totalXp = leaderboard ? leaderboard.xp : 0;
+        const spentXp = leaderboard ? leaderboard.spentXp : 0;
+        const currentXp = Math.max(0, totalXp - spentXp);
+
+        if (currentXp < 50) {
+            return res.status(400).json({ error: 'Not enough XP to use Ask AI (requires 50 XP).' });
+        }
+
+        // Deduct 50 XP
+        await prisma_1.prisma.leaderboard.update({
+            where: { userId },
+            data: { spentXp: { increment: 50 } }
+        });
+
+        // Mock AI response
+        res.json({ answer: 'AI Hint:\n\nBased on your code, you might want to check the indentation and ensure you are returning the expected value.' });
+    } catch (e) {
+        res.status(500).json({ error: 'Failed to process AI request' });
     }
 });
 exports.default = router;

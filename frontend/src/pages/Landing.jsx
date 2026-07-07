@@ -11,8 +11,8 @@ const FEATURES = [
   },
   {
     icon: '⚡',
-    title: 'Live Code Editor',
-    desc: 'Monaco-powered IDE with syntax highlighting, auto-complete, and real-time Python/C compilation.',
+    title: 'Live Code Editor & Ask AI',
+    desc: 'Monaco-powered IDE with real-time compilation. Spend XP to get AI hints when you are stuck.',
     color: 'from-violet-500/20 to-violet-500/5',
     accent: '#8b5cf6',
   },
@@ -26,7 +26,7 @@ const FEATURES = [
   {
     icon: '📊',
     title: 'XP & Progress Tracking',
-    desc: 'Earn XP for lessons and tasks. Track your rank on the live leaderboard.',
+    desc: 'Earn XP for lessons and tasks. Track your total earned, used, and available XP directly on your Dashboard.',
     color: 'from-amber-500/20 to-amber-500/5',
     accent: '#f59e0b',
   },

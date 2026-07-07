@@ -316,6 +316,7 @@ model Leaderboard {
   userId String @unique
 
   xp Int @default(0)
+  spentXp Int @default(0)
   rank Int?
   updatedAt DateTime @updatedAt
 
