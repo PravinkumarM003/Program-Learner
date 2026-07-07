@@ -129,6 +129,7 @@ model Task {
   deadline   DateTime?
   published   Boolean  @default(false)
   isDraft     Boolean  @default(true)
+  isDailyChallenge Boolean @default(false)
 
   baseXp      Int      @default(0)
   targetTime  Int?     // Time limit in seconds

@@ -41,9 +41,18 @@ export default function AdminDashboard() {
   const [lessons, setLessons] = useState([])
   const [courses, setCourses] = useState([])
   const [loading, setLoading] = useState(true)
-  const [tab, setTab] = useState(user?.role === 'TEACHER' ? 'tasks' : 'user-monitor')
-  const [selectedSub, setSelectedSub] = useState(null)
-  const [feedback, setFeedback] = useState('')
+  const [tab, setTab] = useState('tasks')
+  const [changingRoleId, setChangingRoleId] = useState(null)
+  const [settingDailyId, setSettingDailyId] = useState(null)
+  
+  // Set correct initial tab when user loads
+  useEffect(() => {
+    if (user?.role === 'TEACHER') {
+      setTab('tasks')
+    } else if (user?.role === 'ADMIN') {
+      setTab('overview')
+    }
+  }, [user])
   const [marks, setMarks] = useState('')
   const [savingSub, setSavingSub] = useState(false)
   const [msg, setMsg] = useState(null)
@@ -202,6 +211,34 @@ export default function AdminDashboard() {
     setFeedback(s.feedback || '')
     setMarks(s.marks ?? '')
     setMsg(null)
+  }
+
+  const changeRole = async (userId, newRole) => {
+    setChangingRoleId(userId)
+    try {
+      const r = await api.patch(`/admin/users/${userId}/role`, { role: newRole })
+      setUsers(prev => prev.map(u => u.id === userId ? { ...u, role: r.data.user.role } : u))
+      setMsg({ ok: true, text: `Role updated to ${newRole}` })
+      setTimeout(() => setMsg(null), 3000)
+    } catch {
+      setMsg({ ok: false, text: 'Failed to update role.' })
+    } finally {
+      setChangingRoleId(null)
+    }
+  }
+
+  const setDailyChallenge = async (taskId) => {
+    setSettingDailyId(taskId)
+    try {
+      await api.patch(`/tasks/${taskId}/daily`)
+      setTasks(prev => prev.map(t => ({ ...t, isDailyChallenge: t.id === taskId })))
+      setMsg({ ok: true, text: '🔥 Daily Challenge set! All students notified.' })
+      setTimeout(() => setMsg(null), 4000)
+    } catch {
+      setMsg({ ok: false, text: 'Failed to set daily challenge.' })
+    } finally {
+      setSettingDailyId(null)
+    }
   }
 
   const saveReview = (status) => {
@@ -551,11 +588,14 @@ export default function AdminDashboard() {
 
         {/* Navigation groups */}
         <nav className="flex-1 overflow-y-auto py-4 px-3 space-y-5">
-          {GROUPS.map(group => (
+          {GROUPS.map(group => {
+            const items = SIDEBAR_ITEMS.filter(i => i.group === group && TABS.includes(i.id))
+            if (items.length === 0) return null
+            return (
             <div key={group}>
               <p className="text-[10px] font-bold uppercase tracking-widest mb-2 px-2" style={{ color: 'var(--text-muted)' }}>{group}</p>
               <div className="space-y-0.5">
-                {SIDEBAR_ITEMS.filter(i => i.group === group).map(item => (
+                {items.map(item => (
                   <button key={item.id} onClick={() => setTab(item.id)}
                     className={`flex items-center justify-between w-full px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${
                       tab === item.id
@@ -575,7 +615,7 @@ export default function AdminDashboard() {
                 ))}
               </div>
             </div>
-          ))}
+          )})}
         </nav>
 
         {/* Sidebar stats */}
@@ -678,10 +718,13 @@ export default function AdminDashboard() {
                   <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-cyan-500 to-blue-600 text-base font-bold text-white shadow-md">
                     {(u.name || u.email)[0].toUpperCase()}
                   </span>
-                  <div className="z-10 min-w-0">
+                  <div className="z-10 min-w-0 flex-1">
                     <p className="font-bold text-white text-base truncate">{u.name || 'Student'}</p>
                     <p className="text-[10px] text-slate-400 truncate">{u.email}</p>
-                    {u.role === 'ADMIN' && <span className="mt-0.5 inline-block px-1.5 py-0.5 rounded text-[9px] font-bold bg-violet-500/20 text-violet-300">ADMIN</span>}
+                    <div className="flex items-center gap-1 mt-0.5 flex-wrap">
+                      {u.role === 'ADMIN' && <span className="inline-block px-1.5 py-0.5 rounded text-[9px] font-bold bg-violet-500/20 text-violet-300">ADMIN</span>}
+                      {u.role === 'TEACHER' && <span className="inline-block px-1.5 py-0.5 rounded text-[9px] font-bold bg-fuchsia-500/20 text-fuchsia-300">TEACHER</span>}
+                    </div>
                   </div>
                 </div>
                 
@@ -701,6 +744,22 @@ export default function AdminDashboard() {
                   <span className="flex-1 bg-red-500/10 text-red-400 py-1 rounded-md text-center font-bold">{u.rejected} Err</span>
                   <span className="flex-1 bg-yellow-500/10 text-yellow-400 py-1 rounded-md text-center font-bold">{u.pending} Wait</span>
                 </div>
+                {u.role !== 'ADMIN' && (
+                  <div className="z-10 flex items-center gap-2 mt-2 border-t border-white/5 pt-2">
+                    <span className="text-[9px] uppercase font-bold text-slate-500">Change Role:</span>
+                    <div className="flex gap-1 flex-wrap">
+                      {['USER','TEACHER'].filter(r => r !== u.role).map(r => (
+                        <button key={r} disabled={changingRoleId === u.id}
+                          onClick={() => changeRole(u.id, r)}
+                          className={`px-2 py-0.5 rounded text-[9px] font-bold transition-all disabled:opacity-50 ${
+                            r === 'TEACHER' ? 'bg-fuchsia-500/20 text-fuchsia-300 hover:bg-fuchsia-500/40' : 'bg-slate-500/20 text-slate-300 hover:bg-slate-500/40'
+                          }`}>
+                          → {r}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             ))}
           </div>
@@ -775,9 +834,14 @@ export default function AdminDashboard() {
                 </div>
               </div>
               <div className="flex items-center gap-2 shrink-0">
+                {t.isDailyChallenge && <span className="text-[9px] px-1.5 py-0.5 rounded bg-orange-500/20 text-orange-400 font-bold ring-1 ring-orange-500/30">🔥 Daily</span>}
                 <button onClick={() => openEditTask(t)}
                   className="rounded-md bg-cyan-500/10 text-cyan-400 px-3 py-1 text-[11px] font-semibold hover:bg-cyan-500/20 transition-colors">
                   Edit
+                </button>
+                <button onClick={() => setDailyChallenge(t.id)} disabled={settingDailyId === t.id || t.isDailyChallenge}
+                  className="rounded-md bg-orange-500/10 text-orange-400 px-3 py-1 text-[11px] font-semibold hover:bg-orange-500/20 transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
+                  {settingDailyId === t.id ? '...' : '🔥 Daily'}
                 </button>
                 <button onClick={() => deleteTask(t.id)}
                   className="rounded-md bg-red-500/10 text-red-400 px-3 py-1 text-[11px] font-semibold hover:bg-red-500/20 transition-colors">

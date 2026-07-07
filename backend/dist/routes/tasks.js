@@ -191,7 +191,7 @@ router.post('/run-code', async (req, res) => {
     }
 });
 
-router.get('/admin', auth_1.authenticateJWT, (0, auth_1.authorizeRoles)('ADMIN'), async (_req, res) => {
+router.get('/admin', auth_1.authenticateJWT, (0, auth_1.authorizeRoles)('ADMIN', 'TEACHER'), async (_req, res) => {
     const tasks = await prisma_1.prisma.task.findMany({ orderBy: { createdAt: 'desc' } });
     res.json({ tasks });
 });
@@ -315,12 +315,39 @@ router.delete('/:id', auth_1.authenticateJWT, (0, auth_1.authorizeRoles)('ADMIN'
     res.json({ ok: true });
 });
 
-router.post('/:id/publish', auth_1.authenticateJWT, (0, auth_1.authorizeRoles)('ADMIN'), async (req, res) => {
+router.post('/:id/publish', auth_1.authenticateJWT, (0, auth_1.authorizeRoles)('ADMIN', 'TEACHER'), async (req, res) => {
     const { id } = req.params;
     const task = await prisma_1.prisma.task.update({ where: { id }, data: { published: true, isDraft: false } });
     await notifyStudents('New Task Available!', `A new task "${task.title}" has been published.`);
     res.json({ task });
 });
+
+// Daily Challenge: set a task as today's challenge
+router.patch('/:id/daily', auth_1.authenticateJWT, (0, auth_1.authorizeRoles)('ADMIN', 'TEACHER'), async (req, res) => {
+    try {
+        const { id } = req.params;
+        // Unset all existing daily challenges first
+        await prisma_1.prisma.task.updateMany({ where: { isDailyChallenge: true }, data: { isDailyChallenge: false } });
+        const task = await prisma_1.prisma.task.update({ where: { id }, data: { isDailyChallenge: true } });
+        await notifyStudents('🔥 Daily Challenge!', `Today's challenge is: "${task.title}". Can you beat it?`);
+        res.json({ task });
+    } catch (e) {
+        res.status(500).json({ error: 'Failed to set daily challenge' });
+    }
+});
+
+// Daily Challenge: get today's challenge (public)
+router.get('/challenge/daily', async (_req, res) => {
+    try {
+        const task = await prisma_1.prisma.task.findFirst({
+            where: { isDailyChallenge: true, published: true }
+        });
+        res.json({ task: task || null });
+    } catch (e) {
+        res.status(500).json({ error: 'Failed to fetch daily challenge' });
+    }
+});
+
 
 router.post('/:id/submit', auth_1.authenticateJWT, async (req, res) => {
     const { id } = req.params;

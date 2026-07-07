@@ -65,6 +65,8 @@ export default function Dashboard() {
   const [xpData, setXpData] = useState({ xp: 0, lessonXp: 0, taskXp: 0 })
   const [leaderboard, setLeaderboard] = useState([])
   const [achievements, setAchievements] = useState([])
+  const [courses, setCourses] = useState([])
+  const [dailyChallenge, setDailyChallenge] = useState(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -74,6 +76,8 @@ export default function Dashboard() {
       api.get('/user/xp').then(r => setXpData(r.data || {})).catch(() => {}),
       api.get('/user/leaderboard').then(r => setLeaderboard(r.data?.leaderboard || [])).catch(() => {}),
       api.get('/user/achievements').then(r => setAchievements(r.data?.achievements || [])).catch(() => {}),
+      api.get('/courses').then(r => setCourses(r.data?.courses || [])).catch(() => {}),
+      api.get('/tasks/challenge/daily').then(r => setDailyChallenge(r.data?.task || null)).catch(() => {}),
     ]).finally(() => setLoading(false))
   }, [])
 
@@ -115,6 +119,20 @@ export default function Dashboard() {
           <Link to="/tasks" className="btn-primary text-sm px-4 py-2">View Tasks →</Link>
         </div>
       </div>
+
+      {/* ── Daily Challenge Banner ── */}
+      {dailyChallenge && (
+        <Link to={`/tasks/${dailyChallenge.id}`}
+          className="flex items-center gap-4 glass-card rounded-2xl p-4 border border-orange-500/30 bg-gradient-to-r from-orange-500/10 to-red-500/10 hover:from-orange-500/20 hover:to-red-500/20 transition-all animate-fade-up group">
+          <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl text-2xl" style={{ background: 'linear-gradient(135deg,#f97316,#ef4444)' }}>🔥</span>
+          <div className="flex-1 min-w-0">
+            <p className="text-[10px] font-bold uppercase tracking-widest text-orange-400">Daily Challenge</p>
+            <p className="text-base font-bold text-white truncate group-hover:text-orange-300 transition-colors">{dailyChallenge.title}</p>
+            <p className="text-xs text-slate-400">{dailyChallenge.difficulty} · {dailyChallenge.type}</p>
+          </div>
+          <span className="text-orange-400 group-hover:translate-x-1 transition-transform text-xl">→</span>
+        </Link>
+      )}
 
       {/* ── Stats Grid ── */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-10 stagger">
@@ -255,6 +273,35 @@ export default function Dashboard() {
                       </p>
                       <p className="text-xs font-bold text-amber-400">⚡{u.score}</p>
                     </div>
+                  )
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Course Progress */}
+          {courses.length > 0 && (
+            <div className="glass-card rounded-2xl p-5">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="font-bold text-white text-sm">📚 Course Progress</h3>
+                <Link to="/courses" className="text-[11px] text-cyan-400 hover:text-cyan-300 font-semibold">All courses →</Link>
+              </div>
+              <div className="space-y-3">
+                {courses.slice(0, 4).map(course => {
+                  const totalLessons = course.lessons?.length ?? 0
+                  const completedCount = (course.lessons || []).filter(l => progress.some(p => p.lessonId === l.id && p.completed)).length
+                  const pct = totalLessons > 0 ? Math.round((completedCount / totalLessons) * 100) : 0
+                  return (
+                    <Link key={course.id} to={`/courses/${course.id}`} className="block hover:opacity-80 transition-opacity">
+                      <div className="flex items-center justify-between mb-1">
+                        <p className="text-xs font-semibold text-white truncate max-w-[160px]">{course.title}</p>
+                        <span className="text-[10px] font-bold text-cyan-400">{pct}%</span>
+                      </div>
+                      <div className="h-1.5 w-full rounded-full bg-white/5 overflow-hidden">
+                        <div className="h-full rounded-full bg-gradient-to-r from-cyan-500 to-violet-600 transition-all duration-700" style={{ width: `${pct}%` }} />
+                      </div>
+                      <p className="text-[9px] text-slate-500 mt-0.5">{completedCount}/{totalLessons} lessons</p>
+                    </Link>
                   )
                 })}
               </div>

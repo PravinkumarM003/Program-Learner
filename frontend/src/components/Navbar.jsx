@@ -83,10 +83,10 @@ export default function Navbar() {
           : 'sticky top-0'
       }`}>
         {/* Glass bar */}
-        <div className="glass-nav mx-auto flex max-w-7xl items-center justify-between px-4 md:px-6 py-3 gap-4">
+        <div className="glass-nav mx-auto flex w-full items-center justify-between px-4 md:px-6 py-3 gap-4">
           {/* Logo */}
           <Link to="/" className="flex items-center gap-2.5 group flex-shrink-0">
-            <img src="/images/logo.png" alt="Programmer Learner Logo" className="h-10 w-auto rounded-lg shadow-lg transition-shadow group-hover:shadow-cyan-500/30" />
+            <img src="/images/logo.png" alt="Programmer Learner Logo" className="h-10 w-10 object-cover rounded-full shadow-lg transition-shadow group-hover:shadow-cyan-500/30 ring-2 ring-cyan-500/50" />
             <div className="hidden sm:block">
               <span className="block font-bold text-white text-sm leading-tight tracking-tight">Programmer Learner</span>
               <span className="block text-[10px] font-semibold text-cyan-500 leading-tight">Secure Platform</span>

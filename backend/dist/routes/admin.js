@@ -103,6 +103,27 @@ router.get('/users', auth_1.authenticateJWT, (0, auth_1.authorizeRoles)('ADMIN')
 
     res.json({ users, total, page, totalPages: Math.ceil(total / limit) });
 });
+
+// Role change endpoint
+router.patch('/users/:id/role', auth_1.authenticateJWT, (0, auth_1.authorizeRoles)('ADMIN'), async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { role } = req.body;
+        const validRoles = ['USER', 'TEACHER', 'ADMIN'];
+        if (!validRoles.includes(role)) {
+            return res.status(400).json({ error: 'Invalid role. Must be USER, TEACHER, or ADMIN.' });
+        }
+        const user = await prisma_1.prisma.user.update({
+            where: { id },
+            data: { role },
+            select: { id: true, email: true, name: true, role: true }
+        });
+        res.json({ user });
+    } catch (e) {
+        res.status(500).json({ error: 'Failed to update role' });
+    }
+});
+
 router.post('/lessons', auth_1.authenticateJWT, (0, auth_1.authorizeRoles)('ADMIN', 'TEACHER'), async (req, res) => {
     try {
         const { title, content, notes, videoUrl, difficulty } = req.body;

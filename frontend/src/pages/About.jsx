@@ -42,7 +42,7 @@ export default function About() {
             <img 
               src="/images/pravin-photo.jpg" 
               alt="Pravin kumar M" 
-              className="h-32 w-32 rounded-full object-cover shadow-[0_0_20px_rgba(6,182,212,0.5)] shrink-0 border-4 border-cyan-400/80 relative z-10"
+              className="h-36 w-36 rounded-full object-contain bg-slate-900/80 shadow-[0_0_20px_rgba(6,182,212,0.5)] shrink-0 border-4 border-cyan-400/80 relative z-10"
             />
             <div className="space-y-3 text-center sm:text-left relative z-10 flex-1">
               <div>
