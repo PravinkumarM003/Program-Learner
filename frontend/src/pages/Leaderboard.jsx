@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useStore } from '../store/useStore'
 import api from '../api/client'
+import { getXpDetails } from '../utils/ranks'
 
 const PODIUM = [
   { rank: 2, medal: '🥈', height: 'h-20',  label: '2nd', color: '#94a3b8', glow: 'rgba(148,163,184,0.2)' },
@@ -110,11 +111,15 @@ export default function Leaderboard() {
                         style={{ background: `linear-gradient(135deg, ${color}cc, ${color}66)`, boxShadow: `0 8px 24px ${glow}`, border: `2px solid ${color}66` }}>
                         {(entry.name || 'U')[0].toUpperCase()}
                       </span>
+                      {(() => {
+                        const { rankBadge } = getXpDetails(entry.score);
+                        return <span className="absolute -top-3 -left-3 text-2xl drop-shadow-md" title="Rank Badge">{rankBadge}</span>;
+                      })()}
                       <span className="absolute -top-2 -right-2 text-lg">{medal}</span>
                       {isMe && <span className="absolute -bottom-1 -right-1 w-4 h-4 bg-cyan-500 rounded-full border-2 border-slate-900" />}
                     </div>
                     <p className="text-xs font-bold text-white text-center truncate w-full px-1">{entry.name}</p>
-                    <p className="text-[10px] font-semibold text-amber-400">⚡{entry.score}</p>
+                    <p className="text-[10px] font-semibold text-amber-400">⚡{entry.score} • Lvl {getXpDetails(entry.score).level}</p>
                     {/* Podium base */}
                     <div className={`w-full ${height} rounded-t-xl flex items-end justify-center pb-2 text-xs font-black`}
                       style={{ background: `linear-gradient(180deg, ${color}33 0%, ${color}15 100%)`, border: `1px solid ${color}33`, color }}>
@@ -159,9 +164,12 @@ export default function Leaderboard() {
                       </span>
                       <div className="min-w-0">
                         <span className={`text-sm font-semibold truncate block ${isMe ? 'text-cyan-300' : 'text-white'}`}>
-                          {u.name || u.email}
+                          {u.name || u.email} <span className="text-xs ml-1 opacity-80" title="Rank Badge">{getXpDetails(u.score).rankBadge}</span>
                         </span>
-                        {isMe && <span className="text-[10px] text-cyan-500 font-semibold">← You</span>}
+                        <div className="flex items-center gap-2">
+                          <span className={`text-[10px] font-bold ${getXpDetails(u.score).rankColor}`}>Lvl {getXpDetails(u.score).level}</span>
+                          {isMe && <span className="text-[10px] text-cyan-500 font-semibold">← You</span>}
+                        </div>
                       </div>
                     </div>
                     <div className="col-span-3 text-right">

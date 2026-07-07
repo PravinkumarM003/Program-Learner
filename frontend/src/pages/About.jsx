@@ -40,9 +40,9 @@ export default function About() {
             <div className="absolute -top-10 -right-10 w-40 h-40 bg-cyan-500/20 blur-3xl rounded-full pointer-events-none"></div>
             
             <img 
-              src="/images/pravin-photo.png" 
+              src="/images/pravin-photo.jpg" 
               alt="Pravin kumar M" 
-              className="h-28 w-28 rounded-full object-cover shadow-[0_0_20px_rgba(6,182,212,0.3)] shrink-0 border-2 border-cyan-400/60 relative z-10"
+              className="h-32 w-32 rounded-full object-cover shadow-[0_0_20px_rgba(6,182,212,0.5)] shrink-0 border-4 border-cyan-400/80 relative z-10"
             />
             <div className="space-y-3 text-center sm:text-left relative z-10 flex-1">
               <div>

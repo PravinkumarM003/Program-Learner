@@ -43,6 +43,7 @@ export default function TaskDetail() {
   const editorRef = useRef(null)
   const navigate = useNavigate()
   const ideTheme = useStore(s => s.ideTheme)
+  const isCompleted = history.some(s => s.status === 'Accepted')
   const showToast = useStore(s => s.showToast)
   const setIsExamMode = useStore(s => s.setIsExamMode)
 
@@ -562,9 +563,9 @@ export default function TaskDetail() {
                     lineNumbers: 'off',
                     automaticLayout: true,
                     renderLineHighlight: 'none',
-                    overviewRulerLanes: 0,
                     hideCursorInOverviewRuler: true,
                     scrollbar: { vertical: 'auto', horizontal: 'hidden' },
+                    readOnly: isCompleted,
                   }}
                 />
               </div>
@@ -610,6 +611,7 @@ export default function TaskDetail() {
                       renderLineHighlight: 'gutter',
                       fontLigatures: true,
                       fontFamily: '"Fira Code", monospace',
+                      readOnly: isCompleted,
                     }}
                   />
                   <div className="absolute bottom-3 right-4 text-[10px] opacity-40 pointer-events-none text-slate-500 z-10">
@@ -731,7 +733,8 @@ export default function TaskDetail() {
                                 isSelected
                                   ? 'bg-purple-500/10 border-purple-500 text-purple-300 font-bold'
                                   : 'bg-white/5 border-white/10 text-slate-400 hover:bg-white/10 hover:text-white'
-                              }`}
+                              } ${isCompleted ? 'opacity-50 cursor-not-allowed' : ''}`}
+                              disabled={isCompleted}
                             >
                               <span className="font-mono text-purple-400 mr-2">{String.fromCharCode(65 + oIdx)}.</span>
                               {opt}
@@ -748,27 +751,35 @@ export default function TaskDetail() {
 
           {/* Action buttons */}
           <div className="flex items-center justify-between gap-4">
-            {task.type === 'CODE' && (
-              <div className="flex gap-2">
-                <button
-                  onClick={() => handleLanguageChange(lang)}
-                  className="rounded-xl border border-white/10 px-4 py-2.5 text-xs text-slate-400 hover:bg-white/5 hover:text-white transition-colors"
-                >
-                  Reset
-                </button>
-                <button
-                  onClick={runCode}
-                  disabled={running}
-                  className="rounded-xl bg-cyan-600/10 border border-cyan-500/30 px-5 py-2.5 text-xs font-bold text-cyan-400 hover:bg-cyan-500/20 disabled:opacity-50 transition-all"
-                >
-                  {running ? '⏳ Running...' : '▶ Run Code (Ctrl+Enter)'}
-                </button>
+            {isCompleted ? (
+              <div className="w-full text-center py-4 rounded-xl bg-green-500/10 border border-green-500/20 text-green-400 font-bold">
+                ✓ Task Already Completed
               </div>
+            ) : (
+              <>
+                {task.type === 'CODE' && (
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => handleLanguageChange(lang)}
+                      className="rounded-xl border border-white/10 px-4 py-2.5 text-xs text-slate-400 hover:bg-white/5 hover:text-white transition-colors"
+                    >
+                      Reset
+                    </button>
+                    <button
+                      onClick={runCode}
+                      disabled={running}
+                      className="rounded-xl bg-cyan-600/10 border border-cyan-500/30 px-5 py-2.5 text-xs font-bold text-cyan-400 hover:bg-cyan-500/20 disabled:opacity-50 transition-all"
+                    >
+                      {running ? '⏳ Running...' : '▶ Run Code (Ctrl+Enter)'}
+                    </button>
+                  </div>
+                )}
+                <button onClick={submit} disabled={submitting}
+                  className="btn-glow flex-1 sm:flex-none rounded-xl bg-gradient-to-r from-cyan-500 to-violet-600 px-8 py-2.5 text-sm font-bold text-white hover:opacity-90 transition-opacity disabled:opacity-50 ml-auto">
+                  {submitting ? '⏳ Submitting…' : '🚀 Submit Solution'}
+                </button>
+              </>
             )}
-            <button onClick={submit} disabled={submitting}
-              className="btn-glow flex-1 sm:flex-none rounded-xl bg-gradient-to-r from-cyan-500 to-violet-600 px-8 py-2.5 text-sm font-bold text-white hover:opacity-90 transition-opacity disabled:opacity-50 ml-auto">
-              {submitting ? '⏳ Submitting…' : '🚀 Submit Solution'}
-            </button>
           </div>
         </div>
       </div>

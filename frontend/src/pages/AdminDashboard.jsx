@@ -111,6 +111,13 @@ export default function AdminDashboard() {
   const [blockIp, setBlockIp] = useState('')
   const [blockReason, setBlockReason] = useState('')
 
+  // Pagination State
+  const [usersPage, setUsersPage] = useState(1)
+  const [usersTotalPages, setUsersTotalPages] = useState(1)
+  const [subsPage, setSubsPage] = useState(1)
+  const [subsTotalPages, setSubsTotalPages] = useState(1)
+  const ITEMS_PER_PAGE = 20
+
   const fetchAllData = () => {
     setLoading(true)
     const requests = [
@@ -120,7 +127,6 @@ export default function AdminDashboard() {
       api.get('/courses').catch(() => ({ data: { courses: [] } }))
     ]
     if (user?.role === 'ADMIN') {
-      requests.push(api.get('/admin/users').catch(() => ({ data: { users: [] } })))
       requests.push(api.get('/user/leaderboard').catch(() => ({ data: { leaderboard: [] } })))
       requests.push(api.get('/admin/violations').catch(() => ({ data: { violations: [] } })))
       requests.push(api.get('/admin/blocked-ips').catch(() => ({ data: { blockedIps: [] } })))
@@ -128,34 +134,68 @@ export default function AdminDashboard() {
     }
     
     Promise.all(requests).then((responses) => {
-      setSubs(responses[0].data?.submissions || [])
+      // Submissions will be fetched by its own effect
       setTasks(responses[1].data?.tasks || [])
       setLessons(responses[2].data?.lessons || [])
       setCourses(responses[3].data?.courses || [])
       
       if (user?.role === 'ADMIN') {
-        const u = responses[4]
-        const lb = responses[5]
-        const v = responses[6]
-        const b = responses[7]
-        const f = responses[8]
+        const lb = responses[4]
+        const v = responses[5]
+        const b = responses[6]
+        const f = responses[7]
         setViolations(v.data?.violations || [])
         setBlockedIps(b.data?.blockedIps || [])
         setFeedbacks(f.data?.feedbacks || [])
         
-        const leaderboard = lb.data?.leaderboard || []
-        const usersData = (u.data?.users || []).map(usr => {
-          const boardMatch = leaderboard.find(x => x.id === usr.id)
-          return { ...usr, combinedScore: boardMatch ? boardMatch.score : 0 }
-        })
-        setUsers(usersData)
+        // Users will be fetched by its own effect, we'll store leaderboard data to merge later
+        // Just setting leaderboard is not enough, we need it in a state or ref.
+        // Actually, let's fetch leaderboard again in fetchUsers or set a state for it.
+        // For simplicity, we just fetch users with pagination independently.
       }
     }).finally(() => setLoading(false))
+  }
+
+  const fetchUsers = async () => {
+    if (user?.role !== 'ADMIN') return;
+    try {
+      const [uRes, lbRes] = await Promise.all([
+        api.get(`/admin/users?page=${usersPage}&limit=${ITEMS_PER_PAGE}`),
+        api.get('/user/leaderboard')
+      ]);
+      const leaderboard = lbRes.data?.leaderboard || [];
+      const usersData = (uRes.data?.users || []).map(usr => {
+        const boardMatch = leaderboard.find(x => x.id === usr.id);
+        return { ...usr, combinedScore: boardMatch ? boardMatch.score : 0 };
+      });
+      setUsers(usersData);
+      setUsersTotalPages(uRes.data?.totalPages || 1);
+    } catch (e) {
+      console.error(e);
+    }
+  }
+
+  const fetchSubs = async () => {
+    try {
+      const res = await api.get(`/admin/submissions?page=${subsPage}&limit=${ITEMS_PER_PAGE}`);
+      setSubs(res.data?.submissions || []);
+      setSubsTotalPages(res.data?.totalPages || 1);
+    } catch (e) {
+      console.error(e);
+    }
   }
 
   useEffect(() => {
     fetchAllData()
   }, [])
+
+  useEffect(() => {
+    fetchUsers()
+  }, [usersPage])
+
+  useEffect(() => {
+    fetchSubs()
+  }, [subsPage])
 
   const openReview = (s) => {
     setSelectedSub(s)
@@ -664,6 +704,13 @@ export default function AdminDashboard() {
               </div>
             ))}
           </div>
+          {usersTotalPages > 1 && (
+            <div className="flex justify-center items-center gap-4 pt-4">
+              <button disabled={usersPage <= 1} onClick={() => setUsersPage(p => p - 1)} className="px-4 py-2 rounded-lg bg-white/5 hover:bg-white/10 transition-colors text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed">Previous</button>
+              <span className="text-xs font-bold text-slate-400">Page {usersPage} of {usersTotalPages}</span>
+              <button disabled={usersPage >= usersTotalPages} onClick={() => setUsersPage(p => p + 1)} className="px-4 py-2 rounded-lg bg-white/5 hover:bg-white/10 transition-colors text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed">Next</button>
+            </div>
+          )}
         </div>
       ) : tab === 'submissions' ? (
         <div className="space-y-2">
@@ -705,6 +752,13 @@ export default function AdminDashboard() {
               </div>
             </div>
           ))}
+          {subsTotalPages > 1 && (
+            <div className="flex justify-center items-center gap-4 pt-4">
+              <button disabled={subsPage <= 1} onClick={() => setSubsPage(p => p - 1)} className="px-4 py-2 rounded-lg bg-white/5 hover:bg-white/10 transition-colors text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed">Previous</button>
+              <span className="text-xs font-bold text-slate-400">Page {subsPage} of {subsTotalPages}</span>
+              <button disabled={subsPage >= subsTotalPages} onClick={() => setSubsPage(p => p + 1)} className="px-4 py-2 rounded-lg bg-white/5 hover:bg-white/10 transition-colors text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed">Next</button>
+            </div>
+          )}
         </div>
       ) : tab === 'tasks' ? (
         <div className="space-y-2">

@@ -18,12 +18,22 @@ async function notifyStudents(title, body) {
         });
     }));
 }
-router.get('/submissions', auth_1.authenticateJWT, (0, auth_1.authorizeRoles)('ADMIN', 'TEACHER'), async (_req, res) => {
-    const submissions = await prisma_1.prisma.submission.findMany({
-        include: { task: true, user: true, versions: true },
-        orderBy: { createdAt: 'desc' }
-    });
-    res.json({ submissions });
+router.get('/submissions', auth_1.authenticateJWT, (0, auth_1.authorizeRoles)('ADMIN', 'TEACHER'), async (req, res) => {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 20;
+    const skip = (page - 1) * limit;
+
+    const [submissions, total] = await Promise.all([
+        prisma_1.prisma.submission.findMany({
+            include: { task: true, user: true, versions: true },
+            orderBy: { createdAt: 'desc' },
+            skip,
+            take: limit
+        }),
+        prisma_1.prisma.submission.count()
+    ]);
+
+    res.json({ submissions, total, page, totalPages: Math.ceil(total / limit) });
 });
 router.post('/submissions/:id/review', auth_1.authenticateJWT, (0, auth_1.authorizeRoles)('ADMIN', 'TEACHER'), async (req, res) => {
     const { id } = req.params;
@@ -76,11 +86,22 @@ router.post('/submissions/:id/review', auth_1.authenticateJWT, (0, auth_1.author
     res.json({ submission });
 });
 
-router.get('/users', auth_1.authenticateJWT, (0, auth_1.authorizeRoles)('ADMIN'), async (_req, res) => {
-    const users = await prisma_1.prisma.user.findMany({
-        select: { id: true, email: true, name: true, role: true, createdAt: true }
-    });
-    res.json({ users });
+router.get('/users', auth_1.authenticateJWT, (0, auth_1.authorizeRoles)('ADMIN'), async (req, res) => {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 20;
+    const skip = (page - 1) * limit;
+
+    const [users, total] = await Promise.all([
+        prisma_1.prisma.user.findMany({
+            select: { id: true, email: true, name: true, role: true, createdAt: true },
+            orderBy: { createdAt: 'desc' },
+            skip,
+            take: limit
+        }),
+        prisma_1.prisma.user.count()
+    ]);
+
+    res.json({ users, total, page, totalPages: Math.ceil(total / limit) });
 });
 router.post('/lessons', auth_1.authenticateJWT, (0, auth_1.authorizeRoles)('ADMIN', 'TEACHER'), async (req, res) => {
     try {

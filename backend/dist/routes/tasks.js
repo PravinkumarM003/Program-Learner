@@ -554,18 +554,45 @@ router.post('/:id/violation', auth_1.authenticateJWT, async (req, res) => {
             });
         }
 
+        const ipAddress = req.headers['x-forwarded-for'] || req.socket.remoteAddress || req.ip || 'Unknown IP';
+        
+        const recentViolations = await prisma_1.prisma.activityLog.count({
+            where: {
+                userId,
+                action: 'TASK_VIOLATION',
+                createdAt: { gte: new Date(Date.now() - 5 * 60 * 1000) }
+            }
+        });
+
+        let autoBlocked = false;
+        // recentViolations includes the one we just inserted!
+        if (recentViolations >= 3 && ipAddress && ipAddress !== 'Unknown IP') {
+            await prisma_1.prisma.blockedIp.upsert({
+                where: { ip: String(ipAddress) },
+                update: {},
+                create: {
+                    ip: String(ipAddress),
+                    reason: 'Auto-blocked due to 3+ cheating violations within 5 minutes.',
+                    blockedBy: 'SYSTEM'
+                }
+            });
+            autoBlocked = true;
+        }
+
         const admins = await prisma_1.prisma.user.findMany({ where: { role: 'ADMIN' } });
         await Promise.all(admins.map(admin => {
             return prisma_1.prisma.notification.create({
                 data: {
                     userId: admin.id,
-                    title: '🚨 Cheat Alert: Task Violation',
-                    body: `Student "${studentName}" triggered a lock-down violation on task "${task.title}". Reason: ${reason || 'Unknown'}`,
+                    title: autoBlocked ? '🛑 Auto-Block: Cheat Alert' : '🚨 Cheat Alert: Task Violation',
+                    body: autoBlocked 
+                        ? `Student "${studentName}" (IP: ${ipAddress}) was AUTO-BLOCKED for triggering 3+ violations. Latest reason: ${reason || 'Unknown'}`
+                        : `Student "${studentName}" (IP: ${ipAddress}) triggered a lock-down violation on task "${task.title}". Reason: ${reason || 'Unknown'}`,
                     kind: 'VIOLATION'
                 }
             });
         }));
-        res.json({ success: true });
+        res.json({ success: true, autoBlocked });
     } catch (e) {
         res.status(500).json({ error: 'Failed to report violation' });
     }

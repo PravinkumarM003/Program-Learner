@@ -3,6 +3,7 @@ import { Link, useLocation } from 'react-router-dom'
 import { useStore } from '../store/useStore'
 import api from '../api/client'
 import { useStreak } from '../hooks/useStreak'
+import { getXpDetails } from '../utils/ranks'
 
 const NAV_LINKS = [
   { to: '/dashboard',   label: 'Dashboard',   icon: '🏠' },
@@ -25,6 +26,7 @@ export default function Navbar() {
   const [dropdownOpen, setDropdownOpen] = useState(false)
   const [notifDropdownOpen, setNotifDropdownOpen] = useState(false)
   const [notifications, setNotifications] = useState([])
+  const [userXp, setUserXp] = useState(0)
   const dropdownRef = useRef(null)
   const notifRef = useRef(null)
 
@@ -51,6 +53,7 @@ export default function Navbar() {
   useEffect(() => {
     if (user) {
       api.get('/user/notifications').then(res => setNotifications(res.data.notifications)).catch(console.error)
+      api.get('/user/xp').then(res => setUserXp(res.data.totalXp)).catch(console.error)
     }
   }, [user])
 
@@ -118,6 +121,13 @@ export default function Navbar() {
 
           {/* Right side controls */}
           <div className="hidden md:flex items-center gap-2">
+            {user && (
+              <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white/5 border border-white/10 mr-1 cursor-default">
+                <span className={`text-[11px] font-black ${getXpDetails(userXp).rankColor}`}>Lvl {getXpDetails(userXp).level}</span>
+                <span className="w-1 h-1 rounded-full bg-slate-600"></span>
+                <span className="text-xs font-bold text-amber-400">⚡{userXp}</span>
+              </div>
+            )}
             {user && streakData && streakData.currentStreak > 0 && (
               <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-orange-500/10 text-orange-400 text-sm font-bold border border-orange-500/20 mr-1" title="Daily Streak">
                 🔥 {streakData.currentStreak}{streakData.currentStreak !== 1 ? 's' : ''}
