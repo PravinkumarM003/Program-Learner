@@ -272,7 +272,6 @@ model LoginLog {
   userAgent String?
 
   success Boolean @default(false)
-  reason   String?
 
   createdAt DateTime @default(now())
 

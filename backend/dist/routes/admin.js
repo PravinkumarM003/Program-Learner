@@ -4,6 +4,20 @@ const express_1 = require("express");
 const prisma_1 = require("../prisma");
 const auth_1 = require("../middleware/auth");
 const router = (0, express_1.Router)();
+
+async function notifyStudents(title, body) {
+    const students = await prisma_1.prisma.user.findMany({ where: { role: 'STUDENT' } });
+    await Promise.all(students.map(student => {
+        return prisma_1.prisma.notification.create({
+            data: {
+                userId: student.id,
+                title,
+                body,
+                kind: 'SYSTEM'
+            }
+        });
+    }));
+}
 router.use(auth_1.authenticateJWT, (0, auth_1.authorizeRoles)('ADMIN'));
 router.get('/submissions', async (_req, res) => {
     const submissions = await prisma_1.prisma.submission.findMany({
@@ -88,6 +102,9 @@ router.post('/lessons', async (req, res) => {
                 courseId: course.id
             }
         });
+        
+        await notifyStudents('New Lesson Available!', `A new lesson "${lesson.title}" has been added.`);
+        
         res.json({ lesson });
     } catch (e) {
         res.status(500).json({ error: 'Failed to create lesson' });
@@ -167,6 +184,17 @@ router.delete('/blocked-ips/:ip', async (req, res) => {
         res.json({ ok: true });
     } catch (e) {
         res.status(500).json({ error: 'Failed to unblock IP' });
+    }
+});
+
+router.post('/notifications/broadcast', async (req, res) => {
+    try {
+        const { title, message } = req.body;
+        if (!title || !message) return res.status(400).json({ error: 'Title and message required' });
+        await notifyStudents(title, message);
+        res.json({ success: true });
+    } catch (e) {
+        res.status(500).json({ error: 'Failed to broadcast notification' });
     }
 });
 

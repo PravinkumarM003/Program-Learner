@@ -6,6 +6,20 @@ const auth_1 = require("../middleware/auth");
 const validation_1 = require("../middleware/validation");
 const router = (0, express_1.Router)();
 
+async function notifyStudents(title, body) {
+    const students = await prisma_1.prisma.user.findMany({ where: { role: 'STUDENT' } });
+    await Promise.all(students.map(student => {
+        return prisma_1.prisma.notification.create({
+            data: {
+                userId: student.id,
+                title,
+                body,
+                kind: 'NEW_TASK'
+            }
+        });
+    }));
+}
+
 function validatePythonCode(code) {
     const cleanCode = code.replace(/\s+/g, ' ');
     const forbiddenModules = ['os', 'sys', 'subprocess', 'socket', 'shutil', 'platform', 'importlib', 'ctypes', 'builtins'];
@@ -237,6 +251,11 @@ router.post('/', auth_1.authenticateJWT, (0, auth_1.authorizeRoles)('ADMIN'), (0
         },
         include: { quizQuestions: true }
     });
+    
+    if (task.published) {
+        await notifyStudents('New Task Available!', `A new task "${task.title}" has been published.`);
+    }
+    
     res.status(201).json({ task });
 });
 
@@ -288,6 +307,7 @@ router.delete('/:id', auth_1.authenticateJWT, (0, auth_1.authorizeRoles)('ADMIN'
 router.post('/:id/publish', auth_1.authenticateJWT, (0, auth_1.authorizeRoles)('ADMIN'), async (req, res) => {
     const { id } = req.params;
     const task = await prisma_1.prisma.task.update({ where: { id }, data: { published: true, isDraft: false } });
+    await notifyStudents('New Task Available!', `A new task "${task.title}" has been published.`);
     res.json({ task });
 });
 
@@ -506,6 +526,22 @@ router.post('/:id/violation', auth_1.authenticateJWT, async (req, res) => {
                 meta: JSON.stringify({ taskId: id, taskTitle: task.title, reason })
             }
         });
+
+        // Auto-reject so it's hidden
+        const existingSub = await prisma_1.prisma.submission.findUnique({
+            where: { taskId_userId: { taskId: id, userId } }
+        });
+        if (!existingSub) {
+            await prisma_1.prisma.submission.create({
+                data: {
+                    taskId: id,
+                    userId,
+                    status: 'Rejected',
+                    feedback: `Auto-rejected due to lock-down violation: ${reason}`,
+                    versions: { create: [{ code: `// VIOLATION: ${reason}`, isFinal: true }] }
+                }
+            });
+        }
 
         const admins = await prisma_1.prisma.user.findMany({ where: { role: 'ADMIN' } });
         await Promise.all(admins.map(admin => {

@@ -44,6 +44,26 @@ export default function AdminDashboard() {
   const [savingSub, setSavingSub] = useState(false)
   const [msg, setMsg] = useState(null)
 
+  // Broadcast state
+  const [broadcastTitle, setBroadcastTitle] = useState('')
+  const [broadcastMessage, setBroadcastMessage] = useState('')
+  const [sendingBroadcast, setSendingBroadcast] = useState(false)
+
+  const sendBroadcast = async (e) => {
+    e.preventDefault()
+    setSendingBroadcast(true)
+    try {
+      await api.post('/admin/notifications/broadcast', { title: broadcastTitle, message: broadcastMessage })
+      setMsg({ ok: true, text: 'Broadcast sent successfully!' })
+      setBroadcastTitle('')
+      setBroadcastMessage('')
+    } catch(e) {
+      setMsg({ ok: false, text: 'Failed to send broadcast.' })
+    } finally {
+      setSendingBroadcast(false)
+    }
+  }
+
   // Task Form State
   const [taskModalOpen, setTaskModalOpen] = useState(false)
   const [editingTask, setEditingTask] = useState(null)
@@ -439,6 +459,7 @@ export default function AdminDashboard() {
   const SIDEBAR_ITEMS = [
     { id: 'overview',     icon: '📊', label: 'Overview',       group: 'Main' },
     { id: 'user-monitor', icon: '👥', label: 'Users',          group: 'Main' },
+    { id: 'broadcast',    icon: '📢', label: 'Broadcast',      group: 'Main' },
     { id: 'submissions',  icon: '📝', label: 'Submissions',    group: 'Main', badge: pendingCount },
     { id: 'tasks',        icon: '🎯', label: 'Tasks',          group: 'Content' },
     { id: 'lessons',      icon: '📚', label: 'Lessons',        group: 'Content' },
@@ -845,6 +866,31 @@ export default function AdminDashboard() {
                 </div>
               ))}
             </div>
+          </div>
+        </div>
+      ) : tab === 'broadcast' ? (
+        <div className="max-w-2xl mx-auto mt-6">
+          <div className="glass-card rounded-2xl p-6 border border-white/5 shadow-2xl">
+            <h2 className="text-xl font-bold text-white mb-2 flex items-center gap-2">📢 Broadcast Notification</h2>
+            <p className="text-sm text-slate-400 mb-6">Send a notification to all students.</p>
+            <form onSubmit={sendBroadcast} className="space-y-4">
+              <div>
+                <label className="text-xs text-slate-400 font-semibold block mb-1.5">Notification Title *</label>
+                <input type="text" value={broadcastTitle} onChange={e => setBroadcastTitle(e.target.value)} required
+                  className="w-full rounded-xl bg-black/20 border border-white/10 px-4 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-cyan-500/50"
+                  placeholder="e.g. System Maintenance" />
+              </div>
+              <div>
+                <label className="text-xs text-slate-400 font-semibold block mb-1.5">Message *</label>
+                <textarea rows={4} value={broadcastMessage} onChange={e => setBroadcastMessage(e.target.value)} required
+                  className="w-full rounded-xl bg-black/20 border border-white/10 px-4 py-3 text-sm text-white focus:outline-none focus:ring-2 focus:ring-cyan-500/50 resize-none"
+                  placeholder="Type your message here..." />
+              </div>
+              <button type="submit" disabled={sendingBroadcast}
+                className="w-full rounded-xl bg-cyan-500/20 text-cyan-400 py-3 text-sm font-bold hover:bg-cyan-500/30 transition-colors disabled:opacity-50 mt-4">
+                {sendingBroadcast ? 'Sending...' : 'Send Broadcast'}
+              </button>
+            </form>
           </div>
         </div>
       ) : null}

@@ -134,8 +134,8 @@ export default function TaskDetail() {
                            document.mozFullScreenElement || 
                            document.msFullscreenElement;
       if (!isFullscreen && restrictedModeActive) {
-        reportViolation('Exited Fullscreen Mode');
-        alert('⚠️ Warning: Exited fullscreen mode! Please click "Enter Fullscreen" to resume lock-down.');
+        api.post(`/tasks/${id}/violation`, { reason: 'Exited Fullscreen Mode' }).catch(()=>{});
+        navigate('/dashboard');
       }
     };
 

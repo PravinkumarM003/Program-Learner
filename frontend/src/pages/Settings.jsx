@@ -1,13 +1,44 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useStore } from '../store/useStore'
 import api from '../api/client'
 
 export default function Settings() {
   const user = useStore(s => s.user)
   const setUser = useStore(s => s.setUser)
+  const setTheme = useStore(s => s.setTheme)
+  const currentTheme = useStore(s => s.theme)
   const [name, setName] = useState(user?.name || '')
   const [saving, setSaving] = useState(false)
   const [msg, setMsg] = useState(null)
+  const [xpData, setXpData] = useState(null)
+
+  useEffect(() => {
+    api.get('/user/xp').then(r => setXpData(r.data)).catch(() => {})
+  }, [])
+
+  const handleThemeAction = async (theme) => {
+    const unlockedThemes = user?.unlockedThemes ? JSON.parse(user.unlockedThemes) : []
+    const isUnlocked = theme.id === 'vs-dark' || unlockedThemes.includes(theme.id)
+
+    if (isUnlocked) {
+      setTheme(theme.id)
+      return
+    }
+
+    if (!xpData || xpData.currentXp < theme.price) {
+      alert(`Not enough XP! You need ${theme.price} XP.`)
+      return
+    }
+
+    try {
+      const r = await api.post('/user/unlock-theme', { themeId: theme.id, price: theme.price })
+      setUser({ ...user, unlockedThemes: JSON.stringify(r.data.unlockedThemes) })
+      setXpData(prev => ({ ...prev, currentXp: prev.currentXp - theme.price }))
+      alert(`Unlocked ${theme.name}!`)
+    } catch (e) {
+      alert('Failed to unlock theme.')
+    }
+  }
 
   const save = async (e) => {
     e.preventDefault()
@@ -76,21 +107,26 @@ export default function Settings() {
         </form>
       </div>
 
-      {/* Theme Store (Mock UI Phase 1) */}
+      {/* Theme Store */}
       <div className="glass-card rounded-2xl p-8 mb-6">
         <div className="flex items-center justify-between mb-6">
           <h2 className="font-bold text-white flex items-center gap-2">🎨 IDE Themes</h2>
-          <span className="text-xs font-bold text-amber-400 bg-amber-500/10 px-2 py-1 rounded-lg">Your Balance: 150 XP</span>
+          <span className="text-xs font-bold text-amber-400 bg-amber-500/10 px-2 py-1 rounded-lg">Your Balance: {xpData?.currentXp ?? 0} XP</span>
         </div>
         
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {[
-            { id: 'vs-dark', name: 'Default Dark', price: 0, unlocked: true, colors: ['#1e1e1e', '#d4d4d4', '#569cd6'] },
-            { id: 'dracula', name: 'Dracula', price: 100, unlocked: false, colors: ['#282a36', '#f8f8f2', '#ff79c6'] },
-            { id: 'monokai', name: 'Monokai', price: 150, unlocked: false, colors: ['#272822', '#f8f8f2', '#a6e22e'] },
-            { id: 'synthwave', name: 'Synthwave 84', price: 300, unlocked: false, colors: ['#262335', '#ff7edb', '#36f9f6'] }
-          ].map(theme => (
-            <div key={theme.id} className={`p-4 rounded-xl border flex items-center justify-between transition-all ${theme.unlocked ? 'bg-white/5 border-white/10' : 'bg-black/20 border-white/5 grayscale'}`}>
+            { id: 'vs-dark', name: 'Default Dark', price: 0, colors: ['#1e1e1e', '#d4d4d4', '#569cd6'] },
+            { id: 'dracula', name: 'Dracula', price: 100, colors: ['#282a36', '#f8f8f2', '#ff79c6'] },
+            { id: 'monokai', name: 'Monokai', price: 150, colors: ['#272822', '#f8f8f2', '#a6e22e'] },
+            { id: 'synthwave', name: 'Synthwave 84', price: 300, colors: ['#262335', '#ff7edb', '#36f9f6'] }
+          ].map(theme => {
+            const unlockedThemes = user?.unlockedThemes ? JSON.parse(user.unlockedThemes) : []
+            const isUnlocked = theme.id === 'vs-dark' || unlockedThemes.includes(theme.id)
+            const isActive = currentTheme === theme.id
+
+            return (
+            <div key={theme.id} className={`p-4 rounded-xl border flex items-center justify-between transition-all ${isUnlocked ? 'bg-white/5 border-white/10' : 'bg-black/20 border-white/5 grayscale'}`}>
               <div className="flex items-center gap-3">
                 <div className="flex gap-0.5 rounded overflow-hidden">
                   {theme.colors.map(c => <div key={c} style={{ backgroundColor: c }} className="w-2 h-6" />)}
@@ -102,16 +138,18 @@ export default function Settings() {
               </div>
               
               <button 
+                onClick={() => handleThemeAction(theme)}
                 className={`text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors ${
-                  theme.unlocked 
-                    ? theme.id === 'vs-dark' ? 'bg-cyan-500/20 text-cyan-400' : 'bg-white/5 text-white hover:bg-white/10'
+                  isUnlocked 
+                    ? isActive ? 'bg-cyan-500/20 text-cyan-400' : 'bg-white/5 text-white hover:bg-white/10'
                     : 'bg-amber-500/10 text-amber-400 hover:bg-amber-500/20'
                 }`}
               >
-                {theme.unlocked ? (theme.id === 'vs-dark' ? 'Active' : 'Apply') : 'Unlock'}
+                {isUnlocked ? (isActive ? 'Active' : 'Apply') : 'Unlock'}
               </button>
             </div>
-          ))}
+            )
+          })}
         </div>
       </div>
 

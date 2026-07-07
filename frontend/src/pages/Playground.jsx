@@ -85,8 +85,29 @@ export default function Playground() {
   const [xpData, setXpData] = useState(null)
   const [showAiPopup, setShowAiPopup] = useState(false)
   const [aiPopupMsg, setAiPopupMsg] = useState('')
+  const [chatOpen, setChatOpen] = useState(false)
+  const [chatInput, setChatInput] = useState('')
+  const [chatMessages, setChatMessages] = useState([{ role: 'ai', content: 'Hello! I am your AI assistant. How can I help you with your code today?' }])
   const editorRef = useRef(null)
   const nameInputRef = useRef(null)
+
+  const handleEditorWillMount = (monaco) => {
+    monaco.editor.defineTheme('dracula', {
+      base: 'vs-dark', inherit: true,
+      rules: [{ background: '282a36' }, { token: 'comment', foreground: '6272a4' }, { token: 'keyword', foreground: 'ff79c6', fontStyle: 'bold' }, { token: 'string', foreground: 'f1fa8c' }],
+      colors: { 'editor.background': '#282a36' }
+    });
+    monaco.editor.defineTheme('monokai', {
+      base: 'vs-dark', inherit: true,
+      rules: [{ background: '272822' }, { token: 'comment', foreground: '75715e' }, { token: 'keyword', foreground: 'f92672', fontStyle: 'bold' }, { token: 'string', foreground: 'e6db74' }],
+      colors: { 'editor.background': '#272822' }
+    });
+    monaco.editor.defineTheme('synthwave', {
+      base: 'vs-dark', inherit: true,
+      rules: [{ background: '262335' }, { token: 'comment', foreground: '848bbd', fontStyle: 'italic' }, { token: 'keyword', foreground: 'f92aad' }, { token: 'string', foreground: 'ff8b39' }],
+      colors: { 'editor.background': '#262335' }
+    });
+  }
 
   useEffect(() => {
     api.get('/user/xp').then(r => setXpData(r.data)).catch(() => {})
@@ -134,16 +155,24 @@ export default function Playground() {
     }
   }
 
-  const handleAskAi = async () => {
+  const handleAskAiMessage = async () => {
+    if (!chatInput.trim()) return
+    const msgContent = chatInput
+    setChatInput('')
+    const newMessages = [...chatMessages, { role: 'user', content: msgContent }]
+    setChatMessages(newMessages)
+
     if (!xpData || xpData.currentXp < 50) {
       setAiPopupMsg('You do not have enough XP! You need at least 50 XP to use Ask AI.')
       setShowAiPopup(true)
+      setChatMessages(prev => [...prev, { role: 'ai', content: 'I cannot answer this. You need at least 50 XP.' }])
       return
     }
+
     try {
-      const res = await api.post('/user/ask-ai')
+      const res = await api.post('/user/ask-ai', { messages: newMessages, codeContext: code })
       setXpData(prev => ({ ...prev, currentXp: prev.currentXp - 50, spentXp: (prev.spentXp || 0) + 50 }))
-      alert(res.data.answer)
+      setChatMessages(prev => [...prev, { role: 'ai', content: res.data.answer }])
     } catch (e) {
       setAiPopupMsg(e.response?.data?.error || 'Failed to connect to AI.')
       setShowAiPopup(true)
@@ -313,8 +342,8 @@ export default function Playground() {
 
         <div className="flex-1" />
 
-        {/* Ask AI (Mock Phase 2) */}
-        <button onClick={handleAskAi} 
+        {/* Ask AI Chat Toggle */}
+        <button onClick={() => setChatOpen(!chatOpen)} 
           className="flex items-center gap-2 px-4 py-1.5 rounded-xl text-sm font-bold text-slate-900 transition-all hover:scale-105"
           style={{ background: 'linear-gradient(135deg, #fcd34d, #f59e0b)', boxShadow: '0 4px 15px rgba(245, 158, 11, 0.3)' }}>
           ✨ Ask AI
@@ -395,38 +424,74 @@ export default function Playground() {
             </div>
           )}
         </aside>
-
         {/* Editor + Output */}
         <div className="flex-1 flex flex-col overflow-hidden">
-
           {/* Editor */}
-          <div className="flex-1 overflow-hidden relative" style={{ minHeight: 0 }}>
-            <Editor
-              height="100%"
-              language={langCfg.monacoLang}
-              theme={theme === 'dark' ? 'vs-dark' : 'light'}
-              value={code}
-              onChange={v => setCode(v || '')}
-              onMount={e => { editorRef.current = e }}
-              options={{
-                fontSize: 14,
-                fontFamily: '"Fira Code", "Cascadia Code", monospace',
-                fontLigatures: true,
-                minimap: { enabled: false },
-                scrollBeyondLastLine: false,
-                padding: { top: 16, bottom: 16 },
-                lineNumbers: 'on',
-                renderLineHighlight: 'gutter',
-                wordWrap: 'off',
-                automaticLayout: true,
-                tabSize: language === 'python' ? 4 : 2,
-                insertSpaces: true,
-              }}
-            />
-            <div className="absolute bottom-3 right-4 text-[10px] opacity-40 pointer-events-none"
-              style={{ color: 'var(--text-muted)' }}>
-              Ctrl+Enter to run
+          <div className="flex-1 flex relative" style={{ minHeight: 0 }}>
+            <div className="flex-1 relative">
+              <Editor
+                height="100%"
+                language={langCfg.monacoLang}
+                theme={theme === 'dark' ? 'vs-dark' : (theme === 'light' ? 'light' : theme)}
+                value={code}
+                onChange={v => setCode(v || '')}
+                onMount={e => { editorRef.current = e }}
+                beforeMount={handleEditorWillMount}
+                options={{
+                  fontSize: 14,
+                  fontFamily: '"Fira Code", "Cascadia Code", monospace',
+                  fontLigatures: true,
+                  minimap: { enabled: false },
+                  scrollBeyondLastLine: false,
+                  padding: { top: 16, bottom: 16 },
+                  lineNumbers: 'on',
+                  renderLineHighlight: 'gutter',
+                  wordWrap: 'off',
+                  automaticLayout: true,
+                  tabSize: language === 'python' ? 4 : 2,
+                  insertSpaces: true,
+                }}
+              />
+              <div className="absolute bottom-3 right-4 text-[10px] opacity-40 pointer-events-none"
+                style={{ color: 'var(--text-muted)' }}>
+                Ctrl+Enter to run
+              </div>
             </div>
+
+            {/* Ask AI Chat Widget */}
+            {chatOpen && (
+              <div className="absolute right-4 bottom-4 w-80 bg-slate-900 border border-white/10 rounded-2xl shadow-2xl flex flex-col overflow-hidden z-40 transition-all" style={{ height: '400px' }}>
+                <div className="bg-gradient-to-r from-cyan-500 to-violet-600 px-4 py-3 flex justify-between items-center">
+                  <h3 className="text-white font-bold text-sm">✨ Ask AI Assistant</h3>
+                  <button onClick={() => setChatOpen(false)} className="text-white/80 hover:text-white">✕</button>
+                </div>
+                <div className="flex-1 p-3 overflow-y-auto space-y-3 bg-slate-950/50">
+                  {chatMessages.map((msg, i) => (
+                    <div key={i} className={`flex ${msg.role === 'ai' ? 'justify-start' : 'justify-end'}`}>
+                      <div className={`max-w-[85%] rounded-xl px-3 py-2 text-xs leading-relaxed ${msg.role === 'ai' ? 'bg-slate-800 text-slate-300' : 'bg-cyan-600/30 text-cyan-100 border border-cyan-500/30'}`}>
+                        {msg.content.split('```').map((block, idx) => {
+                          if (idx % 2 === 1) {
+                            return <pre key={idx} className="bg-black/50 p-2 rounded mt-1 overflow-x-auto border border-white/5 font-mono text-[10px] text-green-300">{block.replace(/^python\n/, '')}</pre>
+                          }
+                          return <span key={idx} className="whitespace-pre-wrap">{block}</span>
+                        })}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <div className="p-2 bg-slate-900 border-t border-white/10 flex gap-2">
+                  <input 
+                    type="text" 
+                    value={chatInput} 
+                    onChange={e => setChatInput(e.target.value)} 
+                    onKeyDown={e => { if (e.key === 'Enter') handleAskAiMessage() }}
+                    placeholder="Ask a question (50 XP)..." 
+                    className="flex-1 bg-black/30 border border-white/5 rounded-lg px-3 py-1.5 text-xs text-white focus:outline-none focus:ring-1 focus:ring-cyan-500"
+                  />
+                  <button onClick={handleAskAiMessage} className="bg-cyan-500/20 text-cyan-400 font-bold px-3 py-1.5 rounded-lg text-xs hover:bg-cyan-500/30 transition-colors">Send</button>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Input Toggle */}

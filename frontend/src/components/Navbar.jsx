@@ -22,7 +22,10 @@ export default function Navbar() {
   const { streakData } = useStreak()
   const [menuOpen, setMenuOpen] = useState(false)
   const [dropdownOpen, setDropdownOpen] = useState(false)
+  const [notifDropdownOpen, setNotifDropdownOpen] = useState(false)
+  const [notifications, setNotifications] = useState([])
   const dropdownRef = useRef(null)
+  const notifRef = useRef(null)
 
   const logout = () => {
     api.post('/auth/logout').finally(() => { setUser(null); window.location.href = '/' })
@@ -36,10 +39,32 @@ export default function Navbar() {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
         setDropdownOpen(false)
       }
+      if (notifRef.current && !notifRef.current.contains(e.target)) {
+        setNotifDropdownOpen(false)
+      }
     }
     document.addEventListener('mousedown', handler)
     return () => document.removeEventListener('mousedown', handler)
   }, [])
+
+  useEffect(() => {
+    if (user) {
+      api.get('/user/notifications').then(res => setNotifications(res.data.notifications)).catch(console.error)
+    }
+  }, [user])
+
+  const handleNotifClick = () => {
+    setNotifDropdownOpen(o => !o)
+    setDropdownOpen(false)
+    if (!notifDropdownOpen) {
+      const hasUnread = notifications.some(n => !n.readAt)
+      if (hasUnread) {
+        api.post('/user/notifications/read', {}).then(() => {
+          setNotifications(prev => prev.map(n => ({ ...n, readAt: new Date().toISOString() })))
+        }).catch(console.error)
+      }
+    }
+  }
 
   // Close mobile menu on route change
   useEffect(() => { setMenuOpen(false) }, [location.pathname])
@@ -108,11 +133,52 @@ export default function Navbar() {
               {theme === 'dark' ? '☀️' : '🌙'}
             </button>
 
+            {user && (
+              <div className="relative" ref={notifRef}>
+                <button
+                  onClick={handleNotifClick}
+                  className="h-8 w-8 flex items-center justify-center rounded-lg text-slate-400 hover:text-white hover:bg-white/5 transition-colors text-sm relative"
+                  title="Notifications"
+                >
+                  🔔
+                  {notifications.some(n => !n.readAt) && (
+                    <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.8)] animate-pulse" />
+                  )}
+                </button>
+                {notifDropdownOpen && (
+                  <div
+                    className="absolute right-0 top-full mt-2 w-72 max-h-96 overflow-y-auto rounded-2xl animate-scale-in"
+                    style={{ background: 'var(--bg-overlay)', border: '1px solid var(--border-default)', boxShadow: '0 16px 40px rgba(0,0,0,0.5)', zIndex: 50 }}
+                  >
+                    <div className="px-4 py-3 border-b sticky top-0" style={{ borderColor: 'var(--border-subtle)', background: 'var(--bg-overlay)', zIndex: 10 }}>
+                      <h3 className="text-sm font-bold text-white">Notifications</h3>
+                    </div>
+                    <div className="py-2">
+                      {notifications.length === 0 ? (
+                        <p className="text-xs text-slate-400 text-center py-4">No notifications yet.</p>
+                      ) : (
+                        notifications.map(n => (
+                          <div key={n.id} className="px-4 py-3 hover:bg-white/5 transition-colors border-b last:border-0" style={{ borderColor: 'var(--border-subtle)' }}>
+                            <p className="text-xs font-semibold text-slate-200">{n.title}</p>
+                            <p className="text-xs text-slate-400 mt-1 line-clamp-2">{n.body}</p>
+                            <p className="text-[10px] text-slate-500 mt-2">{new Date(n.createdAt).toLocaleString()}</p>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
             {user ? (
               /* Avatar Dropdown */
               <div className="relative" ref={dropdownRef}>
                 <button
-                  onClick={() => setDropdownOpen(o => !o)}
+                  onClick={() => {
+                    setDropdownOpen(o => !o)
+                    setNotifDropdownOpen(false)
+                  }}
                   className="flex items-center gap-2 px-2 py-1.5 rounded-xl hover:bg-white/5 transition-colors group"
                 >
                   <span
