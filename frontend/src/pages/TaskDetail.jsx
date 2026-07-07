@@ -624,22 +624,24 @@ export default function TaskDetail() {
                 {showConsole && (
                   <div className="border-t border-white/5 bg-slate-950 p-4 space-y-4 max-h-60 overflow-y-auto">
                     {/* Custom Input */}
-                    <div className="space-y-1.5">
-                      <label className="text-[10px] text-slate-500 font-bold uppercase tracking-wider block">Custom Input (STDIN)</label>
-                      <textarea
-                        rows={2}
-                        value={customInput}
-                        onChange={e => setCustomInput(e.target.value)}
-                        onKeyDown={e => {
-                          if (e.key === 'Enter' && !e.shiftKey) {
-                            e.preventDefault()
-                            runCode()
-                          }
-                        }}
-                        placeholder="Provide stdin input for compilation/execution here..."
-                        className="w-full rounded-xl bg-white/5 border border-white/10 px-3 py-2 text-xs font-mono text-slate-300 focus:outline-none focus:ring-1 focus:ring-cyan-500/40 resize-none"
-                      />
-                    </div>
+                    {(lang === 'python' ? /input\s*\(/.test(code) : /(scanf|gets|fgets|getchar)\s*\(/.test(code)) && (
+                      <div className="space-y-1.5">
+                        <label className="text-[10px] text-cyan-500 font-bold uppercase tracking-wider block">pylearn input:</label>
+                        <textarea
+                          rows={2}
+                          value={customInput}
+                          onChange={e => setCustomInput(e.target.value)}
+                          onKeyDown={e => {
+                            if (e.key === 'Enter' && !e.shiftKey) {
+                              e.preventDefault()
+                              runCode()
+                            }
+                          }}
+                          placeholder="Provide stdin input for compilation/execution here..."
+                          className="w-full rounded-xl bg-white/5 border border-white/10 px-3 py-2 text-xs font-mono text-slate-300 focus:outline-none focus:ring-1 focus:ring-cyan-500/40 resize-none"
+                        />
+                      </div>
+                    )}
 
                     {/* Compilation / Run Output terminal logs */}
                     <div className="space-y-1.5">

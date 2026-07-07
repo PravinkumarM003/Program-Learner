@@ -558,24 +558,25 @@ export default function Playground() {
               </div>
 
               {/* Inline Input (stdin) at the bottom */}
-              <div className="border-t border-white/5 pt-3 flex flex-col md:flex-row items-start gap-2 flex-shrink-0">
-                <div className="flex items-center gap-1.5 text-cyan-500 font-bold flex-shrink-0 mt-1">
-                  <span>pylearn:~$</span>
-                  <span className="text-[9px] text-slate-500 font-medium normal-case font-sans">(stdin)</span>
+              {(language === 'python' ? /input\s*\(/.test(code) : /(scanf|gets|fgets|getchar)\s*\(/.test(code)) && (
+                <div className="border-t border-white/5 pt-3 flex flex-col md:flex-row items-start gap-2 flex-shrink-0">
+                  <div className="flex items-center gap-1.5 text-cyan-500 font-bold flex-shrink-0 mt-1">
+                    <span>pylearn input:</span>
+                  </div>
+                  <textarea
+                    value={input}
+                    onChange={e => setInput(e.target.value)}
+                    onKeyDown={e => {
+                      if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault()
+                        runCode()
+                      }
+                    }}
+                    placeholder="Provide input for execution..."
+                    className="flex-1 w-full bg-transparent border-0 focus:ring-0 focus:outline-none text-green-300 placeholder-slate-600 font-mono resize-none h-16 md:h-10 text-xs"
+                  />
                 </div>
-                <textarea
-                  value={input}
-                  onChange={e => setInput(e.target.value)}
-                  onKeyDown={e => {
-                    if (e.key === 'Enter' && !e.shiftKey) {
-                      e.preventDefault()
-                      runCode()
-                    }
-                  }}
-                  placeholder="Provide input for execution (e.g. 5 or multiple lines)..."
-                  className="flex-1 w-full bg-transparent border-0 focus:ring-0 focus:outline-none text-green-300 placeholder-slate-600 font-mono resize-none h-16 md:h-10 text-xs"
-                />
-              </div>
+              )}
             </div>
           </div>
 
