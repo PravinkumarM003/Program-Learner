@@ -215,6 +215,17 @@ export default function TaskDetail() {
     }
   }, [timerActive, timeLeft])
 
+  // Ctrl+Enter to run code in editor
+  useEffect(() => {
+    const handler = (e) => {
+      if (e.ctrlKey && e.key === 'Enter') {
+        runCode()
+      }
+    }
+    window.addEventListener('keydown', handler)
+    return () => window.removeEventListener('keydown', handler)
+  }, [code, lang, customInput])
+
   const handleLanguageChange = (newLang) => {
     setLang(newLang)
     if (newLang === 'c') {
@@ -587,6 +598,9 @@ export default function TaskDetail() {
                       fontFamily: '"Fira Code", monospace',
                     }}
                   />
+                  <div className="absolute bottom-3 right-4 text-[10px] opacity-40 pointer-events-none text-slate-500 z-10">
+                    Ctrl+Enter to run
+                  </div>
                 </div>
 
                 {/* Console Toggle Bar */}
@@ -725,7 +739,7 @@ export default function TaskDetail() {
                   disabled={running}
                   className="rounded-xl bg-cyan-600/10 border border-cyan-500/30 px-5 py-2.5 text-xs font-bold text-cyan-400 hover:bg-cyan-500/20 disabled:opacity-50 transition-all"
                 >
-                  {running ? '⏳ Running...' : '▶ Run Code'}
+                  {running ? '⏳ Running...' : '▶ Run Code (Ctrl+Enter)'}
                 </button>
               </div>
             )}
