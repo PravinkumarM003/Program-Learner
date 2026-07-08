@@ -369,7 +369,7 @@ export default function AdminDashboard() {
 
     const payload = {
       title: taskTitle, description: taskDesc, type: taskType, difficulty: taskDiff,
-      deadline: taskDeadline || null, starterCode: taskStarterCode, sampleInput: taskSampleInput,
+      deadline: taskDeadline ? new Date(taskDeadline).toISOString() : null, starterCode: taskStarterCode, sampleInput: taskSampleInput,
       sampleOutput: taskSampleOutput, testCases: JSON.stringify(taskTestCases), hints: taskHints,
       baseXp: Number(taskBaseXp) || 0,
       targetTime: taskTargetTime ? Number(taskTargetTime) : null,
@@ -649,7 +649,7 @@ export default function AdminDashboard() {
       </aside>
 
       {/* ── Main Content ── */}
-      <div className="flex-1 overflow-auto relative">
+      <main id="main-content" className="flex-1 overflow-auto relative">
         {/* Top bar */}
         <div className="glass-nav sticky top-0 z-20 flex items-center justify-between px-6 py-4">
           <div>
@@ -701,7 +701,7 @@ export default function AdminDashboard() {
           {/* Recent submissions preview */}
           <div className="glass-card rounded-2xl overflow-hidden">
             <div className="px-5 py-4 border-b flex items-center justify-between" style={{ borderColor: 'var(--border-subtle)' }}>
-              <h3 className="font-bold text-white">Recent Submissions</h3>
+              <h2 className="font-bold text-white">Recent Submissions</h2>
               <button onClick={() => setTab('submissions')} className="text-xs text-cyan-400 hover:text-cyan-300 font-semibold">View all →</button>
             </div>
             <div className="divide-y" style={{ borderColor: 'var(--border-subtle)' }}>
@@ -1597,7 +1597,7 @@ export default function AdminDashboard() {
         </div>
       )}
         </div>{/* end content area p-6 */}
-      </div>{/* end main content flex-1 */}
+      </main>{/* end main content flex-1 */}
     </div>
   )
 }

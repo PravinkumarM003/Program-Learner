@@ -191,12 +191,11 @@ export default function Navbar() {
                   }}
                   className="flex items-center gap-2 px-2 py-1.5 rounded-xl hover:bg-white/5 transition-colors group"
                 >
-                  <span
-                    className="flex h-7 w-7 items-center justify-center rounded-lg text-xs font-bold text-slate-900 flex-shrink-0 transition-shadow group-hover:shadow-cyan-500/30"
-                    style={{ background: 'linear-gradient(135deg, #06b6d4, #8b5cf6)' }}
-                  >
-                    {avatarLetter}
-                  </span>
+                  <img
+                    src="/images/pravin-photo.jpg"
+                    alt="Profile"
+                    className="flex h-8 w-8 items-center justify-center rounded-full object-cover flex-shrink-0 transition-shadow group-hover:shadow-cyan-500/30 ring-2 ring-cyan-500/30"
+                  />
                   <span className="text-sm text-slate-300 max-w-[100px] truncate hidden lg:block">
                     {user.name || user.email}
                   </span>
