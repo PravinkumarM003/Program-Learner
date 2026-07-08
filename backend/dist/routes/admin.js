@@ -87,21 +87,55 @@ router.post('/submissions/:id/review', auth_1.authenticateJWT, (0, auth_1.author
 });
 
 router.get('/users', auth_1.authenticateJWT, (0, auth_1.authorizeRoles)('ADMIN'), async (req, res) => {
-    const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 20;
-    const skip = (page - 1) * limit;
+    try {
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 20;
+        const skip = (page - 1) * limit;
 
-    const [users, total] = await Promise.all([
-        prisma_1.prisma.user.findMany({
-            select: { id: true, email: true, name: true, role: true, createdAt: true },
-            orderBy: { createdAt: 'desc' },
-            skip,
-            take: limit
-        }),
-        prisma_1.prisma.user.count()
-    ]);
+        const [users, total] = await Promise.all([
+            prisma_1.prisma.user.findMany({
+                select: {
+                    id: true,
+                    email: true,
+                    name: true,
+                    role: true,
+                    createdAt: true,
+                    submissions: {
+                        select: {
+                            status: true,
+                            marks: true
+                        }
+                    }
+                },
+                orderBy: { createdAt: 'desc' },
+                skip,
+                take: limit
+            }),
+            prisma_1.prisma.user.count()
+        ]);
 
-    res.json({ users, total, page, totalPages: Math.ceil(total / limit) });
+        const usersWithStats = users.map(user => {
+            const accepted = user.submissions.filter(s => s.status === 'Accepted').length;
+            const rejected = user.submissions.filter(s => s.status === 'Rejected').length;
+            const pending = user.submissions.filter(s => s.status === 'Pending' || s.status === 'UnderReview').length;
+            const taskMarks = user.submissions.reduce((sum, s) => sum + (s.marks || 0), 0);
+            const totalSubs = user.submissions.length;
+
+            const { submissions, ...userWithoutSubs } = user;
+            return {
+                ...userWithoutSubs,
+                accepted,
+                rejected,
+                pending,
+                taskMarks,
+                totalSubs
+            };
+        });
+
+        res.json({ users: usersWithStats, total, page, totalPages: Math.ceil(total / limit) });
+    } catch (e) {
+        res.status(500).json({ error: 'Failed to fetch users' });
+    }
 });
 
 // Role change endpoint
@@ -203,6 +237,19 @@ router.get('/violations', auth_1.authenticateJWT, (0, auth_1.authorizeRoles)('AD
     }
 });
 
+router.delete('/violations/:id', auth_1.authenticateJWT, (0, auth_1.authorizeRoles)('ADMIN'), async (req, res) => {
+    try {
+        const { id } = req.params;
+        const userId = req.user?.sub;
+        await prisma_1.prisma.notification.deleteMany({
+            where: { id, userId }
+        });
+        res.json({ ok: true });
+    } catch (e) {
+        res.status(500).json({ error: 'Failed to delete notification' });
+    }
+});
+
 router.get('/blocked-ips', auth_1.authenticateJWT, (0, auth_1.authorizeRoles)('ADMIN'), async (_req, res) => {
     try {
         const blockedIps = await prisma_1.prisma.blockedIp.findMany({
@@ -233,6 +280,9 @@ router.post('/blocked-ips', auth_1.authenticateJWT, (0, auth_1.authorizeRoles)('
                 blockedBy: req.user?.sub || null
             }
         });
+        if (global.blockedIpsCache) {
+            global.blockedIpsCache.add(normalizedIp);
+        }
         res.status(201).json({ blockedIp });
     } catch (e) {
         res.status(500).json({ error: 'Failed to block IP' });
@@ -243,6 +293,9 @@ router.delete('/blocked-ips/:ip', auth_1.authenticateJWT, (0, auth_1.authorizeRo
     try {
         const ip = decodeURIComponent(req.params.ip);
         await prisma_1.prisma.blockedIp.delete({ where: { ip } });
+        if (global.blockedIpsCache) {
+            global.blockedIpsCache.delete(ip);
+        }
         res.json({ ok: true });
     } catch (e) {
         res.status(500).json({ error: 'Failed to unblock IP' });

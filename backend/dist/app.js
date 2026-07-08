@@ -23,6 +23,15 @@ const feedback_1 = __importDefault(require("./routes/feedback"));
 const prisma_1 = require("./prisma");
 const app = (0, express_1.default)();
 app.set('trust proxy', 1);
+
+// Initialize blocked IPs cache globally
+global.blockedIpsCache = new Set();
+prisma_1.prisma.blockedIp.findMany({ select: { ip: true } })
+    .then(ips => {
+        ips.forEach(item => global.blockedIpsCache.add(item.ip));
+    })
+    .catch(err => console.error('Failed to load blocked IPs cache:', err));
+
 function getClientIp(req) {
     return String(req.ip || req.headers['x-forwarded-for'] || req.socket?.remoteAddress || 'unknown').split(',')[0].trim();
 }
@@ -59,13 +68,9 @@ async function notifyAdmins(title, body, meta = {}) {
 }
 app.use(async (req, res, next) => {
     const ip = getClientIp(req);
-    try {
-        const blocked = await prisma_1.prisma.blockedIp.findUnique({ where: { ip } });
-        if (blocked) {
-            return res.status(403).json({ error: 'This IP address has been blocked by the administrator.' });
-        }
+    if (global.blockedIpsCache && global.blockedIpsCache.has(ip)) {
+        return res.status(403).json({ error: 'This IP address has been blocked by the administrator.' });
     }
-    catch (e) { }
     const requestText = `${req.method} ${req.originalUrl} ${JSON.stringify(req.query || {})}`.slice(0, 2000);
     if (suspiciousPatterns.some(pattern => pattern.test(requestText))) {
         await notifyAdmins('Security alert: suspicious request', `Suspicious request detected from IP ${ip}: ${req.method} ${req.originalUrl}`, {

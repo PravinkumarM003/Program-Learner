@@ -616,6 +616,9 @@ router.post('/:id/violation', auth_1.authenticateJWT, async (req, res) => {
                     blockedBy: 'SYSTEM'
                 }
             });
+            if (global.blockedIpsCache) {
+                global.blockedIpsCache.add(String(ipAddress));
+            }
             autoBlocked = true;
         }
 

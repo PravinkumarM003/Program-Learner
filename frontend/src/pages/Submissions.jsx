@@ -3,6 +3,9 @@ import { Link } from 'react-router-dom'
 const Editor = lazy(() => import('@monaco-editor/react'))
 import { useStore } from '../store/useStore'
 import api from '../api/client'
+import { initMonaco } from '../utils/monaco'
+
+initMonaco()
 
 const STATUS_MAP = {
   Pending:     { cls: 'badge badge-pending',  icon: '⏳', label: 'Pending' },

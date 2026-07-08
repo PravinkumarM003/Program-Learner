@@ -514,19 +514,22 @@ export default function AdminDashboard() {
       .catch(() => setMsg({ ok: false, text: 'Failed to unblock IP.' }))
   }
 
+  const deleteViolation = (id) => {
+    if (!confirm('Are you sure you want to delete this notification?')) return
+    api.delete(`/admin/violations/${id}`)
+      .then(() => {
+        setViolations(prev => prev.filter(v => v.id !== id))
+        setMsg({ ok: true, text: 'Notification deleted' })
+      })
+      .catch(() => setMsg({ ok: false, text: 'Failed to delete notification' }))
+  }
+
   const TABS = user?.role === 'TEACHER' 
     ? ['submissions', 'content-manager']
-    : ['overview', 'user-monitor', 'broadcast', 'submissions', 'content-manager', 'violations', 'feedbacks', 'analytics']
+    : ['overview', 'user-monitor', 'give-xp', 'broadcast', 'submissions', 'content-manager', 'violations', 'feedbacks', 'analytics']
 
-  // User Monitoring Calculation
-  const userStats = users.map(user => {
-    const userSubs = subs.filter(s => s.userId === user.id)
-    const accepted = userSubs.filter(s => s.status === 'Accepted').length
-    const rejected = userSubs.filter(s => s.status === 'Rejected').length
-    const pending = userSubs.filter(s => s.status === 'Pending' || s.status === 'UnderReview').length
-    const totalMarks = userSubs.reduce((sum, s) => sum + (s.marks || 0), 0)
-    return { ...user, accepted, rejected, pending, taskMarks: totalMarks, totalSubs: userSubs.length }
-  })
+  // User Monitoring Calculation (calculated on backend)
+  const userStats = users
 
   const feedbackByDate = feedbacks.reduce((groups, item) => {
     const key = getDateKey(item.createdAt)
@@ -993,12 +996,18 @@ export default function AdminDashboard() {
                     <span className="bg-red-500/20 text-red-400 font-bold px-2.5 py-1 rounded-lg text-xs uppercase tracking-wider">
                       Breach
                     </span>
-                    {detectedIp && (
-                      <button onClick={() => saveBlockedIp(detectedIp, v.title)}
+                    <div className="flex gap-2">
+                      <button onClick={() => deleteViolation(v.id)}
                         className="rounded-lg bg-red-500/10 text-red-400 px-3 py-1.5 text-xs font-semibold hover:bg-red-500/20 transition-colors">
-                        Block {detectedIp}
+                        Delete
                       </button>
-                    )}
+                      {detectedIp && (
+                        <button onClick={() => saveBlockedIp(detectedIp, v.title)}
+                          className="rounded-lg bg-red-500/10 text-red-400 px-3 py-1.5 text-xs font-semibold hover:bg-red-500/20 transition-colors">
+                          Block {detectedIp}
+                        </button>
+                      )}
+                    </div>
                   </div>
                 </div>
               )
@@ -1086,6 +1095,35 @@ export default function AdminDashboard() {
                 </div>
               ))}
             </div>
+          </div>
+        </div>
+      ) : tab === 'give-xp' ? (
+        <div className="max-w-2xl mx-auto mt-6">
+          <div className="glass-card rounded-2xl p-6 border border-white/5 shadow-2xl">
+            <h2 className="text-xl font-bold text-white mb-2 flex items-center gap-2">⚡ Give XP to User</h2>
+            <p className="text-sm text-slate-400 mb-6">Grant experience points to a specific user.</p>
+            <form onSubmit={handleGiveXp} className="space-y-4">
+              <div>
+                <label className="text-xs text-slate-400 font-semibold block mb-1.5">User *</label>
+                <select value={giveXpUserId} onChange={e => setGiveXpUserId(e.target.value)} required
+                  className="w-full rounded-xl bg-black/20 border border-white/10 px-4 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-cyan-500/50">
+                  <option value="">Select a user</option>
+                  {users.map(u => (
+                    <option key={u.id} value={u.id}>{u.name || u.email} ({u.email})</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="text-xs text-slate-400 font-semibold block mb-1.5">XP Amount *</label>
+                <input type="number" value={giveXpAmount} onChange={e => setGiveXpAmount(e.target.value)} required min="1"
+                  className="w-full rounded-xl bg-black/20 border border-white/10 px-4 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-cyan-500/50"
+                  placeholder="e.g. 100" />
+              </div>
+              <button type="submit" disabled={givingXp}
+                className="w-full rounded-xl bg-yellow-500/20 text-yellow-400 py-3 text-sm font-bold hover:bg-yellow-500/30 transition-colors disabled:opacity-50 mt-4">
+                {givingXp ? 'Granting...' : 'Grant XP'}
+              </button>
+            </form>
           </div>
         </div>
       ) : tab === 'broadcast' ? (

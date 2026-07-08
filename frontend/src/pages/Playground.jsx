@@ -2,6 +2,9 @@ import { useState, useEffect, useRef } from 'react'
 import Editor from '@monaco-editor/react'
 import { useStore } from '../store/useStore'
 import api from '../api/client'
+import { initMonaco } from '../utils/monaco'
+
+initMonaco()
 
 const STORAGE_KEY = 'pg_snippets'
 

@@ -3,6 +3,9 @@ import { useParams, Link, useNavigate } from 'react-router-dom'
 const Editor = lazy(() => import('@monaco-editor/react'))
 import { useStore } from '../store/useStore'
 import api from '../api/client'
+import { initMonaco } from '../utils/monaco'
+
+initMonaco()
 
 const TYPE_BADGES = {
   GENERAL: 'bg-teal-500/10 text-teal-400 border border-teal-500/20',

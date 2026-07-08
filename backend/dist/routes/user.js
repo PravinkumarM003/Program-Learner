@@ -71,7 +71,7 @@ router.get('/leaderboard', async (req, res) => {
             return res.json({ leaderboard: _lbCache.data, cached: true });
         }
         const leaderboards = await prisma_1.prisma.leaderboard.findMany({
-            where: { user: { role: { not: 'ADMIN' } } },
+            where: { user: { role: 'STUDENT' } },
             include: { user: { select: { name: true, email: true } } },
             orderBy: { xp: 'desc' },
             take: 50
