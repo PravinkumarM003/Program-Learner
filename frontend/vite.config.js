@@ -16,19 +16,21 @@ export default defineConfig({
   build: {
     outDir: 'dist',
     sourcemap: false,
-    // Warn if any single chunk exceeds 600 KB
-    chunkSizeWarningLimit: 600,
+    chunkSizeWarningLimit: 800,
     rollupOptions: {
       output: {
         manualChunks(id) {
-          // Monaco editor gets its own huge chunk (loaded only on Playground page)
-          if (id.includes('monaco-editor')) return 'monaco-editor'
-          // React core — tiny, always needed
-          if (id.includes('node_modules/react') || id.includes('node_modules/react-dom')) return 'react-vendor'
-          // Router
-          if (id.includes('react-router')) return 'router'
-          // Everything else from node_modules in one vendor chunk
-          if (id.includes('node_modules')) return 'vendor'
+          // Monaco editor is huge (~5 MB) — give it its own chunk so it only
+          // loads on the Playground page. All other node_modules stay in ONE
+          // vendor chunk to guarantee a single React instance and avoid the
+          // "Cannot read properties of undefined (reading 'useState')" error
+          // that occurs when react-dependent packages (zustand, framer-motion,
+          // react-router) are split into a separate chunk that evaluates before
+          // react/react-dom is ready.
+          if (id.includes('node_modules')) {
+            if (id.includes('monaco-editor')) return 'monaco-editor'
+            return 'vendor'
+          }
         }
       }
     }
@@ -41,3 +43,4 @@ export default defineConfig({
     format: 'es'
   }
 })
+
