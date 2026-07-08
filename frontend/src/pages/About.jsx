@@ -83,7 +83,7 @@ export default function About() {
               src="/images/pravin-photo.jpg"
               alt="Pravin Kumar M"
               className="h-full w-full rounded-full object-cover"
-              style={{ objectPosition: 'center 15%' }}
+              style={{ objectPosition: 'center 30%' }}
             />
           </div>
         </div>

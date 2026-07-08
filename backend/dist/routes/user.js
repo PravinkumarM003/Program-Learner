@@ -37,6 +37,28 @@ router.get('/me', async (req, res) => {
     }
 });
 
+router.patch('/me', auth_1.authenticateJWT, async (req, res) => {
+    try {
+        const userId = req.user?.sub;
+        if (!userId) return res.status(401).json({ error: 'Authentication required' });
+        
+        const { name } = req.body;
+        if (!name || typeof name !== 'string' || name.trim() === '') {
+            return res.status(400).json({ error: 'Name is required' });
+        }
+        
+        const user = await prisma_1.prisma.user.update({
+            where: { id: userId },
+            data: { name: name.trim() },
+            select: { id: true, email: true, name: true, role: true, createdAt: true, unlockedThemes: true }
+        });
+        
+        res.json({ user });
+    } catch (e) {
+        res.status(500).json({ error: 'Failed to update user profile' });
+    }
+});
+
 router.get('/xp', auth_1.authenticateJWT, async (req, res) => {
     try {
         const userId = req.user?.sub;
