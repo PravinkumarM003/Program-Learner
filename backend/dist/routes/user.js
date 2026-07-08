@@ -17,7 +17,7 @@ function formatUser(user) {
     const isPravin = email.toLowerCase().includes('pravin') || (user.name && user.name.toLowerCase().includes('pravin'));
     
     // Default avatar: Pravin's photo if it's Pravin, otherwise Gravatar (identicon default)
-    const defaultAvatar = isPravin ? '/images/pravin-photo.jpg' : `https://www.gravatar.com/avatar/${hash}?d=identicon`;
+    const defaultAvatar = isPravin ? '/images/pravin-photo.jpg?v=2' : `https://www.gravatar.com/avatar/${hash}?d=identicon`;
     
     return {
         id: user.id,

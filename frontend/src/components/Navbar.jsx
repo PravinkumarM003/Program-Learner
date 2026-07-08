@@ -6,13 +6,13 @@ import { useStreak } from '../hooks/useStreak'
 import { getXpDetails } from '../utils/ranks'
 
 const NAV_LINKS = [
-  { to: '/dashboard',   label: 'Dashboard',   icon: '🏠' },
-  { to: '/tasks',       label: 'Tasks',        icon: '🎯' },
-  { to: '/courses',     label: 'Lessons',      icon: '📚' },
-  { to: '/playground',  label: 'Playground',   icon: '⚡' },
-  { to: '/submissions', label: 'Submissions',  icon: '📝' },
-  { to: '/leaderboard', label: 'Leaderboard',  icon: '🏆' },
-  { to: '/about',       label: 'About',        icon: '💬' },
+  { to: '/dashboard', label: 'Dashboard', icon: '🏠' },
+  { to: '/tasks', label: 'Tasks', icon: '🎯' },
+  { to: '/courses', label: 'Lessons', icon: '📚' },
+  { to: '/playground', label: 'Playground', icon: '⚡' },
+  { to: '/submissions', label: 'Submissions', icon: '📝' },
+  { to: '/leaderboard', label: 'Leaderboard', icon: '🏆' },
+  { to: '/about', label: 'About', icon: '💬' },
 ]
 
 export default function Navbar() {
@@ -77,11 +77,10 @@ export default function Navbar() {
 
   return (
     <>
-      <header className={`z-40 w-full transition-all duration-300 ${
-        isExamMode
+      <header className={`z-40 w-full transition-all duration-300 ${isExamMode
           ? 'fixed top-0 left-0 right-0 h-4 overflow-hidden opacity-0 hover:h-[72px] hover:opacity-100 hover:bg-[#030712]/95 border-b border-transparent hover:border-white/10 z-[100] backdrop-blur-md'
           : 'sticky top-0'
-      }`}>
+        }`}>
         {/* Glass bar */}
         <div className="glass-nav mx-auto flex w-full items-center justify-between px-4 md:px-6 py-3 gap-4">
           {/* Logo */}
@@ -97,22 +96,20 @@ export default function Navbar() {
           <nav className="hidden md:flex items-center gap-0.5">
             {NAV_LINKS.map(({ to, label }) => (
               <Link key={to} to={to}
-                className={`px-3 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${
-                  isActive(to)
+                className={`px-3 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${isActive(to)
                     ? 'bg-cyan-500/12 text-cyan-400 shadow-sm'
                     : 'text-slate-400 hover:text-white hover:bg-white/5'
-                }`}
+                  }`}
               >
                 {label}
               </Link>
             ))}
             {user?.role === 'ADMIN' && (
               <Link to="/admin"
-                className={`px-3 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${
-                  isActive('/admin')
+                className={`px-3 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${isActive('/admin')
                     ? 'bg-violet-500/12 text-violet-400'
                     : 'text-slate-400 hover:text-violet-400 hover:bg-violet-500/5'
-                }`}
+                  }`}
               >
                 Admin
               </Link>
@@ -133,7 +130,7 @@ export default function Navbar() {
                 🔥 {streakData.currentStreak}
               </div>
             )}
-            
+
             {/* Theme toggle */}
             <button
               onClick={toggleTheme}
@@ -265,9 +262,9 @@ export default function Navbar() {
             className="md:hidden p-2 rounded-lg text-slate-400 hover:text-white hover:bg-white/5 transition-colors"
             aria-label="Toggle menu"
           >
-            <span className="block w-5 h-0.5 bg-current mb-1.5 transition-all duration-300" style={menuOpen ? {transform:'rotate(45deg) translate(2px,6px)'} : {}} />
-            <span className="block w-5 h-0.5 bg-current mb-1.5 transition-all duration-300" style={menuOpen ? {opacity:0, width: 0} : {}} />
-            <span className="block w-5 h-0.5 bg-current transition-all duration-300" style={menuOpen ? {transform:'rotate(-45deg) translate(2px,-6px)'} : {}} />
+            <span className="block w-5 h-0.5 bg-current mb-1.5 transition-all duration-300" style={menuOpen ? { transform: 'rotate(45deg) translate(2px,6px)' } : {}} />
+            <span className="block w-5 h-0.5 bg-current mb-1.5 transition-all duration-300" style={menuOpen ? { opacity: 0, width: 0 } : {}} />
+            <span className="block w-5 h-0.5 bg-current transition-all duration-300" style={menuOpen ? { transform: 'rotate(-45deg) translate(2px,-6px)' } : {}} />
           </button>
         </div>
       </header>
@@ -302,9 +299,8 @@ export default function Navbar() {
         <nav className="flex-1 overflow-y-auto py-4 px-3 space-y-1">
           {NAV_LINKS.map(({ to, label, icon }) => (
             <Link key={to} to={to}
-              className={`flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium transition-colors ${
-                isActive(to) ? 'bg-cyan-500/10 text-cyan-400' : 'text-slate-300 hover:text-white hover:bg-white/5'
-              }`}
+              className={`flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium transition-colors ${isActive(to) ? 'bg-cyan-500/10 text-cyan-400' : 'text-slate-300 hover:text-white hover:bg-white/5'
+                }`}
             >
               <span className="text-base w-6 text-center">{icon}</span>
               {label}
@@ -312,9 +308,8 @@ export default function Navbar() {
           ))}
           {user?.role === 'ADMIN' && (
             <Link to="/admin"
-              className={`flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium transition-colors ${
-                isActive('/admin') ? 'bg-violet-500/10 text-violet-400' : 'text-slate-300 hover:text-white hover:bg-white/5'
-              }`}
+              className={`flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium transition-colors ${isActive('/admin') ? 'bg-violet-500/10 text-violet-400' : 'text-slate-300 hover:text-white hover:bg-white/5'
+                }`}
             >
               <span className="text-base w-6 text-center">🛡️</span>
               Admin Panel
@@ -322,9 +317,8 @@ export default function Navbar() {
           )}
           {user?.role === 'TEACHER' && (
             <Link to="/admin"
-              className={`flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium transition-colors ${
-                isActive('/admin') ? 'bg-fuchsia-500/10 text-fuchsia-400' : 'text-slate-300 hover:text-white hover:bg-white/5'
-              }`}
+              className={`flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium transition-colors ${isActive('/admin') ? 'bg-fuchsia-500/10 text-fuchsia-400' : 'text-slate-300 hover:text-white hover:bg-white/5'
+                }`}
             >
               <span className="text-base w-6 text-center">👩‍🏫</span> Teacher Dashboard
             </Link>

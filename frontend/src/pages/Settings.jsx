@@ -122,7 +122,7 @@ export default function Settings() {
             className="relative h-16 w-16 rounded-2xl overflow-hidden cursor-pointer group shadow-lg ring-2 ring-cyan-500/30"
           >
             <img
-              src={localPreview || user?.avatarUrl || "/images/pravin-photo.jpg"}
+              src={localPreview || user?.avatarUrl || "/images/pravin-photo.jpg?v=2"}
               alt="Profile"
               className="h-full w-full object-cover transition-opacity duration-300 group-hover:opacity-30"
             />

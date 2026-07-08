@@ -82,10 +82,10 @@ export default function About() {
           {/* Inner image container for spacing */}
           <div className="relative p-2 bg-slate-900 rounded-full h-64 w-64 shadow-[0_0_40px_rgba(139,92,246,0.5)]">
             <img
-              src="/images/pravin-photo.jpg"
+              src="/images/pravin-photo.jpg?v=2"
               alt="Pravin Kumar M"
               className="h-full w-full rounded-full object-cover"
-              style={{ objectPosition: 'center 30%' }}
+              style={{ objectPosition: 'center' }}
             />
           </div>
         </div>
