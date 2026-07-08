@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useStore } from '../store/useStore'
 import api from '../api/client'
 
@@ -9,7 +9,9 @@ export default function Settings() {
   const currentIdeTheme = useStore(s => s.ideTheme)
   const showToast = useStore(s => s.showToast)
   const [name, setName] = useState(user?.name || '')
-  const [avatarUrl, setAvatarUrl] = useState(user?.avatarUrl || '')
+  const fileInputRef = useRef(null)
+  const [uploading, setUploading] = useState(false)
+  const [localPreview, setLocalPreview] = useState(null)
   const [saving, setSaving] = useState(false)
   const [msg, setMsg] = useState(null)
   const [xpData, setXpData] = useState(null)
@@ -17,6 +19,50 @@ export default function Settings() {
   useEffect(() => {
     api.get('/user/xp').then(r => setXpData(r.data)).catch(() => {})
   }, [])
+
+  const handleAvatarClick = () => {
+    fileInputRef.current?.click()
+  }
+
+  // Placeholder function for handling file upload. Can be hooked to AWS S3 / Cloudinary.
+  const handleFileUpload = async (file) => {
+    const formData = new FormData()
+    formData.append('avatar', file)
+
+    // Current implementation: Upload to the Node backend uploads endpoint.
+    const res = await api.post('/user/avatar', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    })
+    return res.data.user
+  }
+
+  const handleFileChange = async (e) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    if (file.size > 4 * 1024 * 1024) {
+      showToast('Image must be less than 4MB', 'error')
+      return
+    }
+
+    // Show local preview immediately over the avatar
+    const previewUrl = URL.createObjectURL(file)
+    setLocalPreview(previewUrl)
+
+    setUploading(true)
+
+    try {
+      const updatedUser = await handleFileUpload(file)
+      setUser(updatedUser)
+      showToast('Profile photo updated!', 'success')
+    } catch (err) {
+      showToast(err.response?.data?.error || 'Failed to upload photo.', 'error')
+      // Revert preview on failure
+      setLocalPreview(null)
+    } finally {
+      setUploading(false)
+    }
+  }
 
   const handleThemeAction = async (theme) => {
     const unlockedThemes = user?.unlockedThemes ? JSON.parse(user.unlockedThemes) : []
@@ -47,7 +93,7 @@ export default function Settings() {
     setSaving(true)
     setMsg(null)
     try {
-      const r = await api.patch('/user/me', { name, avatarUrl })
+      const r = await api.patch('/user/me', { name })
       setUser(r.data?.user)
       setMsg({ ok: true, text: 'Profile updated!' })
     } catch {
@@ -71,11 +117,37 @@ export default function Settings() {
         <h2 className="font-bold text-white mb-6 flex items-center gap-2">👤 Profile</h2>
 
         <div className="flex items-center gap-4 mb-6">
-          <img
-            src={user?.avatarUrl || "/images/pravin-photo.jpg"}
-            alt="Profile"
-            className="flex h-16 w-16 items-center justify-center rounded-2xl object-cover shadow-lg ring-2 ring-cyan-500/30"
-          />
+          <div 
+            onClick={handleAvatarClick}
+            className="relative h-16 w-16 rounded-2xl overflow-hidden cursor-pointer group shadow-lg ring-2 ring-cyan-500/30"
+          >
+            <img
+              src={localPreview || user?.avatarUrl || "/images/pravin-photo.jpg"}
+              alt="Profile"
+              className="h-full w-full object-cover transition-opacity duration-300 group-hover:opacity-30"
+            />
+            {uploading ? (
+              <div className="absolute inset-0 flex items-center justify-center bg-black/50">
+                <div className="w-5 h-5 rounded-full border-2 border-cyan-500 border-t-transparent animate-spin" />
+              </div>
+            ) : (
+              <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/75 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                {/* Subtle camera icon SVG */}
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 mb-0.5 text-cyan-400">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6.827 6.175A2.31 2.31 0 0 1 5.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 0 0 2.25 2.25h15A2.25 2.25 0 0 0 21.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 0 0-1.134-.175 2.31 2.31 0 0 1-1.64-1.055l-.822-1.316a2.192 2.192 0 0 0-1.736-1.039 48.774 48.774 0 0 0-5.232 0 2.192 2.192 0 0 0-1.736 1.039l-.821 1.316Z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 12.75a4.5 4.5 0 1 1-9 0 4.5 4.5 0 0 1 9 0ZM18.75 10.5h.008v.008h-.008V10.5Z" />
+                </svg>
+                <span className="text-[8px] text-cyan-400 font-bold uppercase tracking-wider">Change</span>
+              </div>
+            )}
+            <input 
+              type="file" 
+              ref={fileInputRef} 
+              accept="image/*" 
+              onChange={handleFileChange} 
+              style={{ display: 'none' }} 
+            />
+          </div>
           <div>
             <p className="font-semibold text-white">{user?.name || '—'}</p>
             <p className="text-sm text-slate-400">{user?.email}</p>
@@ -91,12 +163,6 @@ export default function Settings() {
             <input value={name} onChange={e => setName(e.target.value)}
               className="w-full rounded-xl bg-white/5 border border-white/10 px-4 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-cyan-500/40 placeholder-slate-600"
               placeholder="Your name" />
-          </div>
-          <div>
-            <label className="text-xs text-slate-400 font-semibold block mb-1.5">Profile Photo URL</label>
-            <input value={avatarUrl} onChange={e => setAvatarUrl(e.target.value)}
-              className="w-full rounded-xl bg-white/5 border border-white/10 px-4 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-cyan-500/40 placeholder-slate-600"
-              placeholder="Leave empty to use Gravatar / default" />
           </div>
           <div>
             <label className="text-xs text-slate-400 font-semibold block mb-1.5">Email</label>
