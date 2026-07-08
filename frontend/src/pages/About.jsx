@@ -74,7 +74,7 @@ export default function About() {
         <img
           src="/images/pravin-photo.jpg"
           alt="Pravin Kumar M"
-          className="h-40 w-40 rounded-full object-cover shadow-[0_0_30px_rgba(6,182,212,0.4)] shrink-0 border-4 border-cyan-400/80 relative z-10"
+          className="h-50 w-30 rounded-full object-cover shadow-[0_0_30px_rgba(6,182,212,0.4)] shrink-0 border-4 border-cyan-400/80 relative z-10"
           style={{ objectPosition: 'center top' }}
         />
         <div className="space-y-3 text-center sm:text-left relative z-10 flex-1">
@@ -89,7 +89,7 @@ export default function About() {
           <div className="grid grid-cols-3 gap-3 pt-1 max-w-xs sm:max-w-none">
             {[
               { href: 'https://www.linkedin.com/in/pravinkumar-m/', icon: '🔗', label: 'LinkedIn', color: 'hover:bg-cyan-500/20 text-cyan-400 hover:border-cyan-500/30' },
-              { href: 'https://github.com/pravinkumar-m', icon: '🐙', label: 'GitHub', color: 'hover:bg-violet-500/20 text-violet-400 hover:border-violet-500/30' },
+              { href: 'https://github.com/PravinkumarM003/', icon: '🐙', label: 'GitHub', color: 'hover:bg-violet-500/20 text-violet-400 hover:border-violet-500/30' },
               { href: 'https://www.instagram.com/pravin.a.i', icon: '📸', label: 'Instagram', color: 'hover:bg-pink-500/20 text-pink-400 hover:border-pink-500/30' },
             ].map(({ href, icon, label, color }) => (
               <a key={label} href={href} target="_blank" rel="noopener noreferrer"

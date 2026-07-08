@@ -130,7 +130,7 @@ export default function Navbar() {
             )}
             {user && streakData && streakData.currentStreak > 0 && (
               <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-orange-500/10 text-orange-400 text-sm font-bold border border-orange-500/20 mr-1" title="Daily Streak">
-                🔥 {streakData.currentStreak}{streakData.currentStreak !== 1 ? 's' : ''}
+                🔥 {streakData.currentStreak}
               </div>
             )}
             

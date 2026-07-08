@@ -1292,9 +1292,9 @@ export default function AdminDashboard() {
                     <label className="text-xs text-slate-400 font-semibold block mb-1.5">Task Type</label>
                     <select value={taskType} onChange={e => setTaskType(e.target.value)}
                       className="w-full rounded-xl bg-black/20 border border-white/10 px-4 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-cyan-500/50 transition-shadow">
-                      <option value="GENERAL">General (Text Answer)</option>
-                      <option value="CODE">Code (Python Compiler)</option>
-                      <option value="QUIZ">One-Mark Quiz (Auto-graded)</option>
+                      <option value="GENERAL">General </option>
+                      <option value="CODE">Code </option>
+                      <option value="QUIZ">One-Mark Quiz </option>
                     </select>
                   </div>
                 </div>
@@ -1322,7 +1322,10 @@ export default function AdminDashboard() {
                     <select value={taskCourseId} onChange={e => setTaskCourseId(e.target.value)}
                       className="w-full rounded-xl bg-black/20 border border-white/10 px-4 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-cyan-500/50 transition-shadow">
                       <option value="">No Course (Global)</option>
-                      {courses.map(c => <option key={c.id} value={c.id}>{c.title}</option>)}
+                      {courses.map(c => {
+                        const displayTitle = (c.title || '').trim().toLowerCase() === 'main course' ? 'Python' : c.title;
+                        return <option key={c.id} value={c.id}>{displayTitle}</option>;
+                      })}
                     </select>
                   </div>
                   <div>
