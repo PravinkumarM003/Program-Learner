@@ -5,6 +5,9 @@ const prisma_1 = require("../prisma");
 const auth_1 = require("../middleware/auth");
 const express_rate_limit_1 = require("express-rate-limit");
 const crypto = require("crypto");
+const multer = require("multer");
+const path = require("path");
+const fs = require("fs");
 const router = (0, express_1.Router)();
 
 function formatUser(user) {
@@ -356,6 +359,48 @@ router.post('/achievements/check', auth_1.authenticateJWT, async (req, res) => {
         res.json({ newlyUnlocked });
     } catch (e) {
         res.status(500).json({ error: 'Failed to check achievements' });
+    }
+});
+
+// Configure Multer storage for avatars
+const uploadDir = path.join(__dirname, '..', '..', 'uploads');
+if (!fs.existsSync(uploadDir)) {
+    fs.mkdirSync(uploadDir, { recursive: true });
+}
+const storage = multer.diskStorage({
+    destination: (_req, _file, cb) => cb(null, uploadDir),
+    filename: (_req, file, cb) => cb(null, `avatar-${Date.now()}${path.extname(file.originalname)}`)
+});
+const upload = multer({
+    storage,
+    limits: { fileSize: 4 * 1024 * 1024 }, // 4MB limit
+    fileFilter: (_req, file, cb) => {
+        const allowed = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp'];
+        if (!allowed.includes(file.mimetype))
+            return cb(new Error('Only PNG, JPEG, JPG, and WEBP images are supported'), false);
+        cb(null, true);
+    }
+});
+
+router.post('/avatar', auth_1.authenticateJWT, upload.single('avatar'), async (req, res) => {
+    try {
+        const userId = req.user?.sub;
+        if (!userId) return res.status(401).json({ error: 'Authentication required' });
+        
+        const file = req.file;
+        if (!file) return res.status(400).json({ error: 'No image file uploaded' });
+        
+        const avatarUrl = `/uploads/${path.basename(file.path)}`;
+        
+        const user = await prisma_1.prisma.user.update({
+            where: { id: userId },
+            data: { avatarUrl },
+            select: { id: true, email: true, name: true, role: true, createdAt: true, unlockedThemes: true, avatarUrl: true }
+        });
+        
+        res.json({ user: formatUser(user) });
+    } catch (e) {
+        res.status(500).json({ error: 'Failed to upload avatar image' });
     }
 });
 
