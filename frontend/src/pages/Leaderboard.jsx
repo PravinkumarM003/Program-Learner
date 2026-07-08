@@ -34,8 +34,8 @@ export default function Leaderboard() {
   }
 
   return (
-    <>
-    <div className="max-w-3xl mx-auto px-4 md:px-6 py-10">
+    <div className="min-h-[80vh] flex flex-col justify-between">
+      <div className="max-w-3xl mx-auto px-4 md:px-6 py-10 w-full flex-grow">
 
       {/* ── Header ── */}
       <div className="text-center mb-10">
@@ -193,8 +193,8 @@ export default function Leaderboard() {
           <Link to="/tasks" className="btn-primary text-sm px-6 py-2.5">Solve your first task →</Link>
         </div>
       )}
+      </div>
+      <Footer />
     </div>
-    <Footer />
-    </>
   )
 }

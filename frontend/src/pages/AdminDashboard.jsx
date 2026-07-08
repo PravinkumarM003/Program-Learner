@@ -63,6 +63,25 @@ export default function AdminDashboard() {
   const [broadcastTitle, setBroadcastTitle] = useState('')
   const [broadcastMessage, setBroadcastMessage] = useState('')
   const [sendingBroadcast, setSendingBroadcast] = useState(false)
+  const [broadcasts, setBroadcasts] = useState([])
+
+  const fetchBroadcasts = async () => {
+    try {
+      const res = await api.get('/admin/notifications/broadcast')
+      setBroadcasts(res.data?.broadcasts || [])
+    } catch (e) {}
+  }
+
+  const deleteBroadcast = async (title, body) => {
+    if (!window.confirm(`Are you sure you want to delete the broadcast "${title}"?`)) return
+    try {
+      await api.delete('/admin/notifications/broadcast', { data: { title, body } })
+      setBroadcasts(prev => prev.filter(b => !(b.title === title && b.body === body)))
+      showToast('Broadcast deleted successfully!', 'success')
+    } catch (err) {
+      showToast('Failed to delete broadcast.', 'error')
+    }
+  }
 
   // Give XP state
   const [giveXpUserId, setGiveXpUserId] = useState('')
@@ -94,6 +113,7 @@ export default function AdminDashboard() {
       setMsg({ ok: true, text: 'Broadcast sent successfully!' })
       setBroadcastTitle('')
       setBroadcastMessage('')
+      fetchBroadcasts() // Refresh the list
     } catch(e) {
       setMsg({ ok: false, text: 'Failed to send broadcast.' })
     } finally {
@@ -171,6 +191,7 @@ export default function AdminDashboard() {
       requests.push(api.get('/admin/violations').catch(() => ({ data: { violations: [] } })))
       requests.push(api.get('/admin/blocked-ips').catch(() => ({ data: { blockedIps: [] } })))
       requests.push(api.get('/feedback').catch(() => ({ data: { feedbacks: [] } })))
+      requests.push(api.get('/admin/notifications/broadcast').catch(() => ({ data: { broadcasts: [] } })))
     }
     
     Promise.all(requests).then((responses) => {
@@ -184,9 +205,11 @@ export default function AdminDashboard() {
         const v = responses[5]
         const b = responses[6]
         const f = responses[7]
+        const br = responses[8]
         setViolations(v.data?.violations || [])
         setBlockedIps(b.data?.blockedIps || [])
         setFeedbacks(f.data?.feedbacks || [])
+        setBroadcasts(br.data?.broadcasts || [])
         
         // Users will be fetched by its own effect, we'll store leaderboard data to merge later
         // Just setting leaderboard is not enough, we need it in a state or ref.
@@ -1127,7 +1150,7 @@ export default function AdminDashboard() {
           </div>
         </div>
       ) : tab === 'broadcast' ? (
-        <div className="max-w-2xl mx-auto mt-6">
+        <div className="max-w-3xl mx-auto mt-6 space-y-6">
           <div className="glass-card rounded-2xl p-6 border border-white/5 shadow-2xl">
             <h2 className="text-xl font-bold text-white mb-2 flex items-center gap-2">📢 Broadcast Notification</h2>
             <p className="text-sm text-slate-400 mb-6">Send a notification to all students.</p>
@@ -1149,6 +1172,35 @@ export default function AdminDashboard() {
                 {sendingBroadcast ? 'Sending...' : 'Send Broadcast'}
               </button>
             </form>
+          </div>
+
+          <div className="glass-card rounded-2xl p-6 border border-white/5 shadow-2xl">
+            <h2 className="text-xl font-bold text-white mb-2">📋 Sent Broadcasts</h2>
+            <p className="text-sm text-slate-400 mb-6">View and delete sent broadcast notifications.</p>
+
+            <div className="space-y-4">
+              {broadcasts.length === 0 ? (
+                <p className="text-slate-500 text-center py-6 text-sm">No sent broadcasts found.</p>
+              ) : (
+                broadcasts.map((b) => (
+                  <div key={b.id} className="p-4 rounded-xl bg-white/5 border border-white/5 flex items-start justify-between gap-4">
+                    <div className="min-w-0 flex-1">
+                      <h3 className="text-sm font-bold text-white truncate">{b.title}</h3>
+                      <p className="text-xs text-slate-400 mt-1 whitespace-pre-wrap">{b.body}</p>
+                      <span className="text-[10px] text-slate-500 block mt-2">
+                        Sent on {new Date(b.createdAt).toLocaleString()}
+                      </span>
+                    </div>
+                    <button
+                      onClick={() => deleteBroadcast(b.title, b.body)}
+                      className="text-xs px-3 py-1.5 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500/20 font-semibold flex-shrink-0 transition-colors"
+                    >
+                      Delete
+                    </button>
+                  </div>
+                ))
+              )}
+            </div>
           </div>
         </div>
       ) : null}

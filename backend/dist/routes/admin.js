@@ -313,4 +313,49 @@ router.post('/notifications/broadcast', auth_1.authenticateJWT, (0, auth_1.autho
     }
 });
 
+router.get('/notifications/broadcast', auth_1.authenticateJWT, (0, auth_1.authorizeRoles)('ADMIN'), async (_req, res) => {
+    try {
+        const notifications = await prisma_1.prisma.notification.findMany({
+            where: { kind: 'SYSTEM' },
+            select: { id: true, title: true, body: true, createdAt: true },
+            orderBy: { createdAt: 'desc' }
+        });
+        
+        const grouped = [];
+        const seen = new Set();
+        for (const n of notifications) {
+            const key = `${n.title}|||${n.body}`;
+            if (!seen.has(key)) {
+                seen.add(key);
+                grouped.push(n);
+            }
+        }
+        res.json({ broadcasts: grouped });
+    } catch (e) {
+        res.status(500).json({ error: 'Failed to fetch broadcasts' });
+    }
+});
+
+router.delete('/notifications/broadcast', auth_1.authenticateJWT, (0, auth_1.authorizeRoles)('ADMIN'), async (req, res) => {
+    try {
+        const title = String(req.body.title || req.query.title || '');
+        const body = String(req.body.body || req.query.body || '');
+        
+        if (!title || !body) {
+            return res.status(400).json({ error: 'Title and body are required' });
+        }
+        
+        await prisma_1.prisma.notification.deleteMany({
+            where: {
+                kind: 'SYSTEM',
+                title,
+                body
+            }
+        });
+        res.json({ success: true });
+    } catch (e) {
+        res.status(500).json({ error: 'Failed to delete notifications' });
+    }
+});
+
 exports.default = router;
