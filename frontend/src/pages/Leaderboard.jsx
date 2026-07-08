@@ -34,7 +34,7 @@ export default function Leaderboard() {
   }
 
   return (
-    <div className="min-h-[80vh] flex flex-col justify-between">
+    <div className="min-h-[calc(100vh-64px)] flex flex-col justify-between">
       <div className="max-w-3xl mx-auto px-4 md:px-6 py-10 w-full flex-grow">
 
       {/* ── Header ── */}

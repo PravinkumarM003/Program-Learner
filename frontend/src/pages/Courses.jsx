@@ -15,7 +15,7 @@ export default function Courses() {
   }, [])
 
   return (
-    <div className="min-h-[80vh] flex flex-col justify-between">
+    <div className="min-h-[calc(100vh-64px)] flex flex-col justify-between">
       <div className="max-w-7xl mx-auto px-4 py-10 w-full flex-grow">
         <div className="mb-8">
           <h1 className="text-3xl font-black text-white">Lessons</h1>

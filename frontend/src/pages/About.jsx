@@ -42,7 +42,7 @@ export default function About() {
   }
 
   return (
-    <div className="min-h-[80vh] flex flex-col justify-between">
+    <div className="min-h-[calc(100vh-64px)] flex flex-col justify-between">
       <div className="max-w-6xl mx-auto px-4 py-12 space-y-16 flex-grow">
 
       {/* ── Hero ── */}
