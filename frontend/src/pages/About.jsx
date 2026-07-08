@@ -71,12 +71,22 @@ export default function About() {
         <div className="absolute -top-16 -right-16 w-56 h-56 bg-cyan-500/15 blur-3xl rounded-full pointer-events-none" />
         <div className="absolute -bottom-16 -left-16 w-56 h-56 bg-violet-500/10 blur-3xl rounded-full pointer-events-none" />
 
-        <img
-          src="/images/pravin-photo.jpg"
-          alt="Pravin Kumar M"
-          className="h-56 w-56 rounded-full object-cover shadow-[0_0_30px_rgba(6,182,212,0.4)] shrink-0 border-4 border-cyan-400/80 relative z-10"
-          style={{ objectPosition: 'center' }}
-        />
+        {/* Royal animated profile picture */}
+        <div className="relative shrink-0 z-10 group mt-4 sm:mt-0">
+          {/* Animated gradient ring */}
+          <div className="absolute -inset-1.5 rounded-full bg-gradient-to-r from-cyan-400 via-violet-500 to-cyan-400 opacity-70 blur-sm group-hover:opacity-100 transition-opacity duration-500 animate-[spin_4s_linear_infinite]" />
+          <div className="absolute -inset-1.5 rounded-full bg-gradient-to-r from-cyan-400 via-violet-500 to-cyan-400 animate-[spin_4s_linear_infinite]" />
+          
+          {/* Inner image container for spacing */}
+          <div className="relative p-2 bg-slate-900 rounded-full h-64 w-64 shadow-[0_0_40px_rgba(139,92,246,0.5)]">
+            <img
+              src="/images/pravin-photo.jpg"
+              alt="Pravin Kumar M"
+              className="h-full w-full rounded-full object-cover"
+              style={{ objectPosition: 'center 15%' }}
+            />
+          </div>
+        </div>
         <div className="space-y-3 text-center sm:text-left relative z-10 flex-1">
           <div>
             <h2 className="font-black text-white text-3xl tracking-tight mb-1">Pravin Kumar M</h2>

@@ -125,7 +125,7 @@ export default function Dashboard() {
       </div>
 
       {/* ── Daily Challenge Banner ── */}
-      {dailyChallenge && !subs.some(s => s.taskId === dailyChallenge.id && s.status === 'Accepted') && (
+      {dailyChallenge && !subs.some(s => s.taskId === dailyChallenge.id) && (
         <Link to={`/tasks/${dailyChallenge.id}`}
           className="flex items-center gap-4 glass-card rounded-2xl p-4 border border-orange-500/30 bg-gradient-to-r from-orange-500/10 to-red-500/10 hover:from-orange-500/20 hover:to-red-500/20 transition-all animate-fade-up group">
           <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl text-2xl" style={{ background: 'linear-gradient(135deg,#f97316,#ef4444)' }}>🔥</span>

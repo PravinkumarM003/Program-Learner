@@ -786,7 +786,7 @@ export default function AdminDashboard() {
                   <div className="z-10 flex items-center gap-2 mt-2 border-t border-white/5 pt-2">
                     <span className="text-[9px] uppercase font-bold text-slate-500">Change Role:</span>
                     <div className="flex gap-1 flex-wrap">
-                      {['USER','TEACHER'].filter(r => r !== u.role).map(r => (
+                      {['STUDENT','TEACHER'].filter(r => r !== u.role).map(r => (
                         <button key={r} disabled={changingRoleId === u.id}
                           onClick={() => changeRole(u.id, r)}
                           className={`px-2 py-0.5 rounded text-[9px] font-bold transition-all disabled:opacity-50 ${

@@ -109,9 +109,9 @@ router.patch('/users/:id/role', auth_1.authenticateJWT, (0, auth_1.authorizeRole
     try {
         const { id } = req.params;
         const { role } = req.body;
-        const validRoles = ['USER', 'TEACHER', 'ADMIN'];
+        const validRoles = ['STUDENT', 'TEACHER', 'ADMIN'];
         if (!validRoles.includes(role)) {
-            return res.status(400).json({ error: 'Invalid role. Must be USER, TEACHER, or ADMIN.' });
+            return res.status(400).json({ error: 'Invalid role. Must be STUDENT, TEACHER, or ADMIN.' });
         }
         const user = await prisma_1.prisma.user.update({
             where: { id },
