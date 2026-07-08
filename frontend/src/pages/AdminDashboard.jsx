@@ -64,6 +64,28 @@ export default function AdminDashboard() {
   const [broadcastMessage, setBroadcastMessage] = useState('')
   const [sendingBroadcast, setSendingBroadcast] = useState(false)
 
+  // Give XP state
+  const [giveXpUserId, setGiveXpUserId] = useState('')
+  const [giveXpAmount, setGiveXpAmount] = useState('')
+  const [givingXp, setGivingXp] = useState(false)
+
+  const handleGiveXp = async (e) => {
+    e.preventDefault()
+    if (!giveXpUserId || !giveXpAmount) return
+    setGivingXp(true)
+    try {
+      await api.post(`/admin/users/${giveXpUserId}/xp`, { xp: Number(giveXpAmount) })
+      setMsg({ ok: true, text: `Successfully gave ${giveXpAmount} XP!` })
+      setGiveXpUserId('')
+      setGiveXpAmount('')
+      fetchUsers() // Refresh user data
+    } catch (err) {
+      setMsg({ ok: false, text: 'Failed to give XP.' })
+    } finally {
+      setGivingXp(false)
+    }
+  }
+
   const sendBroadcast = async (e) => {
     e.preventDefault()
     setSendingBroadcast(true)
@@ -576,6 +598,7 @@ export default function AdminDashboard() {
   const SIDEBAR_ITEMS = [
     { id: 'overview',     icon: '📊', label: 'Overview',       group: 'Main' },
     { id: 'user-monitor', icon: '👥', label: 'Users',          group: 'Main' },
+    { id: 'give-xp',      icon: '⚡', label: 'Give XP',        group: 'Main' },
     { id: 'broadcast',    icon: '📢', label: 'Broadcast',      group: 'Main' },
     { id: 'submissions',  icon: '📝', label: 'Submissions',    group: 'Main', badge: pendingCount },
     { id: 'content-manager', icon: '📚', label: 'Content Manager', group: 'Content' },

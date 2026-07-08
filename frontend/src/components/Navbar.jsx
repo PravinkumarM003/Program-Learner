@@ -121,7 +121,7 @@ export default function Navbar() {
 
           {/* Right side controls */}
           <div className="hidden md:flex items-center gap-2">
-            {user && (
+            {user && user.role !== 'ADMIN' && (
               <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white/5 border border-white/10 mr-1 cursor-default">
                 <span className={`text-[11px] font-black ${getXpDetails(userXp).rankColor}`}>Lvl {getXpDetails(userXp).level}</span>
                 <span className="w-1 h-1 rounded-full bg-slate-600"></span>

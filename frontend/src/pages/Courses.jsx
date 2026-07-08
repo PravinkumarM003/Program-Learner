@@ -43,7 +43,7 @@ export default function Courses() {
 
       {!loading && !error && courses.length > 0 && (
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {courses.map(c => (
+          {courses.filter(c => (c.title || '').trim().toLowerCase() !== 'main course' && (c.title || '').trim().toLowerCase() !== 'main courses').map(c => (
             <Link key={c.id} to={`/courses/${c.id}`}
               className="card-hover glass-card rounded-2xl p-6 flex flex-col gap-3 group">
               <div className="flex items-center justify-between">

@@ -69,19 +69,6 @@ export default function Tasks() {
           </p>
         </div>
 
-        <div className="bg-cyan-500/10 border border-cyan-500/20 rounded-xl p-4 text-sm flex items-center justify-between mb-4">
-          <div className="flex items-center gap-3">
-            <span className="text-2xl">📚</span>
-            <div>
-              <p className="text-white font-semibold">Looking for C or Python tasks?</p>
-              <p className="text-cyan-400">Language-specific tasks are now organized inside their respective Course pages!</p>
-            </div>
-          </div>
-          <Link to="/courses" className="px-4 py-2 bg-cyan-500 hover:bg-cyan-400 text-slate-900 font-bold rounded-lg transition-colors text-xs whitespace-nowrap">
-            Go to Courses
-          </Link>
-        </div>
-
         {/* Filters */}
         <div className="flex flex-col gap-2">
           {/* Type filter */}

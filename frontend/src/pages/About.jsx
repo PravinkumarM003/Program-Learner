@@ -74,8 +74,8 @@ export default function About() {
         <img
           src="/images/pravin-photo.jpg"
           alt="Pravin Kumar M"
-          className="h-50 w-30 rounded-full object-cover shadow-[0_0_30px_rgba(6,182,212,0.4)] shrink-0 border-4 border-cyan-400/80 relative z-10"
-          style={{ objectPosition: 'center top' }}
+          className="h-56 w-56 rounded-full object-cover shadow-[0_0_30px_rgba(6,182,212,0.4)] shrink-0 border-4 border-cyan-400/80 relative z-10"
+          style={{ objectPosition: 'center' }}
         />
         <div className="space-y-3 text-center sm:text-left relative z-10 flex-1">
           <div>

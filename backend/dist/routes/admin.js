@@ -124,6 +124,25 @@ router.patch('/users/:id/role', auth_1.authenticateJWT, (0, auth_1.authorizeRole
     }
 });
 
+// Give XP endpoint
+router.post('/users/:id/xp', auth_1.authenticateJWT, (0, auth_1.authorizeRoles)('ADMIN'), async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { xp } = req.body;
+        if (!xp || typeof xp !== 'number' || xp <= 0) {
+            return res.status(400).json({ error: 'Invalid XP amount.' });
+        }
+        const user = await prisma_1.prisma.user.update({
+            where: { id },
+            data: { xp: { increment: xp }, currentXp: { increment: xp } },
+            select: { id: true, xp: true, currentXp: true }
+        });
+        res.json({ message: 'XP granted successfully', user });
+    } catch (e) {
+        res.status(500).json({ error: 'Failed to grant XP' });
+    }
+});
+
 router.post('/lessons', auth_1.authenticateJWT, (0, auth_1.authorizeRoles)('ADMIN', 'TEACHER'), async (req, res) => {
     try {
         const { title, content, notes, videoUrl, difficulty, category } = req.body;

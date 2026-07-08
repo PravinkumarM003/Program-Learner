@@ -91,12 +91,16 @@ export default function Dashboard() {
   const myRank        = myRankIndex >= 0 ? `#${myRankIndex + 1}` : '—'
   const acceptedCount = subs.filter(s => s.status === 'Accepted').length
 
-  const STATS = [
+  let STATS = [
     { label: 'Available XP', value: xpData.currentXp !== undefined ? xpData.currentXp : totalXp, icon: '⚡', gradient: '#f59e0b, #ef4444', sub: `Total Earned: ${totalXp} · Used: ${xpData.spentXp || 0}` },
     { label: 'Lessons Completed', value: lessonsDone,   icon: '📚', gradient: '#10b981, #059669', sub: null },
     { label: 'Tasks Accepted',    value: acceptedCount, icon: '✅', gradient: '#06b6d4, #3b82f6', sub: `of ${subs.length} total submissions` },
     { label: 'Leaderboard Rank',  value: myRank,        icon: '🏆', gradient: '#8b5cf6, #7c3aed', sub: myRankIndex >= 0 ? 'Keep climbing!' : 'Submit tasks to rank' },
   ]
+
+  if (user?.role === 'ADMIN') {
+    STATS = STATS.filter(s => s.label !== 'Available XP')
+  }
 
   const recentSubs = subs.slice(0, 6)
 
@@ -121,7 +125,7 @@ export default function Dashboard() {
       </div>
 
       {/* ── Daily Challenge Banner ── */}
-      {dailyChallenge && (
+      {dailyChallenge && !subs.some(s => s.taskId === dailyChallenge.id && s.status === 'Accepted') && (
         <Link to={`/tasks/${dailyChallenge.id}`}
           className="flex items-center gap-4 glass-card rounded-2xl p-4 border border-orange-500/30 bg-gradient-to-r from-orange-500/10 to-red-500/10 hover:from-orange-500/20 hover:to-red-500/20 transition-all animate-fade-up group">
           <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl text-2xl" style={{ background: 'linear-gradient(135deg,#f97316,#ef4444)' }}>🔥</span>
