@@ -81,6 +81,8 @@ export default function AdminDashboard() {
 
   // Task Form State
   const [taskModalOpen, setTaskModalOpen] = useState(false)
+  const [taskLangPrompt, setTaskLangPrompt] = useState(false)   // language picker before task modal
+  const [lessonLangPrompt, setLessonLangPrompt] = useState(false) // language picker before lesson modal
   const [editingTask, setEditingTask] = useState(null)
   const [taskTitle, setTaskTitle] = useState('')
   const [taskDesc, setTaskDesc] = useState('')
@@ -284,7 +286,7 @@ export default function AdminDashboard() {
       .finally(() => setSavingSub(false))
   }
 
-  const openCreateTask = () => {
+  const openCreateTask = (lang) => {
     setEditingTask(null)
     setTaskTitle('')
     setTaskDesc('')
@@ -301,6 +303,8 @@ export default function AdminDashboard() {
     setTaskMaxMarks('')
     setTaskCourseId('')
     setQuizQuestions([])
+    setTaskCategory(lang || 'C')  // reset to chosen language
+    setTaskLangPrompt(false)
     setTaskModalOpen(true)
   }
 
@@ -406,13 +410,14 @@ export default function AdminDashboard() {
       .catch(() => setMsg({ ok: false, text: 'Failed to delete lesson.' }))
   }
 
-  const openCreateLesson = () => {
+  const openCreateLesson = (lang) => {
     setLessonTitle('')
     setLessonContent('')
     setLessonNotes('')
     setLessonVideoUrl('')
     setLessonDifficulty('Beginner')
-    setLessonCategory('C')
+    setLessonCategory(lang || 'C')
+    setLessonLangPrompt(false)
     setLessonModalOpen(true)
   }
 
@@ -654,10 +659,10 @@ export default function AdminDashboard() {
           </div>
           <div className="flex items-center gap-3">
             {tab === 'tasks' && (
-              <button onClick={openCreateTask} className="btn-primary text-xs px-4 py-2">➕ Create Task</button>
+              <button onClick={() => setTaskLangPrompt(true)} className="btn-primary text-xs px-4 py-2">➕ Create Task</button>
             )}
             {tab === 'lessons' && (
-              <button onClick={openCreateLesson} className="btn-primary text-xs px-4 py-2">➕ Create Lesson</button>
+              <button onClick={() => setLessonLangPrompt(true)} className="btn-primary text-xs px-4 py-2">➕ Create Lesson</button>
             )}
             <button onClick={fetchAllData} className="btn-ghost text-xs px-3 py-2" title="Refresh">🔄 Refresh</button>
           </div>
@@ -859,7 +864,7 @@ export default function AdminDashboard() {
                 <h3 className="font-bold text-white flex items-center gap-2">
                   <span className="text-xl">📚</span> {contentTrack} Lessons
                 </h3>
-                <button onClick={openCreateLesson}
+                <button onClick={() => openCreateLesson(contentTrack)}
                   className="rounded-lg bg-cyan-500/10 text-cyan-400 px-3 py-1 text-xs font-bold hover:bg-cyan-500/20 transition-colors">
                   ➕ New Lesson
                 </button>
@@ -886,7 +891,7 @@ export default function AdminDashboard() {
                 <h3 className="font-bold text-white flex items-center gap-2">
                   <span className="text-xl">🎯</span> {contentTrack} Tasks
                 </h3>
-                <button onClick={openCreateTask}
+                <button onClick={() => openCreateTask(contentTrack)}
                   className="rounded-lg bg-violet-500/10 text-violet-400 px-3 py-1 text-xs font-bold hover:bg-violet-500/20 transition-colors">
                   ➕ New Task
                 </button>
@@ -1185,6 +1190,74 @@ export default function AdminDashboard() {
                 🔍 Review
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Language Picker — Task */}
+      {taskLangPrompt && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
+          <div className="glass-card rounded-3xl w-full max-w-sm p-8 shadow-2xl animate-fade-up">
+            <h2 className="font-black text-white text-xl mb-1">➕ Create New Task</h2>
+            <p className="text-sm text-slate-400 mb-8">Choose the programming language for this task</p>
+            <div className="grid grid-cols-2 gap-4">
+              <button
+                onClick={() => openCreateTask('C')}
+                className="flex flex-col items-center gap-3 p-6 rounded-2xl border-2 border-cyan-500/40 bg-cyan-500/10 hover:bg-cyan-500/20 hover:border-cyan-500 transition-all group"
+              >
+                <span className="text-4xl">🖥️</span>
+                <span className="font-black text-white text-lg group-hover:text-cyan-400 transition-colors">C</span>
+                <span className="text-xs text-slate-400">C Language Track</span>
+              </button>
+              <button
+                onClick={() => openCreateTask('Python')}
+                className="flex flex-col items-center gap-3 p-6 rounded-2xl border-2 border-violet-500/40 bg-violet-500/10 hover:bg-violet-500/20 hover:border-violet-500 transition-all group"
+              >
+                <span className="text-4xl">🐍</span>
+                <span className="font-black text-white text-lg group-hover:text-violet-400 transition-colors">Python</span>
+                <span className="text-xs text-slate-400">Python Language Track</span>
+              </button>
+            </div>
+            <button
+              onClick={() => setTaskLangPrompt(false)}
+              className="mt-6 w-full rounded-xl border border-white/10 px-4 py-2.5 text-sm text-slate-400 hover:bg-white/5 hover:text-white transition-colors"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Language Picker — Lesson */}
+      {lessonLangPrompt && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
+          <div className="glass-card rounded-3xl w-full max-w-sm p-8 shadow-2xl animate-fade-up">
+            <h2 className="font-black text-white text-xl mb-1">📚 Create New Lesson</h2>
+            <p className="text-sm text-slate-400 mb-8">Choose the programming language for this lesson</p>
+            <div className="grid grid-cols-2 gap-4">
+              <button
+                onClick={() => openCreateLesson('C')}
+                className="flex flex-col items-center gap-3 p-6 rounded-2xl border-2 border-cyan-500/40 bg-cyan-500/10 hover:bg-cyan-500/20 hover:border-cyan-500 transition-all group"
+              >
+                <span className="text-4xl">🖥️</span>
+                <span className="font-black text-white text-lg group-hover:text-cyan-400 transition-colors">C</span>
+                <span className="text-xs text-slate-400">C Language Track</span>
+              </button>
+              <button
+                onClick={() => openCreateLesson('Python')}
+                className="flex flex-col items-center gap-3 p-6 rounded-2xl border-2 border-violet-500/40 bg-violet-500/10 hover:bg-violet-500/20 hover:border-violet-500 transition-all group"
+              >
+                <span className="text-4xl">🐍</span>
+                <span className="font-black text-white text-lg group-hover:text-violet-400 transition-colors">Python</span>
+                <span className="text-xs text-slate-400">Python Language Track</span>
+              </button>
+            </div>
+            <button
+              onClick={() => setLessonLangPrompt(false)}
+              className="mt-6 w-full rounded-xl border border-white/10 px-4 py-2.5 text-sm text-slate-400 hover:bg-white/5 hover:text-white transition-colors"
+            >
+              Cancel
+            </button>
           </div>
         </div>
       )}

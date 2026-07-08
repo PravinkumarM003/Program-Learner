@@ -35,11 +35,12 @@ function PageLoader() {
 }
 
 
-function PrivateRoute({ children, role, allowGuest = false }) {
+function PrivateRoute({ children, role, allowedRoles, allowGuest = false }) {
   const user = useStore(s => s.user);
   if (allowGuest) return children;
   if (!user) return <Navigate to="/login" replace />;
   if (role && user.role !== role) return <Navigate to="/dashboard" replace />;
+  if (allowedRoles && !allowedRoles.includes(user.role)) return <Navigate to="/dashboard" replace />;
   return children;
 }
 
@@ -96,7 +97,7 @@ export default function App() {
           <Route path="/submissions" element={<PrivateRoute><Submissions /></PrivateRoute>} />
           <Route path="/leaderboard" element={<PrivateRoute><Leaderboard /></PrivateRoute>} />
           <Route path="/about" element={<About />} />
-          <Route path="/admin" element={<PrivateRoute role="ADMIN"><AdminDashboard /></PrivateRoute>} />
+          <Route path="/admin" element={<PrivateRoute allowedRoles={['ADMIN', 'TEACHER']}><AdminDashboard /></PrivateRoute>} />
           <Route path="/settings" element={<PrivateRoute><Settings /></PrivateRoute>} />
           <Route path="/playground" element={<PrivateRoute><Playground /></PrivateRoute>} />
 

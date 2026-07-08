@@ -167,7 +167,7 @@ export default function Tasks() {
       {/* ── Tasks grid ── */}
       {!loading && !error && filtered.length > 0 && (
         <div className="space-y-10">
-          {['Python', 'C', 'Other'].map(categoryGroup => {
+          {['C', 'Python', 'Other'].map(categoryGroup => {
             const catTasks = filtered.filter(t => {
               const cat = t.category?.toLowerCase() || 'c';
               if (categoryGroup === 'Python') return cat === 'python';
@@ -177,14 +177,33 @@ export default function Tasks() {
 
             if (catTasks.length === 0) return null;
 
+            const dividerColor = categoryGroup === 'C'
+              ? 'bg-cyan-500/40'
+              : categoryGroup === 'Python'
+              ? 'bg-violet-500/40'
+              : 'bg-white/10'
+            const labelColor = categoryGroup === 'C'
+              ? 'text-cyan-400'
+              : categoryGroup === 'Python'
+              ? 'text-violet-400'
+              : 'text-slate-400'
+            const icon = categoryGroup === 'C' ? '🖥️' : categoryGroup === 'Python' ? '🐍' : '📝'
+            const label = categoryGroup === 'Other' ? 'General' : categoryGroup
+
             return (
               <div key={categoryGroup}>
-                <div className="flex items-center gap-4 mb-6">
-                  <div className="h-px bg-white/10 flex-1"></div>
-                  <span className="text-white font-bold tracking-wider uppercase text-sm">
-                    {categoryGroup === 'Other' ? 'General' : categoryGroup}
+                <div className="flex items-center gap-3 mb-6">
+                  <div className={`h-px flex-1 ${dividerColor}`}></div>
+                  <span className={`flex items-center gap-2 font-black tracking-wider uppercase text-sm px-3 py-1 rounded-full border ${
+                    categoryGroup === 'C'
+                      ? 'bg-cyan-500/10 border-cyan-500/30 text-cyan-400'
+                      : categoryGroup === 'Python'
+                      ? 'bg-violet-500/10 border-violet-500/30 text-violet-400'
+                      : 'bg-white/5 border-white/10 text-slate-400'
+                  }`}>
+                    <span>{icon}</span> {label}
                   </span>
-                  <div className="h-px bg-white/10 flex-1"></div>
+                  <div className={`h-px flex-1 ${dividerColor}`}></div>
                 </div>
                 
                 <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5 stagger">
