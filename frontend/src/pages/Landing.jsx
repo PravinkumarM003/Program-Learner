@@ -251,7 +251,7 @@ export default function Landing() {
               style={{ background: 'linear-gradient(135deg, #06b6d4, #8b5cf6)' }}>PL</span>
             <span className="text-sm font-semibold text-white">Programmer Learner</span>
           </div>
-          <p className="text-xs" style={{ color: 'var(--text-muted)' }}>© 2025 Programmer Learner. Built with ❤️ for developers.</p>
+          <p className="text-xs" style={{ color: 'var(--text-muted)' }}>© {new Date().getFullYear()} Programmer Learner. All rights reserved. Built with ❤️ for developers.</p>
           <div className="flex gap-4 text-xs" style={{ color: 'var(--text-muted)' }}>
             <Link to="/about" className="hover:text-white transition-colors">About</Link>
             <Link to="/courses" className="hover:text-white transition-colors">Lessons</Link>
