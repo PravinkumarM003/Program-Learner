@@ -192,7 +192,7 @@ export default function Navbar() {
                   className="flex items-center gap-2 px-2 py-1.5 rounded-xl hover:bg-white/5 transition-colors group"
                 >
                   <img
-                    src="/images/pravin-photo.jpg"
+                    src={user.avatarUrl || "/images/pravin-photo.jpg"}
                     alt="Profile"
                     className="flex h-8 w-8 items-center justify-center rounded-full object-cover flex-shrink-0 transition-shadow group-hover:shadow-cyan-500/30 ring-2 ring-cyan-500/30"
                   />

@@ -9,6 +9,7 @@ export default function Settings() {
   const currentIdeTheme = useStore(s => s.ideTheme)
   const showToast = useStore(s => s.showToast)
   const [name, setName] = useState(user?.name || '')
+  const [avatarUrl, setAvatarUrl] = useState(user?.avatarUrl || '')
   const [saving, setSaving] = useState(false)
   const [msg, setMsg] = useState(null)
   const [xpData, setXpData] = useState(null)
@@ -46,7 +47,7 @@ export default function Settings() {
     setSaving(true)
     setMsg(null)
     try {
-      const r = await api.patch('/user/me', { name })
+      const r = await api.patch('/user/me', { name, avatarUrl })
       setUser(r.data?.user)
       setMsg({ ok: true, text: 'Profile updated!' })
     } catch {
@@ -70,9 +71,11 @@ export default function Settings() {
         <h2 className="font-bold text-white mb-6 flex items-center gap-2">👤 Profile</h2>
 
         <div className="flex items-center gap-4 mb-6">
-          <span className="flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-cyan-500 to-violet-600 text-2xl font-black text-white shadow-lg">
-            {(user?.name || user?.email || 'U')[0].toUpperCase()}
-          </span>
+          <img
+            src={user?.avatarUrl || "/images/pravin-photo.jpg"}
+            alt="Profile"
+            className="flex h-16 w-16 items-center justify-center rounded-2xl object-cover shadow-lg ring-2 ring-cyan-500/30"
+          />
           <div>
             <p className="font-semibold text-white">{user?.name || '—'}</p>
             <p className="text-sm text-slate-400">{user?.email}</p>
@@ -88,6 +91,12 @@ export default function Settings() {
             <input value={name} onChange={e => setName(e.target.value)}
               className="w-full rounded-xl bg-white/5 border border-white/10 px-4 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-cyan-500/40 placeholder-slate-600"
               placeholder="Your name" />
+          </div>
+          <div>
+            <label className="text-xs text-slate-400 font-semibold block mb-1.5">Profile Photo URL</label>
+            <input value={avatarUrl} onChange={e => setAvatarUrl(e.target.value)}
+              className="w-full rounded-xl bg-white/5 border border-white/10 px-4 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-cyan-500/40 placeholder-slate-600"
+              placeholder="Leave empty to use Gravatar / default" />
           </div>
           <div>
             <label className="text-xs text-slate-400 font-semibold block mb-1.5">Email</label>

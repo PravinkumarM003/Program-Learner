@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { useStore } from '../store/useStore'
 import api from '../api/client'
 import { getXpDetails } from '../utils/ranks'
+import Footer from '../components/Footer'
 
 const PODIUM = [
   { rank: 2, medal: '🥈', height: 'h-20',  label: '2nd', color: '#94a3b8', glow: 'rgba(148,163,184,0.2)' },
@@ -33,6 +34,7 @@ export default function Leaderboard() {
   }
 
   return (
+    <>
     <div className="max-w-3xl mx-auto px-4 md:px-6 py-10">
 
       {/* ── Header ── */}
@@ -192,5 +194,7 @@ export default function Leaderboard() {
         </div>
       )}
     </div>
+    <Footer />
+    </>
   )
 }

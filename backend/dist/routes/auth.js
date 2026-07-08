@@ -118,7 +118,9 @@ router.get('/google/callback', async (req, res) => {
         }
         let user = await prisma_1.prisma.user.findUnique({ where: { email } });
         if (!user) {
-            user = await prisma_1.prisma.user.create({ data: { email, name: info.name || undefined, googleId: info.sub } });
+            user = await prisma_1.prisma.user.create({ data: { email, name: info.name || undefined, googleId: info.sub, avatarUrl: info.picture || null } });
+        } else if (!user.avatarUrl && info.picture) {
+            user = await prisma_1.prisma.user.update({ where: { id: user.id }, data: { avatarUrl: info.picture } });
         }
         // Sign tokens
         const access = (0, jwt_1.signAccessToken)({ sub: user.id, role: user.role });

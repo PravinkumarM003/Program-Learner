@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import api from '../api/client'
+import Footer from '../components/Footer'
 
 const DIFF_COLOR = { Beginner: 'text-green-400', Intermediate: 'text-yellow-400', Advanced: 'text-red-400' }
 
@@ -14,6 +15,7 @@ export default function Courses() {
   }, [])
 
   return (
+    <>
     <div className="max-w-7xl mx-auto px-4 py-10">
       <div className="mb-8">
         <h1 className="text-3xl font-black text-white">Lessons</h1>
@@ -61,5 +63,7 @@ export default function Courses() {
         </div>
       )}
     </div>
+    <Footer />
+    </>
   )
 }

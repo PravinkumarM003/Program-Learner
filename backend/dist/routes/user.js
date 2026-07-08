@@ -4,7 +4,28 @@ const express_1 = require("express");
 const prisma_1 = require("../prisma");
 const auth_1 = require("../middleware/auth");
 const express_rate_limit_1 = require("express-rate-limit");
+const crypto = require("crypto");
 const router = (0, express_1.Router)();
+
+function formatUser(user) {
+    if (!user) return null;
+    const email = user.email || '';
+    const hash = crypto.createHash('md5').update(email.trim().toLowerCase()).digest('hex');
+    const isPravin = email.toLowerCase().includes('pravin') || (user.name && user.name.toLowerCase().includes('pravin'));
+    
+    // Default avatar: Pravin's photo if it's Pravin, otherwise Gravatar (identicon default)
+    const defaultAvatar = isPravin ? '/images/pravin-photo.jpg' : `https://www.gravatar.com/avatar/${hash}?d=identicon`;
+    
+    return {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        role: user.role,
+        createdAt: user.createdAt,
+        unlockedThemes: user.unlockedThemes,
+        avatarUrl: user.avatarUrl || defaultAvatar
+    };
+}
 
 // Stricter rate limit for AI endpoint (5 requests per minute)
 const aiLimiter = (0, express_rate_limit_1.default)({
@@ -28,10 +49,10 @@ router.get('/me', async (req, res) => {
 
         const user = await prisma_1.prisma.user.findUnique({
             where: { id: userId },
-            select: { id: true, email: true, name: true, role: true, createdAt: true, unlockedThemes: true }
+            select: { id: true, email: true, name: true, role: true, createdAt: true, unlockedThemes: true, avatarUrl: true }
         });
         if (!user) return res.json({ user: null });
-        res.json({ user });
+        res.json({ user: formatUser(user) });
     } catch(err) {
         return res.json({ user: null });
     }
@@ -42,18 +63,22 @@ router.patch('/me', auth_1.authenticateJWT, async (req, res) => {
         const userId = req.user?.sub;
         if (!userId) return res.status(401).json({ error: 'Authentication required' });
         
-        const { name } = req.body;
-        if (!name || typeof name !== 'string' || name.trim() === '') {
-            return res.status(400).json({ error: 'Name is required' });
+        const { name, avatarUrl } = req.body;
+        const updateData = {};
+        if (name && typeof name === 'string' && name.trim() !== '') {
+            updateData.name = name.trim();
+        }
+        if (avatarUrl !== undefined) {
+            updateData.avatarUrl = avatarUrl;
         }
         
         const user = await prisma_1.prisma.user.update({
             where: { id: userId },
-            data: { name: name.trim() },
-            select: { id: true, email: true, name: true, role: true, createdAt: true, unlockedThemes: true }
+            data: updateData,
+            select: { id: true, email: true, name: true, role: true, createdAt: true, unlockedThemes: true, avatarUrl: true }
         });
         
-        res.json({ user });
+        res.json({ user: formatUser(user) });
     } catch (e) {
         res.status(500).json({ error: 'Failed to update user profile' });
     }

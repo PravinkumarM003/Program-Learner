@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useStore } from '../store/useStore'
 import api from '../api/client'
 import { Link } from 'react-router-dom'
+import Footer from '../components/Footer'
 
 const PLATFORM_FEATURES = [
   { icon: '💻', label: 'C & Python Courses', desc: 'Separate structured paths for both languages' },
@@ -41,6 +42,7 @@ export default function About() {
   }
 
   return (
+    <>
     <div className="max-w-6xl mx-auto px-4 py-12 space-y-16">
 
       {/* ── Hero ── */}
@@ -206,5 +208,7 @@ export default function About() {
       </div>
 
     </div>
+    <Footer />
+    </>
   )
 }
