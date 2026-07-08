@@ -291,7 +291,10 @@ export default function Dashboard() {
                 <Link to="/courses" className="text-[11px] text-cyan-400 hover:text-cyan-300 font-semibold">All courses →</Link>
               </div>
               <div className="space-y-3">
-                {courses.slice(0, 4).map(course => {
+                {courses
+                  .filter(c => (c.title || '').trim().toLowerCase() !== 'main course' && (c.title || '').trim().toLowerCase() !== 'main courses')
+                  .slice(0, 4)
+                  .map(course => {
                   const totalLessons = course.lessons?.length ?? 0
                   const completedCount = (course.lessons || []).filter(l => progress.some(p => p.lessonId === l.id && p.completed)).length
                   const pct = totalLessons > 0 ? Math.round((completedCount / totalLessons) * 100) : 0
