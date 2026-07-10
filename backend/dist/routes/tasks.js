@@ -629,8 +629,8 @@ router.post('/:id/violation', auth_1.authenticateJWT, async (req, res) => {
                     userId: admin.id,
                     title: autoBlocked ? '🛑 Auto-Block: Cheat Alert' : '🚨 Cheat Alert: Task Violation',
                     body: autoBlocked 
-                        ? `Student "${studentName}" (IP: ${ipAddress}) was AUTO-BLOCKED for triggering 3+ violations. Latest reason: ${reason || 'Unknown'}`
-                        : `Student "${studentName}" (IP: ${ipAddress}) triggered a lock-down violation on task "${task.title}". Reason: ${reason || 'Unknown'}`,
+                        ? `Student "${studentName}" (ID: ${userId}, IP: ${ipAddress}) was AUTO-BLOCKED for triggering 3+ violations. Latest reason: ${reason || 'Unknown'}`
+                        : `Student "${studentName}" (ID: ${userId}, IP: ${ipAddress}) triggered a lock-down violation on task "${task.title}". Reason: ${reason || 'Unknown'}`,
                     kind: 'VIOLATION'
                 }
             });

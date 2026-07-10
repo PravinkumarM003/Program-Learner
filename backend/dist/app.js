@@ -66,19 +66,10 @@ async function notifyAdmins(title, body, meta = {}) {
     }
     catch (e) { }
 }
-app.use(async (req, res, next) => {
+app.use((req, res, next) => {
     const ip = getClientIp(req);
     if (global.blockedIpsCache && global.blockedIpsCache.has(ip)) {
         return res.status(403).json({ error: 'This IP address has been blocked by the administrator.' });
-    }
-    const requestText = `${req.method} ${req.originalUrl} ${JSON.stringify(req.query || {})}`.slice(0, 2000);
-    if (suspiciousPatterns.some(pattern => pattern.test(requestText))) {
-        await notifyAdmins('Security alert: suspicious request', `Suspicious request detected from IP ${ip}: ${req.method} ${req.originalUrl}`, {
-            ip,
-            method: req.method,
-            url: req.originalUrl,
-            userAgent: req.headers['user-agent'] || 'unknown'
-        });
     }
     next();
 });
@@ -105,6 +96,45 @@ app.use((0, cors_1.default)({
 }));
 
 // CSRF removed for Bearer token auth
+
+const jwt_1 = require("./utils/jwt");
+app.use(async (req, res, next) => {
+    const ip = getClientIp(req);
+    let userId = 'unauthenticated';
+    let userEmail = 'unauthenticated';
+    try {
+        const authHeader = req.headers.authorization;
+        let token = req.cookies?.access_token;
+        if (authHeader && authHeader.startsWith('Bearer ')) {
+            token = authHeader.split(' ')[1];
+        }
+        if (token) {
+            const payload = (0, jwt_1.verifyAccessToken)(token);
+            if (payload) {
+                userId = payload.sub || 'unknown';
+                userEmail = payload.email || 'unknown';
+            }
+        }
+    } catch (err) {}
+
+    const requestText = `${req.method} ${req.originalUrl} ${JSON.stringify(req.query || {})} ${JSON.stringify(req.body || {})}`.slice(0, 5000);
+    if (suspiciousPatterns.some(pattern => pattern.test(requestText))) {
+        await notifyAdmins(
+            '🛑 Hacking Attempt Blocked',
+            `Suspicious request detected from IP: ${ip} (User ID: ${userId}, Email: ${userEmail})\nRequest: ${req.method} ${req.originalUrl}`,
+            {
+                ip,
+                userId,
+                userEmail,
+                method: req.method,
+                url: req.originalUrl,
+                userAgent: req.headers['user-agent'] || 'unknown'
+            }
+        );
+        return res.status(400).json({ error: 'Suspicious request pattern or malicious payload detected.' });
+    }
+    next();
+});
 
 const limiter = (0, express_rate_limit_1.default)({
     windowMs: 15 * 60 * 1000,
