@@ -5,7 +5,22 @@ const BASE_URL = import.meta.env.VITE_API_URL || 'https://program-learner.onrend
 
 const api = axios.create({
   baseURL: BASE_URL,
+  timeout: 12000, // 12 second timeout — works on slow 2G/3G connections
 })
+
+// ─── Online/Offline Status Banner ────────────────────────────────────────────
+if (typeof window !== 'undefined') {
+  window.addEventListener('offline', () => {
+    const showToast = useStore.getState().showToast
+    if (showToast) showToast('⚠️ You are offline. The app will use cached data.', 'warning')
+  })
+  window.addEventListener('online', () => {
+    const showToast = useStore.getState().showToast
+    if (showToast) showToast('✅ Back online! Data will refresh automatically.', 'success')
+    // Reload the current page data silently
+    window.dispatchEvent(new CustomEvent('connection-restored'))
+  })
+}
 
 // ─── Request Interceptor: attach Bearer token ───────────────────────────
 api.interceptors.request.use((config) => {
@@ -15,6 +30,7 @@ api.interceptors.request.use((config) => {
   }
   return config
 })
+
 
 // ─── Response Interceptor: refresh token on 401 ──────────────────────────────
 let isRefreshing = false
