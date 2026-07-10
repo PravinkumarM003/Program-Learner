@@ -489,7 +489,7 @@ router.post('/:id/submit', auth_1.authenticateJWT, async (req, res) => {
             marks = task.maxMarks || 10;
             status = 'Accepted';
             feedback = 'Auto-graded: Output matches expected sample output.';
-            earnedXp = task.baseXp || 0;
+        earnedXp = task.baseXp || 0;
             
             if (earnedXp > 0) {
                 await prisma_1.prisma.leaderboard.upsert({
