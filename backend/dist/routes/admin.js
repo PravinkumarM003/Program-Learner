@@ -357,5 +357,57 @@ router.delete('/notifications/broadcast', auth_1.authenticateJWT, (0, auth_1.aut
         res.status(500).json({ error: 'Failed to delete notifications' });
     }
 });
+// Get all certificates (Admin)
+router.get('/certificates', auth_1.requireAuth, auth_1.requireAdmin, async (req, res) => {
+    try {
+        const certificates = await prisma_1.prisma.certificate.findMany({
+            include: {
+                user: { select: { name: true, email: true } },
+                course: { select: { title: true } }
+            },
+            orderBy: { requestedAt: 'desc' }
+        });
+        res.json({ certificates });
+    } catch (e) {
+        console.error(e);
+        res.status(500).json({ error: 'Failed to fetch certificates' });
+    }
+});
+
+// Approve or Reject certificate
+router.patch('/certificates/:id/status', auth_1.requireAuth, auth_1.requireAdmin, async (req, res) => {
+    try {
+        const { status } = req.body; // 'APPROVED' or 'REJECTED'
+        if (!['APPROVED', 'REJECTED'].includes(status)) {
+            return res.status(400).json({ error: 'Invalid status' });
+        }
+
+        const certificate = await prisma_1.prisma.certificate.update({
+            where: { id: req.params.id },
+            data: { 
+                status,
+                approvedAt: status === 'APPROVED' ? new Date() : null
+            },
+            include: { course: true }
+        });
+
+        // Notify user
+        await prisma_1.prisma.notification.create({
+            data: {
+                userId: certificate.userId,
+                title: status === 'APPROVED' ? 'Certificate Approved! 🎉' : 'Certificate Request Denied',
+                body: status === 'APPROVED' 
+                    ? `Your certificate for ${certificate.course.title} has been approved. You can now download it from the course page.`
+                    : `Your certificate request for ${certificate.course.title} was denied.`,
+                kind: 'SYSTEM'
+            }
+        });
+
+        res.json({ success: true, certificate });
+    } catch (e) {
+        console.error(e);
+        res.status(500).json({ error: 'Failed to update certificate status' });
+    }
+});
 
 exports.default = router;

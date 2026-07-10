@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import api from '../api/client'
 import { useStore } from '../store/useStore'
+import { downloadCertificate } from '../utils/certificate'
 
 const DIFF_COLOR = {
   Beginner: 'bg-green-500/10 text-green-400',
@@ -27,15 +28,18 @@ export default function CourseDetail() {
   const [course, setCourse] = useState(null)
   const [progress, setProgress] = useState([]) // array of LessonProgress objects
   const [submittedTaskIds, setSubmittedTaskIds] = useState(new Set())
+  const [certStatus, setCertStatus] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [downloading, setDownloading] = useState(false)
+  const [requesting, setRequesting] = useState(false)
 
   useEffect(() => {
     Promise.all([
       api.get(`/courses/${id}`).then(r => setCourse(r.data?.course)),
       api.get('/progress').then(r => setProgress(r.data?.progress || [])).catch(() => {}),
-      api.get('/submissions').then(r => setSubmittedTaskIds(new Set((r.data?.submissions || []).map(s => s.taskId)))).catch(() => {})
+      api.get('/submissions').then(r => setSubmittedTaskIds(new Set((r.data?.submissions || []).map(s => s.taskId)))).catch(() => {}),
+      api.get(`/certificates/${id}`).then(r => setCertStatus(r.data?.certificate)).catch(() => {})
     ])
       .catch(() => setError('Course not found.'))
       .finally(() => setLoading(false))
@@ -66,60 +70,23 @@ export default function CourseDetail() {
   const progressPct = totalLessons > 0 ? Math.round((completedCount / totalLessons) * 100) : 0
   const totalXpEarned = (course.lessons || []).reduce((sum, l) => sum + (progressMap[l.id]?.xp || 0), 0)
 
-  const downloadCertificate = () => {
+  const handleDownloadCertificate = () => {
     setDownloading(true)
     const studentName = user?.name || user?.email || 'Student'
-    const date = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
-    const html = `<!DOCTYPE html>
-<html>
-<head>
-<meta charset="UTF-8">
-<title>Certificate - ${course.title}</title>
-<style>
-  @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Inter:wght@400;600&display=swap');
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-  body { background: #fff; display: flex; align-items: center; justify-content: center; min-height: 100vh; font-family: 'Inter', sans-serif; }
-  .cert { width: 900px; min-height: 620px; border: 12px solid #06b6d4; border-radius: 24px; padding: 60px 80px; text-align: center; position: relative; background: linear-gradient(135deg,#f0fdfa,#eff6ff); }
-  .cert::before { content: ''; position: absolute; inset: 16px; border: 2px dashed #a5f3fc; border-radius: 14px; pointer-events: none; }
-  .logo { font-size: 48px; margin-bottom: 8px; }
-  .brand { font-size: 13px; letter-spacing: 4px; text-transform: uppercase; color: #0891b2; font-weight: 600; margin-bottom: 40px; }
-  .cert-title { font-family: 'Playfair Display', serif; font-size: 42px; color: #0c4a6e; margin-bottom: 12px; }
-  .sub { font-size: 16px; color: #64748b; margin-bottom: 36px; }
-  .name { font-family: 'Playfair Display', serif; font-size: 52px; color: #0891b2; border-bottom: 3px solid #0891b2; display: inline-block; padding-bottom: 8px; margin-bottom: 28px; }
-  .course-label { font-size: 13px; letter-spacing: 3px; text-transform: uppercase; color: #64748b; margin-bottom: 8px; }
-  .course-name { font-size: 26px; font-weight: 700; color: #1e293b; margin-bottom: 40px; }
-  .footer { display: flex; justify-content: space-between; align-items: flex-end; margin-top: 30px; }
-  .footer-item { text-align: center; }
-  .footer-item .value { font-weight: 700; font-size: 15px; color: #1e293b; border-top: 2px solid #1e293b; padding-top: 6px; }
-  .footer-item .label { font-size: 11px; color: #94a3b8; margin-top: 4px; letter-spacing: 1px; text-transform: uppercase; }
-  .xp { background: linear-gradient(135deg,#f59e0b,#ef4444); color: white; font-size: 15px; font-weight: 700; padding: 8px 20px; border-radius: 999px; display: inline-block; margin-bottom: 20px; }
-</style>
-</head>
-<body>
-<div class="cert">
-  <div class="logo">💻</div>
-  <div class="brand">Programmer Learner</div>
-  <div class="cert-title">Certificate of Completion</div>
-  <div class="sub">This is to certify that</div>
-  <div class="name">${studentName}</div>
-  <div class="course-label">has successfully completed</div>
-  <div class="course-name">${course.title}</div>
-  ${totalXpEarned > 0 ? `<div class="xp">⚡ ${totalXpEarned} XP Earned</div>` : ''}
-  <div class="footer">
-    <div class="footer-item"><div class="value">${completedCount} Lessons</div><div class="label">Completed</div></div>
-    <div class="footer-item"><div class="value">Programmer Learner</div><div class="label">Platform</div></div>
-    <div class="footer-item"><div class="value">${date}</div><div class="label">Issue Date</div></div>
-  </div>
-</div>
-</body></html>`
-    const blob = new Blob([html], { type: 'text/html' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `Certificate_${course.title.replace(/\s+/g,'_')}.html`
-    a.click()
-    URL.revokeObjectURL(url)
-    setTimeout(() => setDownloading(false), 1000)
+    const date = certStatus?.approvedAt ? new Date(certStatus.approvedAt).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) : new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
+    downloadCertificate(studentName, course.title, totalXpEarned, completedCount, date, () => setDownloading(false))
+  }
+
+  const handleRequestCertificate = async () => {
+    try {
+      setRequesting(true)
+      const res = await api.post(`/certificates/request/${course.id}`)
+      setCertStatus(res.data.certificate)
+    } catch (e) {
+      alert(e.response?.data?.error || 'Failed to request certificate')
+    } finally {
+      setRequesting(false)
+    }
   }
 
   return (
@@ -154,15 +121,31 @@ export default function CourseDetail() {
               />
             </div>
             {progressPct === 100 && (
-              <div className="mt-4 flex items-center justify-between p-4 rounded-xl bg-gradient-to-r from-green-500/10 to-cyan-500/10 border border-green-500/20">
+              <div className="mt-4 flex flex-col sm:flex-row items-center justify-between p-4 rounded-xl bg-gradient-to-r from-green-500/10 to-cyan-500/10 border border-green-500/20 gap-4">
                 <div>
                   <p className="font-bold text-green-400 text-sm">🎉 Course Complete!</p>
-                  <p className="text-xs text-slate-400 mt-0.5">You finished all {totalLessons} lessons. Claim your certificate!</p>
+                  <p className="text-xs text-slate-400 mt-0.5">You finished all {totalLessons} lessons.</p>
                 </div>
-                <button onClick={downloadCertificate} disabled={downloading}
-                  className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-cyan-500 to-violet-600 text-white text-xs font-bold hover:opacity-90 transition-opacity disabled:opacity-50 shrink-0">
-                  {downloading ? '⏳ Generating...' : '🏅 Download Certificate'}
-                </button>
+                
+                {!certStatus ? (
+                  <button onClick={handleRequestCertificate} disabled={requesting}
+                    className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-violet-500 to-fuchsia-600 text-white text-xs font-bold hover:opacity-90 transition-opacity disabled:opacity-50 shrink-0">
+                    {requesting ? '⏳ Requesting...' : '📝 Request Certificate'}
+                  </button>
+                ) : certStatus.status === 'PENDING' ? (
+                  <span className="px-4 py-2 rounded-xl bg-amber-500/20 text-amber-400 text-xs font-bold border border-amber-500/30">
+                    ⏳ Approval Pending
+                  </span>
+                ) : certStatus.status === 'REJECTED' ? (
+                  <span className="px-4 py-2 rounded-xl bg-red-500/20 text-red-400 text-xs font-bold border border-red-500/30">
+                    ❌ Request Denied
+                  </span>
+                ) : (
+                  <button onClick={handleDownloadCertificate} disabled={downloading}
+                    className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-cyan-500 to-violet-600 text-white text-xs font-bold hover:opacity-90 transition-opacity disabled:opacity-50 shrink-0">
+                    {downloading ? '⏳ Generating...' : '🏅 Download Certificate'}
+                  </button>
+                )}
               </div>
             )}
           </div>

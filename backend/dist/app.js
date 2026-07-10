@@ -20,6 +20,7 @@ const analytics_1 = __importDefault(require("./routes/analytics"));
 const admin_1 = __importDefault(require("./routes/admin"));
 const attachments_1 = __importDefault(require("./routes/attachments"));
 const feedback_1 = __importDefault(require("./routes/feedback"));
+const certificates_1 = __importDefault(require("./routes/certificates"));
 const prisma_1 = require("./prisma");
 const app = (0, express_1.default)();
 app.set('trust proxy', 1);
@@ -179,6 +180,7 @@ app.use('/api/analytics', analytics_1.default);
 app.use('/api/admin', admin_1.default);
 app.use('/api/attachments', attachments_1.default);
 app.use('/api/feedback', feedback_1.default);
+app.use('/api/certificates', certificates_1.default);
 app.get('/health', (_req, res) => res.json({ status: 'ok' }));
 
 app.use((err, _req, res, _next) => {

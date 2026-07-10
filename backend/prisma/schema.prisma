@@ -38,6 +38,12 @@ enum AttachmentKind {
   OTHER
 }
 
+enum CertificateStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
 model User {
   id        String   @id @default(uuid())
   email     String   @unique
@@ -62,6 +68,7 @@ model User {
   roleAssignments RoleAssignment[]
   leaderboard     Leaderboard?
   userAchievements UserAchievement[]
+  certificates    Certificate[]
 }
 
 
@@ -75,6 +82,7 @@ model Course {
 
   lessons Lesson[]
   tasks   Task[]
+  certificates Certificate[]
 
   @@index([title])
 }
@@ -373,4 +381,25 @@ model UserAchievement {
 
   @@unique([userId, achievementId])
   @@index([userId])
+}
+
+model Certificate {
+  id        String   @id @default(uuid())
+  
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  
+  course    Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  courseId  String
+  
+  status    CertificateStatus @default(PENDING)
+  xpEarned  Int      @default(0)
+  lessonsCompleted Int @default(0)
+  
+  requestedAt DateTime @default(now())
+  approvedAt  DateTime?
+
+  @@unique([userId, courseId])
+  @@index([userId])
+  @@index([status])
 }
