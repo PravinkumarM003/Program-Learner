@@ -30,20 +30,53 @@ function addRefreshSubscriber(cb) {
 }
 
 api.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    // Cache GET response data under a unique localStorage key
+    if (response.config.method === 'get') {
+      try {
+        localStorage.setItem(`api_cache_${response.config.url}`, JSON.stringify(response.data))
+      } catch (e) {
+        console.warn('Failed to cache response:', e)
+      }
+    }
+    return response
+  },
   async (error) => {
     const originalRequest = error.config
 
+    // Check if network is offline or request timed out
+    const isNetworkError = !error.response || error.code === 'ECONNABORTED' || error.message === 'Network Error'
+    if (originalRequest && originalRequest.method === 'get' && isNetworkError) {
+      const cacheKey = `api_cache_${originalRequest.url}`
+      const cached = localStorage.getItem(cacheKey)
+      if (cached) {
+        try {
+          const parsed = JSON.parse(cached)
+          const showToast = useStore.getState().showToast
+          if (showToast) {
+            showToast('Offline or slow internet detected. Displaying cached data.', 'info')
+          }
+          return {
+            data: parsed,
+            status: 200,
+            statusText: 'OK',
+            headers: {},
+            config: originalRequest
+          }
+        } catch (e) {}
+      }
+    }
+
     // Avoid infinite retry loops
-    if (originalRequest._retry) {
+    if (originalRequest && originalRequest._retry) {
       return Promise.reject(error)
     }
 
     const status = error.response?.status
     // Only handle 401 for non-auth endpoints
-    const isAuthEndpoint = originalRequest.url?.includes('/auth/')
+    const isAuthEndpoint = originalRequest?.url?.includes('/auth/')
     
-    if (status === 401 && !isAuthEndpoint) {
+    if (status === 401 && !isAuthEndpoint && originalRequest) {
       if (isRefreshing) {
         // Queue this request until refresh completes
         return new Promise((resolve) => {

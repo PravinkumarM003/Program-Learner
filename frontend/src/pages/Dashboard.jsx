@@ -207,16 +207,16 @@ export default function Dashboard() {
             </div>
             
             <div className="p-6 grid grid-cols-2 sm:grid-cols-3 gap-4">
-              {achievements.length > 0 ? (
-                achievements.map(badge => (
-                  <div key={badge.id} className={`p-4 rounded-xl border flex flex-col items-center text-center transition-all ${badge.unlocked ? 'bg-cyan-500/10 border-cyan-500/30' : 'bg-white/5 border-white/5 opacity-50 grayscale'}`}>
+              {achievements.filter(a => a.unlocked).length > 0 ? (
+                achievements.filter(a => a.unlocked).map(badge => (
+                  <div key={badge.id} className="p-4 rounded-xl border flex flex-col items-center text-center transition-all bg-cyan-500/10 border-cyan-500/30">
                     <span className="text-4xl mb-2 drop-shadow-lg">{badge.icon}</span>
-                    <h3 className={`text-sm font-bold ${badge.unlocked ? 'text-white' : 'text-slate-400'}`}>{badge.title}</h3>
+                    <h3 className="text-sm font-bold text-white">{badge.title}</h3>
                     <p className="text-[10px] mt-1" style={{ color: 'var(--text-muted)' }}>{badge.description}</p>
                   </div>
                 ))
               ) : (
-                <p className="col-span-full text-center text-sm text-slate-500 py-4">No achievements loaded.</p>
+                <p className="col-span-full text-center text-sm text-slate-500 py-4">No achievements unlocked yet.</p>
               )}
             </div>
           </div>

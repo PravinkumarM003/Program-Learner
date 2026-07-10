@@ -429,8 +429,12 @@ export default function AdminDashboard() {
     request.then(() => {
       setTaskModalOpen(false)
       setMsg({ ok: true, text: `Task successfully ${editingTask ? 'updated' : 'created'}!` })
+      setTimeout(() => setMsg(null), 3000)
       fetchAllData()
-    }).catch(() => setMsg({ ok: false, text: 'Failed to save task.' }))
+    }).catch(() => {
+      setMsg({ ok: false, text: 'Failed to save task.' })
+      setTimeout(() => setMsg(null), 3000)
+    })
       .finally(() => setSavingTask(false))
   }
 
@@ -439,9 +443,13 @@ export default function AdminDashboard() {
     api.delete(`/tasks/${id}`)
       .then(() => {
         setMsg({ ok: true, text: 'Task deleted successfully!' })
+        setTimeout(() => setMsg(null), 3000)
         fetchAllData()
       })
-      .catch(() => setMsg({ ok: false, text: 'Failed to delete task.' }))
+      .catch(() => {
+        setMsg({ ok: false, text: 'Failed to delete task.' })
+        setTimeout(() => setMsg(null), 3000)
+      })
   }
 
   // Delete lesson
@@ -450,9 +458,13 @@ export default function AdminDashboard() {
     api.delete(`/admin/lessons/${id}`)
       .then(() => {
         setMsg({ ok: true, text: 'Lesson deleted successfully!' })
+        setTimeout(() => setMsg(null), 3000)
         fetchAllData()
       })
-      .catch(() => setMsg({ ok: false, text: 'Failed to delete lesson.' }))
+      .catch(() => {
+        setMsg({ ok: false, text: 'Failed to delete lesson.' })
+        setTimeout(() => setMsg(null), 3000)
+      })
   }
 
   const openCreateLesson = (lang) => {
@@ -488,8 +500,12 @@ export default function AdminDashboard() {
     api.post('/admin/lessons', payload).then(() => {
       setLessonModalOpen(false)
       setMsg({ ok: true, text: 'Lesson successfully created!' })
+      setTimeout(() => setMsg(null), 3000)
       fetchAllData()
-    }).catch(() => setMsg({ ok: false, text: 'Failed to save lesson.' }))
+    }).catch(() => {
+      setMsg({ ok: false, text: 'Failed to save lesson.' })
+      setTimeout(() => setMsg(null), 3000)
+    })
       .finally(() => setSavingLesson(false))
   }
 
@@ -708,7 +724,11 @@ export default function AdminDashboard() {
           </div>
           <div className="flex items-center gap-3">
             {tab === 'tasks' && (
-              <button onClick={() => setTaskLangPrompt(true)} className="btn-primary text-xs px-4 py-2">➕ Create Task</button>
+              <div className="flex gap-1.5 flex-wrap">
+                <button onClick={() => setTaskLangPrompt(true)} className="btn-primary text-xs px-3.5 py-2">➕ Coding Task</button>
+                <button onClick={() => { openCreateTask('C'); setTaskType('QUIZ'); }} className="btn-primary text-xs px-3.5 py-2 bg-gradient-to-r from-violet-500 to-indigo-600">➕ Quiz</button>
+                <button onClick={() => { openCreateTask('C'); setTaskType('GENERAL'); }} className="btn-primary text-xs px-3.5 py-2 bg-gradient-to-r from-emerald-500 to-teal-600">➕ General Task</button>
+              </div>
             )}
             {tab === 'lessons' && (
               <button onClick={() => setLessonLangPrompt(true)} className="btn-primary text-xs px-4 py-2">➕ Create Lesson</button>
@@ -940,10 +960,20 @@ export default function AdminDashboard() {
                 <h3 className="font-bold text-white flex items-center gap-2">
                   <span className="text-xl">🎯</span> {contentTrack} Tasks
                 </h3>
-                <button onClick={() => openCreateTask(contentTrack)}
-                  className="rounded-lg bg-violet-500/10 text-violet-400 px-3 py-1 text-xs font-bold hover:bg-violet-500/20 transition-colors">
-                  ➕ New Task
-                </button>
+                <div className="flex gap-1.5 flex-wrap">
+                  <button onClick={() => { openCreateTask(contentTrack); setTaskType('CODE'); }}
+                    className="rounded bg-cyan-500/10 text-cyan-400 px-2 py-1 text-xs font-bold hover:bg-cyan-500/20 transition-colors">
+                    ➕ Code
+                  </button>
+                  <button onClick={() => { openCreateTask(contentTrack); setTaskType('QUIZ'); }}
+                    className="rounded bg-violet-500/10 text-violet-400 px-2 py-1 text-xs font-bold hover:bg-violet-500/20 transition-colors">
+                    ➕ Quiz
+                  </button>
+                  <button onClick={() => { openCreateTask(contentTrack); setTaskType('GENERAL'); }}
+                    className="rounded bg-emerald-500/10 text-emerald-400 px-2 py-1 text-xs font-bold hover:bg-emerald-500/20 transition-colors">
+                    ➕ General
+                  </button>
+                </div>
               </div>
               <div className="space-y-2">
                 {tasks.filter(t => (t.category || 'C') === contentTrack).length === 0 && <p className="text-slate-500 text-center py-4 text-sm">No tasks in {contentTrack} track yet.</p>}
@@ -1435,10 +1465,21 @@ export default function AdminDashboard() {
                     <select value={taskCourseId} onChange={e => setTaskCourseId(e.target.value)}
                       className="w-full rounded-xl bg-black/20 border border-white/10 px-4 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-cyan-500/50 transition-shadow">
                       <option value="">No Course (Global)</option>
-                      {courses.map(c => {
-                        const displayTitle = (c.title || '').trim().toLowerCase() === 'main course' ? 'Python' : c.title;
-                        return <option key={c.id} value={c.id}>{displayTitle}</option>;
-                      })}
+                      {(() => {
+                        const uniqueOptions = [];
+                        const seen = new Set();
+                        courses.forEach(c => {
+                          let title = (c.title || '').trim();
+                          if (title.toLowerCase() === 'main course') title = 'Python';
+                          const normTitle = (title.toLowerCase() === 'c' || title.toLowerCase() === 'c track' || title.toLowerCase() === 'c language') ? 'C' : 
+                                            (title.toLowerCase() === 'python' || title.toLowerCase() === 'python track' || title.toLowerCase() === 'python language') ? 'Python' : null;
+                          if (normTitle && !seen.has(normTitle)) {
+                            seen.add(normTitle);
+                            uniqueOptions.push(<option key={c.id} value={c.id}>{normTitle}</option>);
+                          }
+                        });
+                        return uniqueOptions;
+                      })()}
                     </select>
                   </div>
                   <div>

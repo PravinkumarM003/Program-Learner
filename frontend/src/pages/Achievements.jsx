@@ -3,7 +3,11 @@ import api from '../api/client'
 import Footer from '../components/Footer'
 
 const ACHIEVEMENTS_DATA = [
-  { id: 'first_blood', title: 'First Steps', desc: 'Earn your first 50 XP', requiredXp: 50, icon: '🐣', color: 'text-amber-500', bg: 'bg-amber-500/10' },
+  { id: 'first_step', title: 'First Steps', desc: 'Earn your first 5 XP', requiredXp: 5, icon: '🌱', color: 'text-green-500', bg: 'bg-green-500/10' },
+  { id: 'quick_learner', title: 'Quick Learner', desc: 'Reach 20 XP', requiredXp: 20, icon: '🍀', color: 'text-teal-400', bg: 'bg-teal-500/10' },
+  { id: 'first_blood', title: 'Rising Star', desc: 'Earn your first 50 XP', requiredXp: 50, icon: '🐣', color: 'text-amber-500', bg: 'bg-amber-500/10' },
+  { id: 'code_fan', title: 'Code Hobbyist', desc: 'Reach 100 XP', requiredXp: 100, icon: '💻', color: 'text-cyan-400', bg: 'bg-cyan-500/10' },
+  { id: 'steady_progress', title: 'Steady Coder', desc: 'Reach 250 XP', requiredXp: 250, icon: '📈', color: 'text-blue-400', bg: 'bg-blue-500/10' },
   { id: 'novice_coder', title: 'Novice Coder', desc: 'Reach 500 XP', requiredXp: 500, icon: '🥉', color: 'text-orange-500', bg: 'bg-orange-500/10' },
   { id: 'apprentice', title: 'Apprentice', desc: 'Reach 1,000 XP', requiredXp: 1000, icon: '🥈', color: 'text-slate-300', bg: 'bg-slate-300/10' },
   { id: 'journeyman', title: 'Journeyman', desc: 'Reach 2,500 XP', requiredXp: 2500, icon: '🥇', color: 'text-yellow-400', bg: 'bg-yellow-400/10' },
@@ -11,6 +15,7 @@ const ACHIEVEMENTS_DATA = [
   { id: 'master', title: 'Master', desc: 'Reach 7,500 XP', requiredXp: 7500, icon: '🔥', color: 'text-red-400', bg: 'bg-red-400/10' },
   { id: 'grandmaster', title: 'Grandmaster', desc: 'Reach 10,000 XP. A true legend!', requiredXp: 10000, icon: '👑', color: 'text-fuchsia-500', bg: 'bg-fuchsia-500/10' },
   { id: 'code_god', title: 'Code God', desc: 'Reach 25,000 XP. Unstoppable!', requiredXp: 25000, icon: '🌌', color: 'text-violet-500', bg: 'bg-violet-500/10' },
+  { id: 'god_tier', title: 'God Tier', desc: 'Reach 100,000 XP. You are unstoppable!', requiredXp: 100000, icon: '🌟', color: 'text-rose-500', bg: 'bg-rose-500/10' },
 ]
 
 export default function Achievements() {

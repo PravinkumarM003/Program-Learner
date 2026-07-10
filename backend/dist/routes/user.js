@@ -148,13 +148,6 @@ router.post('/ask-ai', aiLimiter, auth_1.authenticateJWT, async (req, res) => {
         const { messages } = req.body;
 
         const leaderboard = await prisma_1.prisma.leaderboard.findUnique({ where: { userId } });
-        const totalXp = leaderboard ? leaderboard.xp : 0;
-        const spentXp = leaderboard ? leaderboard.spentXp : 0;
-        const currentXp = Math.max(0, totalXp - spentXp);
-
-        if (currentXp < 50) {
-            return res.status(400).json({ error: 'Not enough XP to use Ask AI (requires 50 XP).' });
-        }
 
         const apiKey = process.env.GEMINI_API_KEY;
         if (!apiKey) {
@@ -177,11 +170,7 @@ router.post('/ask-ai', aiLimiter, auth_1.authenticateJWT, async (req, res) => {
             return res.json({ answer: "⚠️ Failed to reach the AI service. Please try again later." });
         }
 
-        // Deduct 50 XP only if AI request succeeded
-        await prisma_1.prisma.leaderboard.update({
-            where: { userId },
-            data: { spentXp: { increment: 50 } }
-        });
+        // No XP deduction anymore
 
         res.json({ answer: aiText });
     } catch (e) {
