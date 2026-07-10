@@ -49,7 +49,7 @@ export default function Courses() {
               <Link key={c.id} to={`/courses/${c.id}`}
                 className="card-hover glass-card rounded-2xl p-6 flex flex-col gap-3 group">
                 <div className="flex items-center justify-between">
-                  <span className="text-3xl">🐍</span>
+                  <span className="text-3xl">{c.title.toLowerCase() === 'c' || c.title.toLowerCase().includes(' c ') ? '⚙️' : '🐍'}</span>
                   <span className="text-xs text-slate-500">{c.lessons?.length ?? 0} lessons</span>
                 </div>
                 <h2 className="font-bold text-white group-hover:text-cyan-400 transition-colors">{c.title}</h2>

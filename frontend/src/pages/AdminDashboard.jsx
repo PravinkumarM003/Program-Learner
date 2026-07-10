@@ -48,7 +48,7 @@ export default function AdminDashboard() {
   // Set correct initial tab when user loads
   useEffect(() => {
     if (user?.role === 'TEACHER') {
-      setTab('tasks')
+      setTab('content-manager')
     } else if (user?.role === 'ADMIN') {
       setTab('overview')
     }

@@ -13,8 +13,8 @@ const TYPE_BADGES = {
   QUIZ:    'bg-purple-500/10 text-purple-400 border border-purple-500/20',
 }
 
-const PYTHON_DEFAULT = `# Write your Python solution here\n\nprint("Hello, World!")\n`
-const C_DEFAULT = `// Write your C solution here\n#include <stdio.h>\n\nint main() {\n    printf("Hello, World!\\n");\n    return 0;\n}\n`
+const PYTHON_DEFAULT = `# Wellcome to Program Learner\n\nprint("Hello, World!")\n`
+const C_DEFAULT = `// Wellcome to Program Learner\n#include <stdio.h>\n\nint main() {\n    printf("Hello, World!\\n");\n    return 0;\n}\n`
 
 export default function TaskDetail() {
   const { id } = useParams()

@@ -93,6 +93,7 @@ export default function Playground() {
   const [chatOpen, setChatOpen] = useState(false)
   const [chatInput, setChatInput] = useState('')
   const [chatMessages, setChatMessages] = useState([{ role: 'ai', content: 'Hello! I am your AI assistant. How can I help you with your code today?' }])
+  const [isAiTyping, setIsAiTyping] = useState(false)
   const editorRef = useRef(null)
   const nameInputRef = useRef(null)
 
@@ -179,20 +180,16 @@ export default function Playground() {
     const newMessages = [...chatMessages, { role: 'user', content: msgContent }]
     setChatMessages(newMessages)
 
-    if (!xpData || xpData.currentXp < 50) {
-      setAiPopupMsg('You do not have enough XP! You need at least 50 XP to use Ask AI.')
-      setShowAiPopup(true)
-      setChatMessages(prev => [...prev, { role: 'ai', content: 'I cannot answer this. You need at least 50 XP.' }])
-      return
-    }
+    setIsAiTyping(true)
 
     try {
       const res = await api.post('/user/ask-ai', { messages: newMessages, codeContext: code })
-      setXpData(prev => ({ ...prev, currentXp: prev.currentXp - 50, spentXp: (prev.spentXp || 0) + 50 }))
       setChatMessages(prev => [...prev, { role: 'ai', content: res.data.answer }])
     } catch (e) {
       setAiPopupMsg(e.response?.data?.error || 'Failed to connect to AI.')
       setShowAiPopup(true)
+    } finally {
+      setIsAiTyping(false)
     }
   }
 
@@ -495,6 +492,15 @@ export default function Playground() {
                       </div>
                     </div>
                   ))}
+                  {isAiTyping && (
+                    <div className="flex justify-start animate-fade-in">
+                      <div className="max-w-[85%] rounded-xl px-4 py-3 bg-slate-800 flex items-center gap-1.5">
+                        <span className="w-1.5 h-1.5 bg-cyan-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                        <span className="w-1.5 h-1.5 bg-cyan-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                        <span className="w-1.5 h-1.5 bg-cyan-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                      </div>
+                    </div>
+                  )}
                 </div>
                 <div className="p-2 bg-slate-900 border-t border-white/10 flex gap-2">
                   <input 
@@ -502,7 +508,7 @@ export default function Playground() {
                     value={chatInput} 
                     onChange={e => setChatInput(e.target.value)} 
                     onKeyDown={e => { if (e.key === 'Enter') handleAskAiMessage() }}
-                    placeholder="Ask a question (50 XP)..." 
+                    placeholder="Ask a question..." 
                     className="flex-1 bg-black/30 border border-white/5 rounded-lg px-3 py-1.5 text-xs text-white focus:outline-none focus:ring-1 focus:ring-cyan-500"
                   />
                   <button onClick={handleAskAiMessage} className="bg-cyan-500/20 text-cyan-400 font-bold px-3 py-1.5 rounded-lg text-xs hover:bg-cyan-500/30 transition-colors">Send</button>

@@ -24,6 +24,7 @@ const Leaderboard    = lazy(() => import('./pages/Leaderboard'))
 const About          = lazy(() => import('./pages/About'))
 const Playground     = lazy(() => import('./pages/Playground'))
 const OAuthCallback  = lazy(() => import('./pages/OAuthCallback'))
+const Achievements   = lazy(() => import('./pages/Achievements'))
 
 // Lightweight full-page loading spinner shown while a chunk is downloading
 function PageLoader() {
@@ -100,6 +101,7 @@ export default function App() {
           <Route path="/admin" element={<PrivateRoute allowedRoles={['ADMIN', 'TEACHER']}><AdminDashboard /></PrivateRoute>} />
           <Route path="/settings" element={<PrivateRoute><Settings /></PrivateRoute>} />
           <Route path="/playground" element={<PrivateRoute><Playground /></PrivateRoute>} />
+          <Route path="/achievements" element={<PrivateRoute><Achievements /></PrivateRoute>} />
 
           <Route path="*" element={
             <div className="min-h-[80vh] flex flex-col items-center justify-center gap-4 text-center px-4">

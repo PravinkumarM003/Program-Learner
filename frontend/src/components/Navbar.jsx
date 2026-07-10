@@ -12,6 +12,7 @@ const NAV_LINKS = [
   { to: '/playground', label: 'Playground', icon: '⚡' },
   { to: '/submissions', label: 'Submissions', icon: '📝' },
   { to: '/leaderboard', label: 'Leaderboard', icon: '🏆' },
+  { to: '/achievements', label: 'Achievements', icon: '🎖️' },
   { to: '/about', label: 'About', icon: '💬' },
 ]
 
