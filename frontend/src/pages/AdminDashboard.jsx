@@ -530,6 +530,7 @@ export default function AdminDashboard() {
     const normalizedIp = String(ip || '').trim()
     if (!normalizedIp) {
       setMsg({ ok: false, text: 'Enter an IP address to block.' })
+      setTimeout(() => setMsg(null), 3000)
       return
     }
 
@@ -540,8 +541,12 @@ export default function AdminDashboard() {
         setBlockIp('')
         setBlockReason('')
         setMsg({ ok: true, text: `Blocked IP ${normalizedIp}` })
+        setTimeout(() => setMsg(null), 3000)
       })
-      .catch(() => setMsg({ ok: false, text: 'Failed to block IP.' }))
+      .catch(() => {
+        setMsg({ ok: false, text: 'Failed to block IP.' })
+        setTimeout(() => setMsg(null), 3000)
+      })
   }
 
   const unblockIp = (ip) => {
@@ -549,8 +554,12 @@ export default function AdminDashboard() {
       .then(() => {
         setBlockedIps(prev => prev.filter(item => item.ip !== ip))
         setMsg({ ok: true, text: `Unblocked IP ${ip}` })
+        setTimeout(() => setMsg(null), 3000)
       })
-      .catch(() => setMsg({ ok: false, text: 'Failed to unblock IP.' }))
+      .catch(() => {
+        setMsg({ ok: false, text: 'Failed to unblock IP.' })
+        setTimeout(() => setMsg(null), 3000)
+      })
   }
 
   const deleteViolation = (id) => {
@@ -559,8 +568,12 @@ export default function AdminDashboard() {
       .then(() => {
         setViolations(prev => prev.filter(v => v.id !== id))
         setMsg({ ok: true, text: 'Notification deleted' })
+        setTimeout(() => setMsg(null), 3000)
       })
-      .catch(() => setMsg({ ok: false, text: 'Failed to delete notification' }))
+      .catch(() => {
+        setMsg({ ok: false, text: 'Failed to delete notification' })
+        setTimeout(() => setMsg(null), 3000)
+      })
   }
 
   const TABS = user?.role === 'TEACHER' 

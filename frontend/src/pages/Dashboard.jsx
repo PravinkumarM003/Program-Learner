@@ -10,6 +10,22 @@ const STATUS_CLASSES = {
   Rejected:    { badge: 'badge badge-rejected', icon: '❌' },
 }
 
+const ACHIEVEMENTS_DATA = [
+  { id: 'first_step', title: 'First Steps', desc: 'Earn your first 100 XP', requiredXp: 100, icon: '🌱' },
+  { id: 'quick_learner', title: 'Quick Learner', desc: 'Reach 200 XP', requiredXp: 200, icon: '🍀' },
+  { id: 'first_blood', title: 'Rising Star', desc: 'Earn your first 500 XP', requiredXp: 500, icon: '🐣' },
+  { id: 'code_fan', title: 'Code Hobbyist', desc: 'Reach 1000 XP', requiredXp: 1000, icon: '💻' },
+  { id: 'steady_progress', title: 'Steady Coder', desc: 'Reach 2500 XP', requiredXp: 2500, icon: '📈' },
+  { id: 'novice_coder', title: 'Novice Coder', desc: 'Reach 5000 XP', requiredXp: 5000, icon: '🥉' },
+  { id: 'apprentice', title: 'Apprentice', desc: 'Reach 10,000 XP', requiredXp: 10000, icon: '🥈' },
+  { id: 'journeyman', title: 'Journeyman', desc: 'Reach 25,000 XP', requiredXp: 25000, icon: '🥇' },
+  { id: 'expert_dev', title: 'Expert Developer', desc: 'Reach 50,000 XP', requiredXp: 50000, icon: '💎' },
+  { id: 'master', title: 'Master', desc: 'Reach 75,000 XP', requiredXp: 75000, icon: '🔥' },
+  { id: 'grandmaster', title: 'Grandmaster', desc: 'Reach 100,000 XP. A true legend!', requiredXp: 100000, icon: '👑' },
+  { id: 'code_god', title: 'Code God', desc: 'Reach 250,000 XP. Unstoppable!', requiredXp: 250000, icon: '🌌' },
+  { id: 'god_tier', title: 'God Tier', desc: 'Reach 1,000,000 XP. You are unstoppable!', requiredXp: 1000000, icon: '🌟' },
+]
+
 // Animated counter hook
 function useCountUp(target, duration = 800) {
   const [count, setCount] = useState(0)
@@ -207,17 +223,20 @@ export default function Dashboard() {
             </div>
             
             <div className="p-6 grid grid-cols-2 sm:grid-cols-3 gap-4">
-              {achievements.filter(a => a.unlocked).length > 0 ? (
-                achievements.filter(a => a.unlocked).map(badge => (
-                  <div key={badge.id} className="p-4 rounded-xl border flex flex-col items-center text-center transition-all bg-cyan-500/10 border-cyan-500/30">
-                    <span className="text-4xl mb-2 drop-shadow-lg">{badge.icon}</span>
-                    <h3 className="text-sm font-bold text-white">{badge.title}</h3>
-                    <p className="text-[10px] mt-1" style={{ color: 'var(--text-muted)' }}>{badge.description}</p>
-                  </div>
-                ))
-              ) : (
-                <p className="col-span-full text-center text-sm text-slate-500 py-4">No achievements unlocked yet.</p>
-              )}
+              {(() => {
+                const unlocked = ACHIEVEMENTS_DATA.filter(ach => totalXp >= ach.requiredXp);
+                return unlocked.length > 0 ? (
+                  unlocked.map(badge => (
+                    <div key={badge.id} className="p-4 rounded-xl border flex flex-col items-center text-center transition-all bg-cyan-500/10 border-cyan-500/30">
+                      <span className="text-4xl mb-2 drop-shadow-lg">{badge.icon}</span>
+                      <h3 className="text-sm font-bold text-white">{badge.title}</h3>
+                      <p className="text-[10px] mt-1" style={{ color: 'var(--text-muted)' }}>{badge.desc}</p>
+                    </div>
+                  ))
+                ) : (
+                  <p className="col-span-full text-center text-sm text-slate-500 py-4">No achievements unlocked yet.</p>
+                );
+              })()}
             </div>
           </div>
         </div>
