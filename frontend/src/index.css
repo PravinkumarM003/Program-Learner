@@ -4,6 +4,12 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer base {
+  html {
+    -webkit-tap-highlight-color: transparent;
+  }
+}
+
 @layer utilities {
   /* Increase brightness of slate text in dark mode for WCAG contrast */
   .text-slate-500 { color: #94a3b8; } /* mapped to slate-400 */
