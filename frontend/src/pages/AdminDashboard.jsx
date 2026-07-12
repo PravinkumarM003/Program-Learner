@@ -175,6 +175,7 @@ export default function AdminDashboard() {
 
 
   // Lesson Form State
+  const [editingLesson, setEditingLesson] = useState(null)
   const [lessonModalOpen, setLessonModalOpen] = useState(false)
   const [lessonTitle, setLessonTitle] = useState('')
   const [lessonContent, setLessonContent] = useState('')
@@ -495,12 +496,25 @@ export default function AdminDashboard() {
   }
 
   const openCreateLesson = (lang) => {
+    setEditingLesson(null)
     setLessonTitle('')
     setLessonContent('')
     setLessonNotes('')
     setLessonVideoUrl('')
     setLessonDifficulty('Beginner')
     setLessonCategory(lang || 'C')
+    setLessonLangPrompt(false)
+    setLessonModalOpen(true)
+  }
+
+  const openEditLesson = (lesson) => {
+    setEditingLesson(lesson)
+    setLessonTitle(lesson.title || '')
+    setLessonContent(lesson.content || '')
+    setLessonNotes(lesson.notes || '')
+    setLessonVideoUrl(lesson.videoUrl || '')
+    setLessonDifficulty(lesson.difficulty || 'Beginner')
+    setLessonCategory(lesson.category || 'C')
     setLessonLangPrompt(false)
     setLessonModalOpen(true)
   }
@@ -524,9 +538,11 @@ export default function AdminDashboard() {
     }
 
 
-    api.post('/admin/lessons', payload).then(() => {
+    const request = editingLesson ? api.put(`/admin/lessons/${editingLesson.id}`, payload) : api.post('/admin/lessons', payload)
+
+    request.then(() => {
       setLessonModalOpen(false)
-      setMsg({ ok: true, text: 'Lesson successfully created!' })
+      setMsg({ ok: true, text: `Lesson successfully ${editingLesson ? 'updated' : 'created'}!` })
       setTimeout(() => setMsg(null), 3000)
       fetchAllData()
     }).catch(() => {
@@ -850,6 +866,11 @@ export default function AdminDashboard() {
                     <div className="flex items-center gap-1 mt-0.5 flex-wrap">
                       {u.role === 'ADMIN' && <span className="inline-block px-1.5 py-0.5 rounded text-[9px] font-bold bg-violet-500/20 text-violet-300">ADMIN</span>}
                       {u.role === 'TEACHER' && <span className="inline-block px-1.5 py-0.5 rounded text-[9px] font-bold bg-fuchsia-500/20 text-fuchsia-300">TEACHER</span>}
+                      {u.email && u.email.endsWith('@bitsathy.ac.in') ? (
+                        <span className="inline-block px-1.5 py-0.5 rounded text-[9px] font-bold bg-emerald-500/20 text-emerald-300">College Student</span>
+                      ) : (
+                        <span className="inline-block px-1.5 py-0.5 rounded text-[9px] font-bold bg-amber-500/20 text-amber-300">External Student</span>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -988,7 +1009,7 @@ export default function AdminDashboard() {
                     <td className="px-4 py-3 text-right space-x-2">
                       {c.status === 'PENDING' && (
                         <>
-                          <button onClick={() => handleCertStatus(c.id, 'APPROVED')} className="text-green-400 hover:text-green-300 bg-green-500/10 hover:bg-green-500/20 px-2 py-1 rounded text-xs transition-colors border border-green-500/20">Approve</button>
+                          <button onClick={() => handleCertStatus(c.id, 'APPROVED')} className="text-green-400 hover:text-green-300 bg-green-500/10 hover:bg-green-500/20 px-2 py-1 rounded text-xs transition-colors border border-green-500/20">Grant Certificate</button>
                           <button onClick={() => handleCertStatus(c.id, 'REJECTED')} className="text-red-400 hover:text-red-300 bg-red-500/10 hover:bg-red-500/20 px-2 py-1 rounded text-xs transition-colors border border-red-500/20">Reject</button>
                         </>
                       )}
@@ -1012,22 +1033,29 @@ export default function AdminDashboard() {
       ) : tab === 'content-manager' ? (
         <div className="space-y-6">
           <div className="flex justify-center border-b border-white/10 pb-4">
-            <div className="flex bg-black/40 p-1 rounded-xl">
-              <button 
-                onClick={() => setContentTrack('C')}
-                className={`px-8 py-2 rounded-lg text-sm font-bold transition-all ${
-                  contentTrack === 'C' ? 'bg-cyan-500 text-black shadow-lg shadow-cyan-500/20' : 'text-slate-400 hover:text-white'
-                }`}
+            <div className="flex flex-wrap items-center gap-2 bg-black/40 p-1 rounded-xl">
+              {courses.map(c => (
+                <button
+                  key={c.id}
+                  onClick={() => setContentTrack(c.title)}
+                  className={`px-6 py-2 rounded-lg text-sm font-bold transition-all ${
+                    contentTrack === c.title ? 'bg-cyan-500 text-black shadow-lg shadow-cyan-500/20' : 'text-slate-400 hover:text-white'
+                  }`}
+                >
+                  {c.title} Track
+                </button>
+              ))}
+              <button
+                onClick={() => {
+                  const track = prompt("Enter new track name:");
+                  if (track && !courses.find(c => c.title === track)) {
+                    setCourses([...courses, { id: 'temp-'+Date.now(), title: track }]);
+                    setContentTrack(track);
+                  }
+                }}
+                className="px-4 py-2 rounded-lg text-sm font-bold text-slate-400 hover:text-white transition-all bg-white/5 hover:bg-white/10"
               >
-                C Track
-              </button>
-              <button 
-                onClick={() => setContentTrack('Python')}
-                className={`px-8 py-2 rounded-lg text-sm font-bold transition-all ${
-                  contentTrack === 'Python' ? 'bg-cyan-500 text-black shadow-lg shadow-cyan-500/20' : 'text-slate-400 hover:text-white'
-                }`}
-              >
-                Python Track
+                ➕ New Track
               </button>
             </div>
           </div>
@@ -1049,11 +1077,17 @@ export default function AdminDashboard() {
                 {lessons.filter(l => (l.category || 'C') === contentTrack).map(l => (
                   <div key={l.id} className="glass-card rounded-xl px-4 py-3 flex flex-col gap-2 relative group border border-white/5 hover:border-white/10 transition-colors">
                     <div className="flex items-start justify-between">
-                      <p className="text-sm font-medium text-white">{l.title}</p>
-                      <button onClick={() => deleteLesson(l.id)} className="opacity-0 group-hover:opacity-100 rounded bg-red-500/10 text-red-400 px-2 py-0.5 text-[10px] font-semibold hover:bg-red-500/20 transition-all absolute right-4 top-3">Delete</button>
+                      <p className="text-sm font-medium text-white pr-16 line-clamp-1">{l.title}</p>
+                      <div className="opacity-0 group-hover:opacity-100 flex items-center gap-1 absolute right-2 top-2.5 transition-all bg-black/80 pl-2 backdrop-blur-sm rounded-l">
+                        <button onClick={() => openEditLesson(l)} className="p-1.5 text-cyan-400 hover:bg-cyan-500/20 rounded" title="Edit">✏️</button>
+                        <button onClick={() => deleteLesson(l.id)} className="p-1.5 text-red-400 hover:bg-red-500/20 rounded" title="Delete">🗑️</button>
+                      </div>
                     </div>
                     <div className="flex items-center gap-2 flex-wrap">
                       <span className="text-[10px] text-slate-500 font-semibold bg-white/5 px-2 py-0.5 rounded">Difficulty: {l.difficulty}</span>
+                      <span className="text-[10px] text-slate-500 font-semibold bg-white/5 px-2 py-0.5 rounded">
+                        Created: {new Date(l.createdAt).toLocaleDateString()} {new Date(l.createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                      </span>
                     </div>
                   </div>
                 ))}
@@ -1094,6 +1128,9 @@ export default function AdminDashboard() {
                       </span>
                       <span className="text-[10px] text-slate-500 font-semibold bg-white/5 px-2 py-0.5 rounded">{t.difficulty}</span>
                       {t.isDailyChallenge && <span className="text-[9px] px-1.5 py-0.5 rounded bg-orange-500/20 text-orange-400 font-bold border border-orange-500/30">🔥 Daily</span>}
+                      <span className="text-[10px] text-slate-500 font-semibold bg-white/5 px-2 py-0.5 rounded">
+                        Created: {new Date(t.createdAt).toLocaleDateString()} {new Date(t.createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                      </span>
                     </div>
                     <div className="opacity-0 group-hover:opacity-100 flex items-center gap-1 absolute right-2 top-2.5 transition-all bg-black/80 pl-2 backdrop-blur-sm rounded-l">
                       <button onClick={() => openEditTask(t)} className="p-1.5 text-cyan-400 hover:bg-cyan-500/20 rounded" title="Edit">✏️</button>

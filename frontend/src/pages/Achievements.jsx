@@ -23,7 +23,7 @@ export default function Achievements() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    api.get('/user/xp').then(r => setXpData(r.data)).catch(() => {}).finally(() => setLoading(false))
+    api.get('/user/xp').then(r => setXpData(r.data)).catch(() => { }).finally(() => setLoading(false))
   }, [])
 
   const currentXp = xpData?.totalXp || 0
@@ -62,10 +62,10 @@ export default function Achievements() {
                       {isUnlocked && <span className="text-xs font-black text-cyan-400 bg-cyan-500/10 px-2 py-0.5 rounded uppercase tracking-wider">Unlocked</span>}
                     </div>
                     <p className="text-xs text-slate-400 mb-2">{ach.desc}</p>
-                    
+
                     {/* Progress Bar */}
                     <div className="w-full bg-slate-800 rounded-full h-1.5 overflow-hidden">
-                      <div 
+                      <div
                         className={`h-full rounded-full transition-all duration-1000 ${isUnlocked ? 'bg-cyan-400' : 'bg-cyan-500/50'}`}
                         style={{ width: `${progress}%` }}
                       />

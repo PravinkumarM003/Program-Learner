@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { useStore } from '../store/useStore'
+import { downloadCertificate } from '../utils/certificate'
 import api from '../api/client'
 import { useStreak } from '../hooks/useStreak'
 import { getXpDetails } from '../utils/ranks'
@@ -169,6 +170,23 @@ export default function Navbar() {
                           <div key={n.id} className="px-4 py-3 hover:bg-white/5 transition-colors border-b last:border-0" style={{ borderColor: 'var(--border-subtle)' }}>
                             <p className="text-xs font-semibold text-slate-200">{n.title}</p>
                             <p className="text-xs text-slate-400 mt-1 line-clamp-2">{n.body}</p>
+                            {n.kind && n.kind.startsWith('CERTIFICATE_APPROVED::') && (
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  const parts = n.kind.split('::')
+                                  if (parts.length >= 5) {
+                                    const [, courseTitle, xpEarned, lessonsCompleted, approvedAt] = parts
+                                    const studentName = user?.name || user?.email || 'Student'
+                                    const date = new Date(approvedAt).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
+                                    downloadCertificate(studentName, courseTitle, Number(xpEarned), Number(lessonsCompleted), date, () => {})
+                                  }
+                                }}
+                                className="mt-2 text-cyan-400 hover:text-cyan-300 bg-cyan-500/10 hover:bg-cyan-500/20 px-3 py-1 rounded text-[10px] font-bold transition-colors border border-cyan-500/20 inline-flex items-center gap-1"
+                              >
+                                🏅 Download Certificate
+                              </button>
+                            )}
                             <p className="text-[10px] text-slate-500 mt-2">{new Date(n.createdAt).toLocaleString()}</p>
                           </div>
                         ))

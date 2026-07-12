@@ -214,6 +214,27 @@ router.get('/lessons', auth_1.authenticateJWT, (0, auth_1.authorizeRoles)('ADMIN
     res.json({ lessons });
 });
 
+router.put('/lessons/:id', auth_1.authenticateJWT, (0, auth_1.authorizeRoles)('ADMIN', 'TEACHER'), async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { title, content, notes, videoUrl, difficulty, category } = req.body;
+        const lesson = await prisma_1.prisma.lesson.update({
+            where: { id },
+            data: {
+                title,
+                content,
+                notes,
+                videoUrl,
+                category: category || 'C',
+                difficulty: difficulty || 'Beginner'
+            }
+        });
+        res.json({ lesson });
+    } catch (e) {
+        res.status(500).json({ error: 'Failed to update lesson' });
+    }
+});
+
 router.delete('/lessons/:id', auth_1.authenticateJWT, (0, auth_1.authorizeRoles)('ADMIN', 'TEACHER'), async (req, res) => {
     try {
         const { id } = req.params;
@@ -397,9 +418,9 @@ router.patch('/certificates/:id/status', auth_1.requireAuth, auth_1.requireAdmin
                 userId: certificate.userId,
                 title: status === 'APPROVED' ? 'Certificate Approved! 🎉' : 'Certificate Request Denied',
                 body: status === 'APPROVED' 
-                    ? `Your certificate for ${certificate.course.title} has been approved. You can now download it from the course page.`
+                    ? `Your certificate for ${certificate.course.title} has been approved. You can download it directly from here.`
                     : `Your certificate request for ${certificate.course.title} was denied.`,
-                kind: 'SYSTEM'
+                kind: status === 'APPROVED' ? `CERTIFICATE_APPROVED::${certificate.course.title}::${certificate.xpEarned}::${certificate.lessonsCompleted}::${new Date().toISOString()}` : 'SYSTEM'
             }
         });
 

@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import api from '../api/client'
 import { useStore } from '../store/useStore'
-import { downloadCertificate } from '../utils/certificate'
 
 const DIFF_COLOR = {
   Beginner: 'bg-green-500/10 text-green-400',
@@ -70,13 +69,6 @@ export default function CourseDetail() {
   const progressPct = totalLessons > 0 ? Math.round((completedCount / totalLessons) * 100) : 0
   const totalXpEarned = (course.lessons || []).reduce((sum, l) => sum + (progressMap[l.id]?.xp || 0), 0)
 
-  const handleDownloadCertificate = () => {
-    setDownloading(true)
-    const studentName = user?.name || user?.email || 'Student'
-    const date = certStatus?.approvedAt ? new Date(certStatus.approvedAt).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) : new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
-    downloadCertificate(studentName, course.title, totalXpEarned, completedCount, date, () => setDownloading(false))
-  }
-
   const handleRequestCertificate = async () => {
     try {
       setRequesting(true)
@@ -141,10 +133,9 @@ export default function CourseDetail() {
                     ❌ Request Denied
                   </span>
                 ) : (
-                  <button onClick={handleDownloadCertificate} disabled={downloading}
-                    className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-cyan-500 to-violet-600 text-white text-xs font-bold hover:opacity-90 transition-opacity disabled:opacity-50 shrink-0">
-                    {downloading ? '⏳ Generating...' : '🏅 Download Certificate'}
-                  </button>
+                  <span className="px-4 py-2 rounded-xl bg-green-500/20 text-green-400 text-xs font-bold border border-green-500/30 shrink-0">
+                    🏅 Certificate Granted
+                  </span>
                 )}
               </div>
             )}
