@@ -1,7 +1,6 @@
-import { useEffect, useState } from 'react'
 import api from '../api/client'
+import { useEffect, useState } from 'react'
 import { useStore } from '../store/useStore'
-import { downloadCertificate } from '../utils/certificate'
 
 const STATUS_MAP = {
   Pending:     'bg-yellow-500/10 text-yellow-400',
@@ -41,18 +40,7 @@ export default function AdminDashboard() {
   const [tasks, setTasks] = useState([])
   const [lessons, setLessons] = useState([])
   const [courses, setCourses] = useState([])
-  const [certificates, setCertificates] = useState([])
   const [loading, setLoading] = useState(true)
-
-  const fetchCertificates = async () => {
-    if (user?.role !== 'ADMIN') return
-    try {
-      const res = await api.get('/admin/certificates')
-      setCertificates(res.data?.certificates || [])
-    } catch (e) {
-      console.error(e)
-    }
-  }
   const [tab, setTab] = useState('tasks')
   const [changingRoleId, setChangingRoleId] = useState(null)
   const [settingDailyId, setSettingDailyId] = useState(null)
@@ -95,17 +83,7 @@ export default function AdminDashboard() {
     }
   }
 
-  const handleCertStatus = async (id, status) => {
-    try {
-      const res = await api.patch(`/admin/certificates/${id}/status`, { status })
-      setCertificates(prev => prev.map(c => c.id === id ? { ...c, status, approvedAt: res.data.certificate.approvedAt } : c))
-      setMsg({ ok: true, text: `Certificate ${status}` })
-      setTimeout(() => setMsg(null), 3000)
-    } catch (e) {
-      setMsg({ ok: false, text: 'Failed to update certificate status' })
-      setTimeout(() => setMsg(null), 3000)
-    }
-  }
+
 
   // Give XP state
   const [giveXpUserId, setGiveXpUserId] = useState('')
@@ -277,7 +255,6 @@ export default function AdminDashboard() {
     fetchAllData()
     fetchUsers()
     fetchSubs()
-    fetchCertificates()
   }, [user])
 
   useEffect(() => {
@@ -621,7 +598,7 @@ export default function AdminDashboard() {
 
   const TABS = user?.role === 'TEACHER' 
     ? ['submissions', 'content-manager']
-    : ['overview', 'user-monitor', 'give-xp', 'broadcast', 'submissions', 'certificates', 'content-manager', 'violations', 'feedbacks', 'analytics']
+    : ['overview', 'user-monitor', 'give-xp', 'broadcast', 'submissions', 'content-manager', 'violations', 'feedbacks', 'analytics']
 
   // User Monitoring Calculation (calculated on backend)
   const userStats = users
@@ -691,7 +668,6 @@ export default function AdminDashboard() {
   })
 
   const pendingCount = subs.filter(s => s.status === 'Pending' || s.status === 'UnderReview').length
-  const pendingCertsCount = certificates.filter(c => c.status === 'PENDING').length
   const acceptedCount = subs.filter(s => s.status === 'Accepted').length
 
   const SIDEBAR_ITEMS = [
@@ -700,7 +676,6 @@ export default function AdminDashboard() {
     { id: 'give-xp',      icon: '⚡', label: 'Give XP',        group: 'Main' },
     { id: 'broadcast',    icon: '📢', label: 'Broadcast',      group: 'Main' },
     { id: 'submissions',  icon: '📝', label: 'Submissions',    group: 'Main', badge: pendingCount },
-    { id: 'certificates', icon: '🏅', label: 'Certificates',   group: 'Main', badge: pendingCertsCount },
     { id: 'content-manager', icon: '📚', label: 'Content Manager', group: 'Content' },
     { id: 'violations',   icon: '🚨', label: 'Violations',     group: 'Security' },
     { id: 'feedbacks',    icon: '💬', label: 'Feedbacks',      group: 'Security' },
@@ -965,70 +940,6 @@ export default function AdminDashboard() {
               <button disabled={subsPage >= subsTotalPages} onClick={() => setSubsPage(p => p + 1)} className="px-4 py-2 rounded-lg bg-white/5 hover:bg-white/10 transition-colors text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed">Next</button>
             </div>
           )}
-        </div>
-      ) : tab === 'certificates' ? (
-        <div className="space-y-6 animate-fade-up">
-          <h2 className="text-xl font-bold text-white mb-4">Certificate Approvals</h2>
-          <div className="overflow-x-auto rounded-xl border border-white/10 bg-black/20 backdrop-blur-md">
-            <table className="w-full text-left text-sm text-slate-300">
-              <thead className="bg-white/5 text-slate-400 border-b border-white/10">
-                <tr>
-                  <th className="px-4 py-3 font-medium">User</th>
-                  <th className="px-4 py-3 font-medium">Course</th>
-                  <th className="px-4 py-3 font-medium">Progress</th>
-                  <th className="px-4 py-3 font-medium">Status</th>
-                  <th className="px-4 py-3 font-medium">Requested</th>
-                  <th className="px-4 py-3 font-medium text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-white/5">
-                {certificates.map(c => (
-                  <tr key={c.id} className="hover:bg-white/5 transition-colors">
-                    <td className="px-4 py-3">
-                      <p className="text-white font-medium">{c.user.name || 'Student'}</p>
-                      <p className="text-xs text-slate-500">{c.user.email}</p>
-                    </td>
-                    <td className="px-4 py-3">{c.course.title}</td>
-                    <td className="px-4 py-3">
-                      <span className="text-amber-400 font-bold">⚡ {c.xpEarned} XP</span>
-                      <br/>
-                      <span className="text-xs text-slate-500">{c.lessonsCompleted} lessons</span>
-                    </td>
-                    <td className="px-4 py-3">
-                      {c.status === 'PENDING' ? (
-                        <span className="px-2 py-1 rounded-md bg-amber-500/10 text-amber-400 text-xs font-bold border border-amber-500/20">Pending</span>
-                      ) : c.status === 'APPROVED' ? (
-                        <span className="px-2 py-1 rounded-md bg-green-500/10 text-green-400 text-xs font-bold border border-green-500/20">Approved</span>
-                      ) : (
-                        <span className="px-2 py-1 rounded-md bg-red-500/10 text-red-400 text-xs font-bold border border-red-500/20">Rejected</span>
-                      )}
-                    </td>
-                    <td className="px-4 py-3 text-xs text-slate-400">
-                      {new Date(c.requestedAt).toLocaleDateString()}
-                    </td>
-                    <td className="px-4 py-3 text-right space-x-2">
-                      {c.status === 'PENDING' && (
-                        <>
-                          <button onClick={() => handleCertStatus(c.id, 'APPROVED')} className="text-green-400 hover:text-green-300 bg-green-500/10 hover:bg-green-500/20 px-2 py-1 rounded text-xs transition-colors border border-green-500/20">Grant Certificate</button>
-                          <button onClick={() => handleCertStatus(c.id, 'REJECTED')} className="text-red-400 hover:text-red-300 bg-red-500/10 hover:bg-red-500/20 px-2 py-1 rounded text-xs transition-colors border border-red-500/20">Reject</button>
-                        </>
-                      )}
-                      {c.status === 'APPROVED' && (
-                        <button onClick={() => downloadCertificate(c.user.name || c.user.email, c.course.title, c.xpEarned, c.lessonsCompleted, new Date(c.approvedAt).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }))} className="text-cyan-400 hover:text-cyan-300 bg-cyan-500/10 hover:bg-cyan-500/20 px-2 py-1 rounded text-xs transition-colors border border-cyan-500/20">🏅 Download</button>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-                {certificates.length === 0 && (
-                  <tr>
-                    <td colSpan="6" className="px-4 py-8 text-center text-slate-500 text-sm">
-                      No certificate requests found.
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
         </div>
       ) : tab === 'content-manager' ? (
         <div className="space-y-6">

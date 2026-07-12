@@ -52,13 +52,7 @@ const FEATURES = [
     color: 'from-red-500/20 to-red-500/5',
     accent: '#ef4444',
   },
-  {
-    icon: '🏅',
-    title: 'Completion Certificates',
-    desc: 'Finish every lesson in a course and instantly download a personalised certificate with your name, XP earned, and completion date.',
-    color: 'from-emerald-500/20 to-emerald-500/5',
-    accent: '#10b981',
-  },
+
   {
     icon: '👩‍🏫',
     title: 'Teacher & Admin Panel',
@@ -100,7 +94,7 @@ const STEPS = [
   { step: '01', title: 'Sign in with Google',       desc: 'One-click authentication. No passwords, no credit card, no hassle.' },
   { step: '02', title: 'Pick C or Python',           desc: 'Choose your language and start structured lessons at your own pace.' },
   { step: '03', title: 'Solve Tasks & Earn XP',     desc: 'Submit code, take quizzes, beat daily challenges, and ask the AI tutor when stuck.' },
-  { step: '04', title: 'Unlock Ranks & Certificates', desc: 'Level up from First Steps to God Tier and download your completion certificate.' },
+  { step: '04', title: 'Unlock Ranks & Badges', desc: 'Level up from First Steps to God Tier and earn exclusive achievement badges.' },
 ]
 
 const ROLES = [
@@ -109,7 +103,7 @@ const ROLES = [
     title: 'Student',
     color: 'border-cyan-500/30 from-cyan-900/20 to-cyan-900/5',
     accent: '#06b6d4',
-    perks: ['Access C & Python courses', 'Complete tasks & quizzes', 'Earn XP & unlock achievements', 'Ask the AI tutor for free', 'Daily challenge bonuses', 'Download certificates'],
+    perks: ['Access C & Python courses', 'Complete tasks & quizzes', 'Earn XP & unlock achievements', 'Ask the AI tutor for free', 'Daily challenge bonuses'],
   },
   {
     icon: '👩‍🏫',
@@ -154,12 +148,12 @@ export default function Landing() {
 
           <h1 className="text-5xl md:text-7xl font-black tracking-tight leading-[1.05] animate-fade-up">
             Learn to Code.<br />
-            <span className="gradient-text">Level Up. Get Certified.</span>
+            <span className="gradient-text">Level Up. Master Code.</span>
           </h1>
 
           <p className="mt-6 max-w-2xl mx-auto text-lg leading-relaxed animate-fade-up" style={{ color: 'var(--text-secondary)', animationDelay: '0.1s' }}>
             A gamified, AI-powered, anti-cheat programming school for C and Python. 
-            Earn XP, unlock achievements, beat daily challenges, and download your certificate — all for free.
+            Earn XP, unlock achievements, and beat daily challenges — all for free.
           </p>
 
           <div className="mt-10 flex flex-wrap items-center justify-center gap-4 animate-fade-up" style={{ animationDelay: '0.2s' }}>
@@ -174,6 +168,13 @@ export default function Landing() {
           <p className="mt-5 text-xs animate-fade-in" style={{ color: 'var(--text-muted)', animationDelay: '0.3s' }}>
             No credit card · Sign in with Google · Free AI tutor · Works offline
           </p>
+
+          <div className="mt-12 flex justify-center animate-bounce">
+            <button onClick={() => window.scrollTo({ top: window.innerHeight * 0.8, behavior: 'smooth' })} className="text-cyan-500 opacity-70 hover:opacity-100 transition-opacity flex flex-col items-center gap-2">
+              <span className="text-sm font-medium tracking-wide">Explore Features</span>
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"></path></svg>
+            </button>
+          </div>
 
           <div className="mt-8 flex items-center justify-center gap-3 animate-fade-in" style={{ animationDelay: '0.35s' }}>
             <div className="flex -space-x-2">
@@ -291,7 +292,7 @@ export default function Landing() {
             <span className="text-5xl mb-4 block">🚀</span>
             <h2 className="text-3xl md:text-4xl font-black">Ready to start your coding journey?</h2>
             <p className="mt-4 text-base max-w-md mx-auto" style={{ color: 'var(--text-secondary)' }}>
-              Join students mastering C and Python — with a free AI tutor, daily challenges, and real certificates waiting for you.
+              Join students mastering C and Python — with a free AI tutor, daily challenges, and achievement badges waiting for you.
             </p>
             <Link to="/login"
               className="btn-primary mt-8 inline-flex px-10 py-4 text-base btn-glow"

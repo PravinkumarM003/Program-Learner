@@ -27,18 +27,14 @@ export default function CourseDetail() {
   const [course, setCourse] = useState(null)
   const [progress, setProgress] = useState([]) // array of LessonProgress objects
   const [submittedTaskIds, setSubmittedTaskIds] = useState(new Set())
-  const [certStatus, setCertStatus] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
-  const [downloading, setDownloading] = useState(false)
-  const [requesting, setRequesting] = useState(false)
 
   useEffect(() => {
     Promise.all([
       api.get(`/courses/${id}`).then(r => setCourse(r.data?.course)),
       api.get('/progress').then(r => setProgress(r.data?.progress || [])).catch(() => {}),
-      api.get('/submissions').then(r => setSubmittedTaskIds(new Set((r.data?.submissions || []).map(s => s.taskId)))).catch(() => {}),
-      api.get(`/certificates/${id}`).then(r => setCertStatus(r.data?.certificate)).catch(() => {})
+      api.get('/submissions').then(r => setSubmittedTaskIds(new Set((r.data?.submissions || []).map(s => s.taskId)))).catch(() => {})
     ])
       .catch(() => setError('Course not found.'))
       .finally(() => setLoading(false))
@@ -69,17 +65,7 @@ export default function CourseDetail() {
   const progressPct = totalLessons > 0 ? Math.round((completedCount / totalLessons) * 100) : 0
   const totalXpEarned = (course.lessons || []).reduce((sum, l) => sum + (progressMap[l.id]?.xp || 0), 0)
 
-  const handleRequestCertificate = async () => {
-    try {
-      setRequesting(true)
-      const res = await api.post(`/certificates/request/${course.id}`)
-      setCertStatus(res.data.certificate)
-    } catch (e) {
-      alert(e.response?.data?.error || 'Failed to request certificate')
-    } finally {
-      setRequesting(false)
-    }
-  }
+
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-10">
@@ -118,25 +104,6 @@ export default function CourseDetail() {
                   <p className="font-bold text-green-400 text-sm">🎉 Course Complete!</p>
                   <p className="text-xs text-slate-400 mt-0.5">You finished all {totalLessons} lessons.</p>
                 </div>
-                
-                {!certStatus ? (
-                  <button onClick={handleRequestCertificate} disabled={requesting}
-                    className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-violet-500 to-fuchsia-600 text-white text-xs font-bold hover:opacity-90 transition-opacity disabled:opacity-50 shrink-0">
-                    {requesting ? '⏳ Requesting...' : '📝 Request Certificate'}
-                  </button>
-                ) : certStatus.status === 'PENDING' ? (
-                  <span className="px-4 py-2 rounded-xl bg-amber-500/20 text-amber-400 text-xs font-bold border border-amber-500/30">
-                    ⏳ Approval Pending
-                  </span>
-                ) : certStatus.status === 'REJECTED' ? (
-                  <span className="px-4 py-2 rounded-xl bg-red-500/20 text-red-400 text-xs font-bold border border-red-500/30">
-                    ❌ Request Denied
-                  </span>
-                ) : (
-                  <span className="px-4 py-2 rounded-xl bg-green-500/20 text-green-400 text-xs font-bold border border-green-500/30 shrink-0">
-                    🏅 Certificate Granted
-                  </span>
-                )}
               </div>
             )}
           </div>

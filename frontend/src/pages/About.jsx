@@ -12,7 +12,6 @@ const PLATFORM_FEATURES = [
   { icon: '🎖️', label: 'Achievements & Badges',       desc: '13 progressive badges that unlock as your XP grows' },
   { icon: '🔐', label: 'Anti-Cheat & Exam Mode',      desc: 'Tab-switch detection, copy-paste blocking, and auto-IP-ban after 3 violations' },
   { icon: '🛡️', label: 'Hacking Detection',           desc: 'SQL injections & malicious payloads blocked; attacker IP & ID reported to admin' },
-  { icon: '🏅', label: 'Completion Certificates',     desc: 'Download a personalised certificate on 100% course completion' },
   { icon: '👩‍🏫', label: 'Teacher Dashboard',          desc: 'Create Coding Tasks, Quizzes, and General Questions; review submissions' },
   { icon: '⚙️', label: 'Admin Panel',                 desc: 'Manage users, roles, XP, blocked IPs, broadcasts, and security alerts' },
   { icon: '📴', label: 'Offline & Low-Internet Mode', desc: 'Service Worker caches lessons so you keep learning even on slow connections' },
@@ -66,8 +65,7 @@ export default function About() {
           </h1>
           <p className="text-slate-400 text-lg max-w-2xl mx-auto leading-relaxed">
             Program Learner is an interactive platform where students learn C and Python through 
-            structured lessons, live coding, a free AI tutor, daily challenges, achievements, 
-            and certified course completion — all with enterprise-grade security built in.
+            structured lessons, live coding, a free AI tutor, daily challenges, and achievements — all with enterprise-grade security built in.
           </p>
           {!user && (
             <div className="flex justify-center gap-4 pt-2">
@@ -147,7 +145,7 @@ export default function About() {
             {[
               {
                 icon: '🎓', title: 'Students', accent: 'border-cyan-500/30 text-cyan-400',
-                items: ['Access C & Python lessons & tasks', 'Earn XP and unlock achievements', 'Ask the AI tutor for free', 'Beat daily challenges', 'Download completion certificates'],
+                items: ['Access C & Python lessons & tasks', 'Earn XP and unlock achievements', 'Ask the AI tutor for free', 'Beat daily challenges'],
               },
               {
                 icon: '👩‍🏫', title: 'Teachers', accent: 'border-violet-500/30 text-violet-400',
@@ -186,7 +184,7 @@ export default function About() {
             <h3 className="font-bold text-white flex items-center gap-2"><span className="text-violet-400">🚀</span> Mission</h3>
             <p className="text-sm text-slate-400 leading-relaxed">
               To provide interactive, gamified, and secure coding education — with a free AI tutor, 
-              daily challenges, achievements, and real certifications — so every student grows into a confident developer.
+              daily challenges, and achievements — so every student grows into a confident developer.
             </p>
           </div>
         </div>
