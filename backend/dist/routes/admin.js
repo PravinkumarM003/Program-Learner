@@ -177,6 +177,22 @@ router.post('/users/:id/xp', auth_1.authenticateJWT, (0, auth_1.authorizeRoles)(
     }
 });
 
+
+// Create a new course (track)
+router.post('/courses', auth_1.authenticateJWT, (0, auth_1.authorizeRoles)('ADMIN', 'TEACHER'), async (req, res) => {
+    try {
+        const { title } = req.body;
+        if (!title) return res.status(400).json({ error: 'Title is required' });
+        const existing = await prisma_1.prisma.course.findFirst({ where: { title } });
+        if (existing) return res.status(400).json({ error: 'Track already exists' });
+        const course = await prisma_1.prisma.course.create({ data: { title } });
+        res.json({ course });
+    } catch (e) {
+        console.error(e);
+        res.status(500).json({ error: 'Failed to create track' });
+    }
+});
+
 router.post('/lessons', auth_1.authenticateJWT, (0, auth_1.authorizeRoles)('ADMIN', 'TEACHER'), async (req, res) => {
     try {
         const { title, content, notes, videoUrl, difficulty, category } = req.body;

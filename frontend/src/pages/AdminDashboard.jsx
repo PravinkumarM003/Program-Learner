@@ -960,8 +960,15 @@ export default function AdminDashboard() {
                 onClick={() => {
                   const track = prompt("Enter new track name:");
                   if (track && !courses.find(c => c.title === track)) {
-                    setCourses([...courses, { id: 'temp-'+Date.now(), title: track }]);
-                    setContentTrack(track);
+                    api.post('/admin/courses', { title: track }).then(res => {
+                      setCourses([...courses, res.data.course]);
+                      setContentTrack(track);
+                      setMsg({ ok: true, text: 'Track created!' });
+                      setTimeout(() => setMsg(null), 3000);
+                    }).catch(e => {
+                      setMsg({ ok: false, text: e.response?.data?.error || 'Failed to create track' });
+                      setTimeout(() => setMsg(null), 3000);
+                    });
                   }
                 }}
                 className="px-4 py-2 rounded-lg text-sm font-bold text-slate-400 hover:text-white transition-all bg-white/5 hover:bg-white/10"
