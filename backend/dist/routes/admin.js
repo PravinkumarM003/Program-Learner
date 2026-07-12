@@ -379,7 +379,7 @@ router.delete('/notifications/broadcast', auth_1.authenticateJWT, (0, auth_1.aut
     }
 });
 // Get all certificates (Admin)
-router.get('/certificates', auth_1.requireAuth, auth_1.requireAdmin, async (req, res) => {
+router.get('/certificates', auth_1.authenticateJWT, (0, auth_1.authorizeRoles)('ADMIN', 'TEACHER'), async (req, res) => {
     try {
         const certificates = await prisma_1.prisma.certificate.findMany({
             include: {
@@ -396,7 +396,7 @@ router.get('/certificates', auth_1.requireAuth, auth_1.requireAdmin, async (req,
 });
 
 // Approve or Reject certificate
-router.patch('/certificates/:id/status', auth_1.requireAuth, auth_1.requireAdmin, async (req, res) => {
+router.patch('/certificates/:id/status', auth_1.authenticateJWT, (0, auth_1.authorizeRoles)('ADMIN', 'TEACHER'), async (req, res) => {
     try {
         const { status } = req.body; // 'APPROVED' or 'REJECTED'
         if (!['APPROVED', 'REJECTED'].includes(status)) {
