@@ -9,14 +9,9 @@ const _coursesCache = { data: null, expiresAt: 0 };
 
 router.get('/', async (_req, res) => {
     try {
-        if (_coursesCache.data && Date.now() < _coursesCache.expiresAt) {
-            return res.json({ courses: _coursesCache.data, cached: true });
-        }
         const courses = await prisma_1.prisma.course.findMany({
             include: { lessons: { orderBy: { order: 'asc' } } }
         });
-        _coursesCache.data = courses;
-        _coursesCache.expiresAt = Date.now() + 5 * 60 * 1000; // 5 minutes
         res.json({ courses });
     } catch (e) {
         res.status(500).json({ error: 'Failed to fetch courses' });
