@@ -825,10 +825,16 @@ export default function AdminDashboard() {
           </div>
         </div>
       ) : tab === 'user-monitor' ? (
-        <div className="space-y-3">
+        <div className="space-y-6">
           {userStats.length === 0 && <p className="text-slate-500 text-center py-10">No users found.</p>}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-            {userStats.map(u => (
+          
+          {(() => {
+            const admins = userStats.filter(u => u.role === 'ADMIN');
+            const teachers = userStats.filter(u => u.role === 'TEACHER');
+            const college = userStats.filter(u => u.role === 'STUDENT' && u.email && u.email.endsWith('@bitsathy.ac.in'));
+            const external = userStats.filter(u => u.role === 'STUDENT' && !(u.email && u.email.endsWith('@bitsathy.ac.in')));
+
+            const renderCard = (u) => (
               <div key={u.id} className="glass-card rounded-xl p-4 flex flex-col gap-3 relative overflow-hidden group">
                 <div className="absolute top-0 right-0 w-24 h-24 bg-cyan-500/5 rounded-full blur-2xl group-hover:bg-cyan-500/10 transition-colors" />
                 <div className="flex items-center gap-3">
@@ -883,8 +889,38 @@ export default function AdminDashboard() {
                   </div>
                 )}
               </div>
-            ))}
-          </div>
+            );
+
+            return (
+              <div className="space-y-8">
+                {admins.length > 0 && (
+                  <div>
+                    <h3 className="font-bold text-violet-400 mb-3 text-lg flex items-center gap-2"><span className="text-2xl">👑</span> Administrators ({admins.length})</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">{admins.map(renderCard)}</div>
+                  </div>
+                )}
+                {teachers.length > 0 && (
+                  <div>
+                    <h3 className="font-bold text-fuchsia-400 mb-3 text-lg flex items-center gap-2"><span className="text-2xl">👨‍🏫</span> Teachers ({teachers.length})</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">{teachers.map(renderCard)}</div>
+                  </div>
+                )}
+                {college.length > 0 && (
+                  <div>
+                    <h3 className="font-bold text-emerald-400 mb-3 text-lg flex items-center gap-2"><span className="text-2xl">🎓</span> College Students ({college.length})</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">{college.map(renderCard)}</div>
+                  </div>
+                )}
+                {external.length > 0 && (
+                  <div>
+                    <h3 className="font-bold text-amber-400 mb-3 text-lg flex items-center gap-2"><span className="text-2xl">🌍</span> External Students ({external.length})</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">{external.map(renderCard)}</div>
+                  </div>
+                )}
+              </div>
+            );
+          })()}
+          
           {usersTotalPages > 1 && (
             <div className="flex justify-center items-center gap-4 pt-4">
               <button disabled={usersPage <= 1} onClick={() => setUsersPage(p => p - 1)} className="px-4 py-2 rounded-lg bg-white/5 hover:bg-white/10 transition-colors text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed">Previous</button>
