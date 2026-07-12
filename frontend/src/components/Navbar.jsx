@@ -8,7 +8,7 @@ import { getXpDetails } from '../utils/ranks'
 const NAV_LINKS = [
   { to: '/dashboard', label: 'Dashboard', icon: '🏠' },
   { to: '/tasks', label: 'Tasks', icon: '🎯' },
-  { to: '/courses', label: 'Lessons', icon: '📚' },
+  { to: '/courses', label: 'Courses', icon: '📚' },
   { to: '/playground', label: 'Playground', icon: '⚡' },
   { to: '/submissions', label: 'Submissions', icon: '📝' },
   { to: '/leaderboard', label: 'Leaderboard', icon: '🏆' },

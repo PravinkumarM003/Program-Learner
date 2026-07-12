@@ -193,6 +193,22 @@ router.post('/courses', auth_1.authenticateJWT, (0, auth_1.authorizeRoles)('ADMI
     }
 });
 
+
+// Edit course
+router.put('/courses/:id', auth_1.authenticateJWT, (0, auth_1.authorizeRoles)('ADMIN', 'TEACHER'), async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { title, emoji } = req.body;
+        const data = {};
+        if (title !== undefined) data.title = title;
+        if (emoji !== undefined) data.description = emoji;
+        const course = await prisma_1.prisma.course.update({ where: { id }, data });
+        res.json({ course });
+    } catch (e) {
+        res.status(500).json({ error: 'Failed to update course' });
+    }
+});
+
 // Delete course (track)
 router.delete('/courses/:id', auth_1.authenticateJWT, (0, auth_1.authorizeRoles)('ADMIN', 'TEACHER'), async (req, res) => {
     try {
