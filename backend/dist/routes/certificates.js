@@ -10,7 +10,7 @@ const auth_1 = require("../middleware/auth");
 const router = express_1.default.Router();
 
 // Get certificate status for a course
-router.get('/:courseId', auth_1.requireAuth, async (req, res) => {
+router.get('/:courseId', auth_1.authenticateJWT, async (req, res) => {
     try {
         const certificate = await prisma_1.prisma.certificate.findUnique({
             where: {
@@ -28,7 +28,7 @@ router.get('/:courseId', auth_1.requireAuth, async (req, res) => {
 });
 
 // Request a certificate
-router.post('/request/:courseId', auth_1.requireAuth, async (req, res) => {
+router.post('/request/:courseId', auth_1.authenticateJWT, async (req, res) => {
     try {
         const courseId = req.params.courseId;
         const userId = req.user.id;
