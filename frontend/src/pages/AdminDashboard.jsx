@@ -1462,22 +1462,17 @@ export default function AdminDashboard() {
             <h2 className="font-black text-white text-xl mb-1">➕ Create New Task</h2>
             <p className="text-sm text-slate-400 mb-8">Choose the programming language for this task</p>
             <div className="grid grid-cols-2 gap-4">
-              <button
-                onClick={() => openCreateTask('C')}
-                className="flex flex-col items-center gap-3 p-6 rounded-2xl border-2 border-cyan-500/40 bg-cyan-500/10 hover:bg-cyan-500/20 hover:border-cyan-500 transition-all group"
-              >
-                <span className="text-4xl">🖥️</span>
-                <span className="font-black text-white text-lg group-hover:text-cyan-400 transition-colors">C</span>
-                <span className="text-xs text-slate-400">C Language Track</span>
-              </button>
-              <button
-                onClick={() => openCreateTask('Python')}
-                className="flex flex-col items-center gap-3 p-6 rounded-2xl border-2 border-violet-500/40 bg-violet-500/10 hover:bg-violet-500/20 hover:border-violet-500 transition-all group"
-              >
-                <span className="text-4xl">🐍</span>
-                <span className="font-black text-white text-lg group-hover:text-violet-400 transition-colors">Python</span>
-                <span className="text-xs text-slate-400">Python Language Track</span>
-              </button>
+              {courses.map(c => (
+                <button
+                  key={c.id}
+                  onClick={() => openCreateTask(c.title)}
+                  className="flex flex-col items-center gap-3 p-6 rounded-2xl border-2 border-cyan-500/40 bg-cyan-500/10 hover:bg-cyan-500/20 hover:border-cyan-500 transition-all group"
+                >
+                  <span className="text-4xl">{c.description || '🖥️'}</span>
+                  <span className="font-black text-white text-lg group-hover:text-cyan-400 transition-colors">{c.title}</span>
+                  <span className="text-xs text-slate-400">{c.title} Track</span>
+                </button>
+              ))}
             </div>
             <button
               onClick={() => setTaskLangPrompt(false)}
@@ -1496,22 +1491,17 @@ export default function AdminDashboard() {
             <h2 className="font-black text-white text-xl mb-1">📚 Create New Lesson</h2>
             <p className="text-sm text-slate-400 mb-8">Choose the programming language for this lesson</p>
             <div className="grid grid-cols-2 gap-4">
-              <button
-                onClick={() => openCreateLesson('C')}
-                className="flex flex-col items-center gap-3 p-6 rounded-2xl border-2 border-cyan-500/40 bg-cyan-500/10 hover:bg-cyan-500/20 hover:border-cyan-500 transition-all group"
-              >
-                <span className="text-4xl">🖥️</span>
-                <span className="font-black text-white text-lg group-hover:text-cyan-400 transition-colors">C</span>
-                <span className="text-xs text-slate-400">C Language Track</span>
-              </button>
-              <button
-                onClick={() => openCreateLesson('Python')}
-                className="flex flex-col items-center gap-3 p-6 rounded-2xl border-2 border-violet-500/40 bg-violet-500/10 hover:bg-violet-500/20 hover:border-violet-500 transition-all group"
-              >
-                <span className="text-4xl">🐍</span>
-                <span className="font-black text-white text-lg group-hover:text-violet-400 transition-colors">Python</span>
-                <span className="text-xs text-slate-400">Python Language Track</span>
-              </button>
+              {courses.map(c => (
+                <button
+                  key={c.id}
+                  onClick={() => openCreateLesson(c.title)}
+                  className="flex flex-col items-center gap-3 p-6 rounded-2xl border-2 border-cyan-500/40 bg-cyan-500/10 hover:bg-cyan-500/20 hover:border-cyan-500 transition-all group"
+                >
+                  <span className="text-4xl">{c.description || '📚'}</span>
+                  <span className="font-black text-white text-lg group-hover:text-cyan-400 transition-colors">{c.title}</span>
+                  <span className="text-xs text-slate-400">{c.title} Track</span>
+                </button>
+              ))}
             </div>
             <button
               onClick={() => setLessonLangPrompt(false)}
@@ -1574,8 +1564,7 @@ export default function AdminDashboard() {
                     <label className="text-xs text-slate-400 font-semibold block mb-1.5">Language Track</label>
                     <select value={taskCategory} onChange={e => setTaskCategory(e.target.value)}
                       className="w-full rounded-xl bg-black/20 border border-white/10 px-4 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-cyan-500/50 transition-shadow">
-                      <option value="C">C Track</option>
-                      <option value="Python">Python Track</option>
+                      {courses.map(c => <option key={c.id} value={c.title}>{c.title} Track</option>)}
                     </select>
                   </div>
                   <div>
@@ -1811,8 +1800,7 @@ export default function AdminDashboard() {
                     <label className="text-xs text-slate-400 font-semibold block mb-1.5">Language Track</label>
                     <select value={lessonCategory} onChange={e => setLessonCategory(e.target.value)}
                       className="w-full rounded-xl bg-black/20 border border-white/10 px-4 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-cyan-500/50 transition-shadow">
-                      <option value="C">C Track</option>
-                      <option value="Python">Python Track</option>
+                      {courses.map(c => <option key={c.id} value={c.title}>{c.title} Track</option>)}
                     </select>
                   </div>
                 </div>

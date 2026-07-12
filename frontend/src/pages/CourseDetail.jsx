@@ -74,9 +74,8 @@ export default function CourseDetail() {
       </Link>
 
       <div className="glass-card rounded-3xl p-8 mb-8">
-        <span className="text-4xl">🐍</span>
+        <span className="text-4xl">{course.description || '📚'}</span>
         <h1 className="mt-4 text-3xl font-black text-white">{course.title}</h1>
-        {course.description && <p className="mt-3 text-slate-400 leading-relaxed">{course.description}</p>}
 
         {/* Stats row */}
         <div className="mt-5 flex flex-wrap items-center gap-4 text-sm text-slate-500">
