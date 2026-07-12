@@ -949,18 +949,19 @@ export default function AdminDashboard() {
                 <button
                   key={c.id}
                   onClick={() => setContentTrack(c.title)}
-                  className={`px-6 py-2 rounded-lg text-sm font-bold transition-all ${
-                    contentTrack === c.title ? 'bg-cyan-500 text-black shadow-lg shadow-cyan-500/20' : 'text-slate-400 hover:text-white'
+                  className={`px-4 py-2 rounded-lg text-sm font-bold transition-all shrink-0 ${
+                    contentTrack === c.title ? 'bg-cyan-500 text-black shadow-lg shadow-cyan-500/20' : 'text-slate-400 hover:text-white bg-white/5'
                   }`}
                 >
-                  {c.title} Track
+                  {c.description ? c.description + ' ' : ''}{c.title} Track
                 </button>
               ))}
               <button
                 onClick={() => {
                   const track = prompt("Enter new track name:");
                   if (track && !courses.find(c => c.title === track)) {
-                    api.post('/admin/courses', { title: track }).then(res => {
+                    const emoji = prompt("Enter an emoji for this track (e.g. 🦀):") || "📚";
+                    api.post('/admin/courses', { title: track, emoji }).then(res => {
                       setCourses([...courses, res.data.course]);
                       setContentTrack(track);
                       setMsg({ ok: true, text: 'Track created!' });
@@ -985,10 +986,30 @@ export default function AdminDashboard() {
                 <h3 className="font-bold text-white flex items-center gap-2">
                   <span className="text-xl">📚</span> {contentTrack} Lessons
                 </h3>
-                <button onClick={() => openCreateLesson(contentTrack)}
-                  className="rounded-lg bg-cyan-500/10 text-cyan-400 px-3 py-1 text-xs font-bold hover:bg-cyan-500/20 transition-colors">
-                  ➕ New Lesson
-                </button>
+                <div className="flex gap-2">
+                    <button onClick={() => {
+                      if (window.confirm(`Are you sure you want to delete the entire ${contentTrack} track? This will delete all its lessons and tasks.`)) {
+                        const course = courses.find(c => c.title === contentTrack);
+                        if (course) {
+                          api.delete(`/admin/courses/${course.id}`).then(() => {
+                            setCourses(courses.filter(c => c.id !== course.id));
+                            setContentTrack(courses[0]?.title || 'C');
+                            setMsg({ ok: true, text: 'Track deleted successfully!' });
+                            setTimeout(() => setMsg(null), 3000);
+                          }).catch(e => {
+                            setMsg({ ok: false, text: 'Failed to delete track' });
+                            setTimeout(() => setMsg(null), 3000);
+                          });
+                        }
+                      }
+                    }} className="rounded-lg bg-red-500/10 text-red-400 px-3 py-1 text-xs font-bold hover:bg-red-500/20 transition-colors">
+                      🗑 Delete Track
+                    </button>
+                    <button onClick={() => openCreateLesson(contentTrack)}
+                      className="rounded-lg bg-cyan-500/10 text-cyan-400 px-3 py-1 text-xs font-bold hover:bg-cyan-500/20 transition-colors">
+                      ➕ New Lesson
+                    </button>
+                  </div>
               </div>
               <div className="space-y-2">
                 {lessons.filter(l => (l.category || 'C') === contentTrack).length === 0 && <p className="text-slate-500 text-center py-4 text-sm">No lessons in {contentTrack} track yet.</p>}
