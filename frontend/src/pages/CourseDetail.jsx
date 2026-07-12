@@ -98,14 +98,7 @@ export default function CourseDetail() {
                 style={{ width: `${progressPct}%` }}
               />
             </div>
-            {progressPct === 100 && (
-              <div className="mt-4 flex flex-col sm:flex-row items-center justify-between p-4 rounded-xl bg-gradient-to-r from-green-500/10 to-cyan-500/10 border border-green-500/20 gap-4">
-                <div>
-                  <p className="font-bold text-green-400 text-sm">🎉 Course Complete!</p>
-                  <p className="text-xs text-slate-400 mt-0.5">You finished all {totalLessons} lessons.</p>
-                </div>
-              </div>
-            )}
+
           </div>
         )}
       </div>
