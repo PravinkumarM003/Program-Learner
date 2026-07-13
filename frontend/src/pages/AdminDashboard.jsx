@@ -436,8 +436,9 @@ export default function AdminDashboard() {
       setMsg({ ok: true, text: `Task successfully ${editingTask ? 'updated' : 'created'}!` })
       setTimeout(() => setMsg(null), 3000)
       fetchAllData()
-    }).catch(() => {
-      setMsg({ ok: false, text: 'Failed to save task.' })
+    }).catch((err) => {
+      const errMsg = err.response?.data?.error || err.response?.data?.details || 'Failed to save task.'
+      setMsg({ ok: false, text: errMsg })
       setTimeout(() => setMsg(null), 3000)
     })
       .finally(() => setSavingTask(false))
@@ -522,8 +523,9 @@ export default function AdminDashboard() {
       setMsg({ ok: true, text: `Lesson successfully ${editingLesson ? 'updated' : 'created'}!` })
       setTimeout(() => setMsg(null), 3000)
       fetchAllData()
-    }).catch(() => {
-      setMsg({ ok: false, text: 'Failed to save lesson.' })
+    }).catch((err) => {
+      const errMsg = err.response?.data?.error || err.response?.data?.details || 'Failed to save lesson.'
+      setMsg({ ok: false, text: errMsg })
       setTimeout(() => setMsg(null), 3000)
     })
       .finally(() => setSavingLesson(false))

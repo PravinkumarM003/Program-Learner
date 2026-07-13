@@ -11,6 +11,15 @@
   ],
   "headers": [
     {
+      "source": "/(.*)\\.html",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-cache, no-store, must-revalidate"
+        }
+      ]
+    },
+    {
       "source": "/assets/(.*)",
       "headers": [
         {
@@ -22,7 +31,7 @@
   ],
   "routes": [
     { "handle": "filesystem" },
-    { "src": "^/assets/(.*)$", "status": 404, "dest": "/404.html" },
+    { "src": "^/assets/(.*)$", "status": 404 },
     { "src": "/.*", "dest": "/index.html" }
   ]
 }

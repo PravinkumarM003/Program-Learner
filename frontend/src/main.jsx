@@ -9,6 +9,12 @@ createRoot(document.getElementById('root')).render(
   </React.StrictMode>
 )
 
+// Handle Vite dynamic import errors (e.g. chunk hash mismatch after new deployment)
+window.addEventListener('vite:preloadError', (event) => {
+  console.warn('Vite preload error (likely a new deployment). Reloading page...', event)
+  window.location.reload()
+})
+
 // Register Service Worker for offline/low-internet support
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
