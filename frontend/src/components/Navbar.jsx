@@ -132,6 +132,22 @@ export default function Navbar() {
               </div>
             )}
 
+            {/* App Downloads */}
+            <a
+              href="/download/windows"
+              className="h-8 w-8 flex items-center justify-center rounded-lg text-slate-400 hover:text-white hover:bg-white/5 transition-colors text-sm"
+              title="Download Windows App"
+            >
+              💻
+            </a>
+            <a
+              href="/download/mobile"
+              className="h-8 w-8 flex items-center justify-center rounded-lg text-slate-400 hover:text-white hover:bg-white/5 transition-colors text-sm"
+              title="Download Mobile App"
+            >
+              📱
+            </a>
+
             {/* Theme toggle */}
             <button
               onClick={toggleTheme}
@@ -329,6 +345,14 @@ export default function Navbar() {
 
         {/* Drawer footer */}
         <div className="border-t px-4 py-4 space-y-2" style={{ borderColor: 'var(--border-subtle)' }}>
+          <a href="/download/windows"
+            className="flex items-center gap-3 w-full px-4 py-2.5 rounded-xl text-sm text-slate-300 hover:text-white hover:bg-white/5 transition-colors">
+            <span className="text-base w-6 text-center">💻</span> Get Windows App
+          </a>
+          <a href="/download/mobile"
+            className="flex items-center gap-3 w-full px-4 py-2.5 rounded-xl text-sm text-slate-300 hover:text-white hover:bg-white/5 transition-colors">
+            <span className="text-base w-6 text-center">📱</span> Get Mobile App
+          </a>
           <button onClick={toggleTheme}
             className="flex items-center gap-3 w-full px-4 py-2.5 rounded-xl text-sm text-slate-300 hover:text-white hover:bg-white/5 transition-colors">
             <span className="text-base w-6 text-center">{theme === 'dark' ? '☀️' : '🌙'}</span>

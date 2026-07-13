@@ -3,9 +3,6 @@ import { Link } from 'react-router-dom'
 const Editor = lazy(() => import('@monaco-editor/react'))
 import { useStore } from '../store/useStore'
 import api from '../api/client'
-import { initMonaco } from '../utils/monaco'
-
-initMonaco()
 
 const STATUS_MAP = {
   Pending:     { cls: 'badge badge-pending',  icon: '⏳', label: 'Pending' },
@@ -21,6 +18,7 @@ export default function Submissions() {
   const [selected, setSelected] = useState(null)
 
   useEffect(() => {
+    import('../utils/monaco').then(({ initMonaco }) => initMonaco())
     api.get('/submissions')
       .then(r => setSubs(r.data?.submissions || []))
       .catch(() => {})

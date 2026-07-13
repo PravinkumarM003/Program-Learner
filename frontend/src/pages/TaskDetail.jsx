@@ -3,9 +3,6 @@ import { useParams, Link, useNavigate } from 'react-router-dom'
 const Editor = lazy(() => import('@monaco-editor/react'))
 import { useStore } from '../store/useStore'
 import api from '../api/client'
-import { initMonaco } from '../utils/monaco'
-
-initMonaco()
 
 const TYPE_BADGES = {
   GENERAL: 'bg-teal-500/10 text-teal-400 border border-teal-500/20',
@@ -54,6 +51,10 @@ export default function TaskDetail() {
   const [restrictedModeActive, setRestrictedModeActive] = useState(false)
   const [warningMsg, setWarningMsg] = useState(null)
   const lastViolationTime = useRef(0)
+
+  useEffect(() => {
+    import('../utils/monaco').then(({ initMonaco }) => initMonaco())
+  }, [])
 
   useEffect(() => {
     if (restrictedModeActive) {

@@ -1,10 +1,8 @@
 import { useState, useEffect, useRef } from 'react'
-import Editor from '@monaco-editor/react'
+import { lazy, Suspense } from 'react'
+const Editor = lazy(() => import('@monaco-editor/react'))
 import { useStore } from '../store/useStore'
 import api from '../api/client'
-import { initMonaco } from '../utils/monaco'
-
-initMonaco()
 
 const STORAGE_KEY = 'pg_snippets'
 
@@ -91,6 +89,11 @@ export default function Playground() {
   const [showAiPopup, setShowAiPopup] = useState(false)
   const [aiPopupMsg, setAiPopupMsg] = useState('')
   const [chatOpen, setChatOpen] = useState(false)
+
+  useEffect(() => {
+    import('../utils/monaco').then(({ initMonaco }) => initMonaco())
+  }, [])
+
   const [chatInput, setChatInput] = useState('')
   const [chatMessages, setChatMessages] = useState([{ role: 'ai', content: 'Hello! I am your AI assistant. How can I help you with your code today?' }])
   const [isAiTyping, setIsAiTyping] = useState(false)
@@ -443,29 +446,31 @@ export default function Playground() {
           {/* Editor */}
           <div className="flex-1 flex relative" style={{ minHeight: 0 }}>
             <div className="flex-1 relative">
-              <Editor
-                height="100%"
-                language={langCfg.monacoLang}
-                theme={ideTheme === 'dark' ? 'vs-dark' : ideTheme}
-                value={code}
-                onChange={v => setCode(v || '')}
-                onMount={e => { editorRef.current = e }}
-                beforeMount={handleEditorWillMount}
-                options={{
-                  fontSize: 14,
-                  fontFamily: '"Fira Code", "Cascadia Code", monospace',
-                  fontLigatures: true,
-                  minimap: { enabled: false },
-                  scrollBeyondLastLine: false,
-                  padding: { top: 16, bottom: 16 },
-                  lineNumbers: 'on',
-                  renderLineHighlight: 'gutter',
-                  wordWrap: 'off',
-                  automaticLayout: true,
-                  tabSize: language === 'python' ? 4 : 2,
-                  insertSpaces: true,
-                }}
-              />
+              <Suspense fallback={<div className="flex-1 flex items-center justify-center text-white/50 text-sm">Loading Editor...</div>}>
+                <Editor
+                  height="100%"
+                  language={langCfg.monacoLang}
+                  theme={ideTheme === 'dark' ? 'vs-dark' : ideTheme}
+                  value={code}
+                  onChange={v => setCode(v || '')}
+                  onMount={e => { editorRef.current = e }}
+                  beforeMount={handleEditorWillMount}
+                  options={{
+                    fontSize: 14,
+                    fontFamily: '"Fira Code", "Cascadia Code", monospace',
+                    fontLigatures: true,
+                    minimap: { enabled: false },
+                    scrollBeyondLastLine: false,
+                    padding: { top: 16, bottom: 16 },
+                    lineNumbers: 'on',
+                    renderLineHighlight: 'gutter',
+                    wordWrap: 'off',
+                    automaticLayout: true,
+                    tabSize: language === 'python' ? 4 : 2,
+                    insertSpaces: true,
+                  }}
+                />
+              </Suspense>
               <div className="absolute bottom-3 right-4 text-[10px] opacity-40 pointer-events-none"
                 style={{ color: 'var(--text-muted)' }}>
                 Ctrl+Enter to run

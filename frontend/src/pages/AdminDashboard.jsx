@@ -769,6 +769,19 @@ export default function AdminDashboard() {
             <button onClick={fetchAllData} className="btn-ghost text-xs px-3 py-2" title="Refresh">🔄 Refresh</button>
           </div>
         </div>
+        
+        {/* Mobile Navigation */}
+        <div className="md:hidden flex overflow-x-auto whitespace-nowrap px-4 py-3 bg-black/20 border-b border-white/5 hide-scrollbar gap-2 shadow-inner">
+          {SIDEBAR_ITEMS.filter(i => TABS.includes(i.id)).map(item => (
+            <button key={item.id} onClick={() => setTab(item.id)}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-bold transition-colors shrink-0 ${
+                tab === item.id ? 'bg-cyan-500/10 text-cyan-400 shadow-sm border border-cyan-500/20' : 'text-slate-400 hover:bg-white/5 hover:text-white border border-transparent'
+              }`}>
+              <span>{item.icon}</span>
+              {item.label}
+            </button>
+          ))}
+        </div>
 
         {/* Content area */}
         <div className="p-6">
@@ -1068,9 +1081,9 @@ export default function AdminDashboard() {
                 {lessons.filter(l => (l.category || 'C') === contentTrack).length === 0 && <p className="text-slate-500 text-center py-4 text-sm">No lessons in {contentTrack} track yet.</p>}
                 {lessons.filter(l => (l.category || 'C') === contentTrack).map(l => (
                   <div key={l.id} className="glass-card rounded-xl px-4 py-3 flex flex-col gap-2 relative group border border-white/5 hover:border-white/10 transition-colors">
-                    <div className="flex items-start justify-between">
-                      <p className="text-sm font-medium text-white pr-16 line-clamp-1">{l.title}</p>
-                      <div className="opacity-0 group-hover:opacity-100 flex items-center gap-1 absolute right-2 top-2.5 transition-all bg-black/80 pl-2 backdrop-blur-sm rounded-l">
+                    <div className="flex items-start justify-between pr-16">
+                      <p className="text-sm font-medium text-white line-clamp-1">{l.title}</p>
+                      <div className="opacity-100 md:opacity-0 md:group-hover:opacity-100 flex items-center gap-1 absolute right-2 top-2.5 transition-all bg-black/80 pl-2 backdrop-blur-sm rounded-l">
                         <button onClick={() => openEditLesson(l)} className="p-1.5 text-cyan-400 hover:bg-cyan-500/20 rounded" title="Edit">✏️</button>
                         <button onClick={() => deleteLesson(l.id)} className="p-1.5 text-red-400 hover:bg-red-500/20 rounded" title="Delete">🗑️</button>
                       </div>
@@ -1124,7 +1137,7 @@ export default function AdminDashboard() {
                         Created: {new Date(t.createdAt).toLocaleDateString()} {new Date(t.createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
                       </span>
                     </div>
-                    <div className="opacity-0 group-hover:opacity-100 flex items-center gap-1 absolute right-2 top-2.5 transition-all bg-black/80 pl-2 backdrop-blur-sm rounded-l">
+                    <div className="opacity-100 md:opacity-0 md:group-hover:opacity-100 flex items-center gap-1 absolute right-2 top-2.5 transition-all bg-black/80 pl-2 backdrop-blur-sm rounded-l">
                       <button onClick={() => openEditTask(t)} className="p-1.5 text-cyan-400 hover:bg-cyan-500/20 rounded" title="Edit">✏️</button>
                       <button onClick={() => setDailyChallenge(t.id)} disabled={settingDailyId === t.id || t.isDailyChallenge} className="p-1.5 text-orange-400 hover:bg-orange-500/20 rounded disabled:opacity-40" title="Set Daily">🔥</button>
                       <button onClick={() => deleteTask(t.id)} className="p-1.5 text-red-400 hover:bg-red-500/20 rounded" title="Delete">🗑️</button>
@@ -1474,8 +1487,8 @@ export default function AdminDashboard() {
 
       {/* Language Picker — Task */}
       {taskLangPrompt && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
-          <div className="glass-card rounded-3xl w-full max-w-sm p-8 shadow-2xl animate-fade-up">
+        <div className="fixed inset-0 z-50 flex items-start md:items-center justify-center bg-black/70 backdrop-blur-sm p-4 overflow-y-auto">
+          <div className="glass-card rounded-3xl w-full max-w-sm p-5 md:p-8 my-8 md:my-auto shadow-2xl animate-fade-up">
             <h2 className="font-black text-white text-xl mb-1">➕ Create New Task</h2>
             <p className="text-sm text-slate-400 mb-8">Choose the programming language for this task</p>
             <div className="grid grid-cols-2 gap-4">
@@ -1503,8 +1516,8 @@ export default function AdminDashboard() {
 
       {/* Language Picker — Lesson */}
       {lessonLangPrompt && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
-          <div className="glass-card rounded-3xl w-full max-w-sm p-8 shadow-2xl animate-fade-up">
+        <div className="fixed inset-0 z-50 flex items-start md:items-center justify-center bg-black/70 backdrop-blur-sm p-4 overflow-y-auto">
+          <div className="glass-card rounded-3xl w-full max-w-sm p-5 md:p-8 my-8 md:my-auto shadow-2xl animate-fade-up">
             <h2 className="font-black text-white text-xl mb-1">📚 Create New Lesson</h2>
             <p className="text-sm text-slate-400 mb-8">Choose the programming language for this lesson</p>
             <div className="grid grid-cols-2 gap-4">
@@ -1532,11 +1545,11 @@ export default function AdminDashboard() {
 
       {/* Task Creation & Edit Modal */}
       {taskModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4 overflow-y-auto">
-          <div className="glass-card rounded-3xl w-full max-w-2xl p-8 my-8 shadow-2xl relative">
-            <div className="flex items-start justify-between mb-6">
+        <div className="fixed inset-0 z-50 flex items-start md:items-center justify-center bg-black/70 backdrop-blur-sm p-2 sm:p-4 overflow-y-auto">
+          <div className="glass-card rounded-3xl w-full max-w-2xl p-4 sm:p-6 md:p-8 my-4 sm:my-8 shadow-2xl relative">
+            <div className="flex items-start justify-between mb-4 sm:mb-6">
               <div>
-                <h2 className="font-bold text-white text-xl">{editingTask ? '✏️ Edit Task' : '➕ Create New Task'}</h2>
+                <h2 className="font-bold text-white text-lg sm:text-xl">{editingTask ? '✏️ Edit Task' : '➕ Create New Task'}</h2>
                 <p className="text-xs text-slate-400 mt-1">Configure your task, questions, and grading rules</p>
               </div>
               <button onClick={() => setTaskModalOpen(false)} className="text-slate-500 hover:text-white transition-colors text-xl">✕</button>
@@ -1784,11 +1797,11 @@ export default function AdminDashboard() {
 
       {/* Lesson Creation Modal */}
       {lessonModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4 overflow-y-auto">
-          <div className="glass-card rounded-3xl w-full max-w-2xl p-8 my-8 shadow-2xl relative">
-            <div className="flex items-start justify-between mb-6">
+        <div className="fixed inset-0 z-50 flex items-start md:items-center justify-center bg-black/70 backdrop-blur-sm p-2 sm:p-4 overflow-y-auto">
+          <div className="glass-card rounded-3xl w-full max-w-2xl p-4 sm:p-6 md:p-8 my-4 sm:my-8 shadow-2xl relative">
+            <div className="flex items-start justify-between mb-4 sm:mb-6">
               <div>
-                <h2 className="font-bold text-white text-xl">📚 Create New Lesson</h2>
+                <h2 className="font-bold text-white text-lg sm:text-xl">📚 {editingLesson ? 'Edit Lesson' : 'Create New Lesson'}</h2>
                 <p className="text-xs text-slate-400 mt-1">Build a lesson with text content and/or an embedded video</p>
               </div>
               <button onClick={() => setLessonModalOpen(false)} className="text-slate-500 hover:text-white transition-colors text-xl">✕</button>
