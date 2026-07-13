@@ -282,6 +282,12 @@ router.put('/lessons/:id', auth_1.authenticateJWT, (0, auth_1.authorizeRoles)('A
 router.delete('/lessons/:id', auth_1.authenticateJWT, (0, auth_1.authorizeRoles)('ADMIN', 'TEACHER'), async (req, res) => {
     try {
         const { id } = req.params;
+        const lesson = await prisma_1.prisma.lesson.findUnique({ where: { id } });
+        if (lesson) {
+            await prisma_1.prisma.notification.deleteMany({
+                where: { body: { contains: lesson.title } }
+            });
+        }
         await prisma_1.prisma.lesson.delete({ where: { id } });
         res.json({ ok: true });
     } catch (e) {

@@ -45,10 +45,12 @@ self.addEventListener('fetch', (event) => {
 
   const isApiRequest = url.pathname.startsWith('/api') ||
     url.hostname.includes('onrender.com') ||
-    url.hostname.includes('localhost') && url.pathname.startsWith('/api')
+    (url.hostname.includes('localhost') && url.pathname.startsWith('/api'))
 
-  if (isApiRequest) {
-    // ── Network-first with cache fallback for API ────────────────────────
+  const isHtmlRequest = url.pathname === '/' || url.pathname === '/index.html' || request.destination === 'document'
+
+  if (isApiRequest || isHtmlRequest) {
+    // ── Network-first with cache fallback for API and HTML ────────────────────────
     event.respondWith(
       fetchWithTimeout(request, 8000)
         .then(response => {

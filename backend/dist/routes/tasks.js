@@ -324,6 +324,12 @@ router.put('/:id', auth_1.authenticateJWT, (0, auth_1.authorizeRoles)('ADMIN', '
 
 router.delete('/:id', auth_1.authenticateJWT, (0, auth_1.authorizeRoles)('ADMIN', 'TEACHER'), async (req, res) => {
     const { id } = req.params;
+    const task = await prisma_1.prisma.task.findUnique({ where: { id } });
+    if (task) {
+        await prisma_1.prisma.notification.deleteMany({
+            where: { body: { contains: task.title } }
+        });
+    }
     await prisma_1.prisma.task.delete({ where: { id } });
     res.json({ ok: true });
 });

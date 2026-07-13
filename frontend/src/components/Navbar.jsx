@@ -28,8 +28,35 @@ export default function Navbar() {
   const [notifDropdownOpen, setNotifDropdownOpen] = useState(false)
   const [notifications, setNotifications] = useState([])
   const [userXp, setUserXp] = useState(0)
+  const [deferredPrompt, setDeferredPrompt] = useState(null)
   const dropdownRef = useRef(null)
   const notifRef = useRef(null)
+
+  useEffect(() => {
+    const handleBeforeInstallPrompt = (e) => {
+      e.preventDefault()
+      setDeferredPrompt(e)
+    }
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt)
+    return () => window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt)
+  }, [])
+
+  const handleInstallClick = async (platform) => {
+    if (deferredPrompt) {
+      deferredPrompt.prompt()
+      const { outcome } = await deferredPrompt.userChoice
+      if (outcome === 'accepted') {
+        setDeferredPrompt(null)
+      }
+    } else {
+      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+      if (isIOS) {
+        alert("To install on iOS: tap the Share button in Safari, then select 'Add to Home Screen'.");
+      } else {
+        alert(`The ${platform} app is already installed or your browser doesn't support automatic installation. Try 'Install App' from your browser's menu!`);
+      }
+    }
+  }
 
   const logout = () => {
     api.post('/auth/logout').finally(() => { setUser(null); window.location.href = '/' })
@@ -134,14 +161,14 @@ export default function Navbar() {
 
             {/* App Downloads */}
             <button
-              onClick={() => alert('Windows App download coming soon!')}
+              onClick={() => handleInstallClick('Windows')}
               className="h-8 w-8 flex items-center justify-center rounded-lg text-slate-400 hover:text-white hover:bg-white/5 transition-colors text-sm cursor-pointer"
               title="Download Windows App"
             >
               💻
             </button>
             <button
-              onClick={() => alert('Mobile App download coming soon!')}
+              onClick={() => handleInstallClick('Mobile')}
               className="h-8 w-8 flex items-center justify-center rounded-lg text-slate-400 hover:text-white hover:bg-white/5 transition-colors text-sm cursor-pointer"
               title="Download Mobile App"
             >
@@ -345,11 +372,11 @@ export default function Navbar() {
 
         {/* Drawer footer */}
         <div className="border-t px-4 py-4 space-y-2" style={{ borderColor: 'var(--border-subtle)' }}>
-          <button onClick={() => alert('Windows App download coming soon!')}
+          <button onClick={() => handleInstallClick('Windows')}
             className="flex items-center gap-3 w-full px-4 py-2.5 rounded-xl text-sm text-slate-300 hover:text-white hover:bg-white/5 transition-colors text-left">
             <span className="text-base w-6 text-center">💻</span> Get Windows App
           </button>
-          <button onClick={() => alert('Mobile App download coming soon!')}
+          <button onClick={() => handleInstallClick('Mobile')}
             className="flex items-center gap-3 w-full px-4 py-2.5 rounded-xl text-sm text-slate-300 hover:text-white hover:bg-white/5 transition-colors text-left">
             <span className="text-base w-6 text-center">📱</span> Get Mobile App
           </button>

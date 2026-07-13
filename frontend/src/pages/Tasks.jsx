@@ -200,7 +200,8 @@ export default function Tasks() {
                     const diff = DIFF_CONFIG[t.difficulty] || { cls: 'badge', bar: 'bg-slate-500', width: '50%' }
                     return (
                       <Link key={t.id} to={`/tasks/${t.id}`}
-                        className={`card-hover glass-card rounded-2xl p-6 flex flex-col gap-4 group relative overflow-hidden animate-fade-up gradient-border ${done ? 'opacity-70' : ''}`}>
+                        onClick={(e) => { if (done) e.preventDefault() }}
+                        className={`card-hover glass-card rounded-2xl p-6 flex flex-col gap-4 group relative overflow-hidden animate-fade-up gradient-border ${done ? 'opacity-70 cursor-default' : ''}`}>
                         
                         {/* Done overlay badge */}
                         {done && (
