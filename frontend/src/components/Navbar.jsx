@@ -28,25 +28,16 @@ export default function Navbar() {
   const [notifDropdownOpen, setNotifDropdownOpen] = useState(false)
   const [notifications, setNotifications] = useState([])
   const [userXp, setUserXp] = useState(0)
-  const [deferredPrompt, setDeferredPrompt] = useState(null)
   const dropdownRef = useRef(null)
   const notifRef = useRef(null)
 
-  useEffect(() => {
-    const handleBeforeInstallPrompt = (e) => {
-      e.preventDefault()
-      setDeferredPrompt(e)
-    }
-    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt)
-    return () => window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt)
-  }, [])
-
   const handleInstallClick = async (platform) => {
-    if (deferredPrompt) {
-      deferredPrompt.prompt()
-      const { outcome } = await deferredPrompt.userChoice
+    const promptEvent = window.deferredInstallPrompt;
+    if (promptEvent) {
+      promptEvent.prompt()
+      const { outcome } = await promptEvent.userChoice
       if (outcome === 'accepted') {
-        setDeferredPrompt(null)
+        window.deferredInstallPrompt = null;
       }
     } else {
       const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
