@@ -64,6 +64,7 @@ router.get('/', async (_req, res) => {
         select: {
             id: true, title: true, type: true, difficulty: true,
             baseXp: true, deadline: true, targetTime: true, maxMarks: true,
+            fullXpTime: true, averageXp: true,
             published: true, isDraft: true, courseId: true,
             createdAt: true, updatedAt: true
         },
@@ -231,7 +232,7 @@ router.get('/admin/:id', auth_1.authenticateJWT, (0, auth_1.authorizeRoles)('ADM
 });
 
 router.post('/', auth_1.authenticateJWT, (0, auth_1.authorizeRoles)('ADMIN', 'TEACHER'), (0, validation_1.validateBody)(validation_1.createTaskSchema), async (req, res) => {
-    const { title, description, courseId, category, type, difficulty, deadline, testCases, sampleInput, sampleOutput, hints, starterCode, isDraft, quizQuestions, baseXp, targetTime, maxMarks } = req.body;
+    const { title, description, courseId, category, type, difficulty, deadline, testCases, sampleInput, sampleOutput, hints, starterCode, isDraft, quizQuestions, baseXp, targetTime, maxMarks, fullXpTime, averageXp } = req.body;
     
     const taskCategory = category || 'C';
     let resolvedCourseId = courseId || null;
@@ -255,6 +256,8 @@ router.post('/', auth_1.authenticateJWT, (0, auth_1.authorizeRoles)('ADMIN', 'TE
             baseXp: Number(baseXp) || 0,
             targetTime: targetTime ? Number(targetTime) : null,
             maxMarks: maxMarks ? Number(maxMarks) : null,
+            fullXpTime: fullXpTime ? Number(fullXpTime) : null,
+            averageXp: averageXp !== undefined && averageXp !== null ? Number(averageXp) : null,
             testCases: testCases || '',
             sampleInput: sampleInput || '',
             sampleOutput: sampleOutput || '',
@@ -300,6 +303,8 @@ router.put('/:id', auth_1.authenticateJWT, (0, auth_1.authorizeRoles)('ADMIN', '
         baseXp: updates.baseXp !== undefined ? Number(updates.baseXp) : undefined,
         targetTime: updates.targetTime !== undefined ? Number(updates.targetTime) : undefined,
         maxMarks: updates.maxMarks !== undefined ? Number(updates.maxMarks) : undefined,
+        fullXpTime: updates.fullXpTime !== undefined ? (updates.fullXpTime ? Number(updates.fullXpTime) : null) : undefined,
+        averageXp: updates.averageXp !== undefined ? (updates.averageXp !== null ? Number(updates.averageXp) : null) : undefined,
         published: typeof updates.published === 'boolean' ? updates.published : undefined,
         isDraft: typeof updates.isDraft === 'boolean' ? updates.isDraft : undefined
     };
@@ -406,7 +411,16 @@ router.post('/:id/submit', auth_1.authenticateJWT, async (req, res) => {
         let max = task.maxMarks || totalQuestions;
         if (max > 0 && marks > 0) {
             let pct = marks / max;
-            earnedXp = Math.floor(pct * (task.baseXp || 0));
+            let finalBaseXp = task.baseXp || 0;
+            if (task.fullXpTime && timeTaken) {
+                if (timeTaken <= task.fullXpTime) {
+                    finalBaseXp = task.baseXp || 0;
+                } else {
+                    const diff = timeTaken - task.fullXpTime;
+                    finalBaseXp = Math.max((task.averageXp || 0), (task.baseXp || 0) - diff);
+                }
+            }
+            earnedXp = Math.floor(pct * finalBaseXp);
         }
         
         if (earnedXp > 0) {
@@ -495,7 +509,17 @@ router.post('/:id/submit', auth_1.authenticateJWT, async (req, res) => {
             marks = task.maxMarks || 10;
             status = 'Accepted';
             feedback = 'Auto-graded: Output matches expected sample output.';
-        earnedXp = task.baseXp || 0;
+            
+            let finalXp = task.baseXp || 0;
+            if (task.fullXpTime && timeTaken) {
+                if (timeTaken <= task.fullXpTime) {
+                    finalXp = task.baseXp || 0;
+                } else {
+                    const diff = timeTaken - task.fullXpTime;
+                    finalXp = Math.max((task.averageXp || 0), (task.baseXp || 0) - diff);
+                }
+            }
+            earnedXp = finalXp;
             
             if (earnedXp > 0) {
                 await prisma_1.prisma.leaderboard.upsert({
@@ -505,6 +529,17 @@ router.post('/:id/submit', auth_1.authenticateJWT, async (req, res) => {
                 });
             }
         }
+    } else if (task.type === 'GENERAL') {
+        let finalBaseXp = task.baseXp || 0;
+        if (task.fullXpTime && timeTaken) {
+            if (timeTaken <= task.fullXpTime) {
+                finalBaseXp = task.baseXp || 0;
+            } else {
+                const diff = timeTaken - task.fullXpTime;
+                finalBaseXp = Math.max((task.averageXp || 0), (task.baseXp || 0) - diff);
+            }
+        }
+        earnedXp = finalBaseXp; // Save the max possible decayed XP here for the manual review to use
     }
     const existingSubmission = await prisma_1.prisma.submission.findUnique({
         where: {

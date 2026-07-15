@@ -22,6 +22,7 @@ export default function TaskDetail() {
   // Timer State
   const [timeLeft, setTimeLeft] = useState(null)
   const [timerActive, setTimerActive] = useState(false)
+  const [timeSpent, setTimeSpent] = useState(0)
   
   // Input states for different types
   const [lang, setLang] = useState('python')
@@ -221,6 +222,13 @@ export default function TaskDetail() {
     }
   }, [timerActive, timeLeft])
 
+  useEffect(() => {
+    const intervalId = setInterval(() => {
+      setTimeSpent(prev => prev + 1)
+    }, 1000)
+    return () => clearInterval(intervalId)
+  }, [])
+
   // Ctrl+Enter to run code in editor
   useEffect(() => {
     const handler = (e) => {
@@ -304,10 +312,10 @@ export default function TaskDetail() {
       submissionPayload = code
     }
 
-    const timeTaken = task.targetTime ? task.targetTime - timeLeft : null
+    const timeTakenToSubmit = task.targetTime && timeLeft !== null ? task.targetTime - timeLeft : timeSpent
 
     try {
-      const r = await api.post(`/tasks/${id}/submit`, { code: submissionPayload, timeTaken, language: task.type === 'CODE' ? lang : undefined })
+      const r = await api.post(`/tasks/${id}/submit`, { code: submissionPayload, timeTaken: timeTakenToSubmit, language: task.type === 'CODE' ? lang : undefined })
       const sub = r.data?.submission
       setResult({
         ok: true,
@@ -432,6 +440,13 @@ export default function TaskDetail() {
               {timeLeft !== null && (
                 <span className={`text-xs px-2 py-0.5 rounded-md font-bold tracking-wider ${timeLeft < 60 ? 'bg-red-500/20 text-red-400 animate-pulse' : 'bg-white/10 text-white'}`}>
                   ⏱ {Math.floor(timeLeft / 60).toString().padStart(2, '0')}:{(timeLeft % 60).toString().padStart(2, '0')}
+                </span>
+              )}
+              {task.fullXpTime && (
+                <span className={`text-xs px-2 py-0.5 rounded-md font-bold tracking-wider ${
+                  timeSpent <= task.fullXpTime ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30' : 'bg-slate-500/20 text-slate-400 line-through opacity-60'
+                }`}>
+                  ⚡ Full XP ({task.fullXpTime}s)
                 </span>
               )}
             </div>

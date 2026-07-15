@@ -141,6 +141,8 @@ export default function AdminDashboard() {
   const [taskBaseXp, setTaskBaseXp] = useState(0)
   const [taskTargetTime, setTaskTargetTime] = useState('')
   const [taskMaxMarks, setTaskMaxMarks] = useState('')
+  const [taskFullXpTime, setTaskFullXpTime] = useState('')
+  const [taskAverageXp, setTaskAverageXp] = useState('')
   const [taskCourseId, setTaskCourseId] = useState('')
   const [taskCategory, setTaskCategory] = useState('C')
   const [quizQuestions, setQuizQuestions] = useState([])
@@ -351,6 +353,8 @@ export default function AdminDashboard() {
     setTaskBaseXp(0)
     setTaskTargetTime('')
     setTaskMaxMarks('')
+    setTaskFullXpTime('')
+    setTaskAverageXp('')
     setTaskCourseId('')
     setQuizQuestions([])
     setTaskCategory(lang || 'C')  // reset to chosen language
@@ -386,6 +390,8 @@ export default function AdminDashboard() {
       setTaskBaseXp(fullTask.baseXp || 0)
       setTaskTargetTime(fullTask.targetTime || '')
       setTaskMaxMarks(fullTask.maxMarks || '')
+      setTaskFullXpTime(fullTask.fullXpTime || '')
+      setTaskAverageXp(fullTask.averageXp || '')
       setTaskCourseId(fullTask.courseId || '')
       
       const parsedQuestions = (fullTask.quizQuestions || []).map(q => {
@@ -424,6 +430,8 @@ export default function AdminDashboard() {
       baseXp: Number(taskBaseXp) || 0,
       targetTime: taskTargetTime ? Number(taskTargetTime) : null,
       maxMarks: taskMaxMarks ? Number(taskMaxMarks) : null,
+      fullXpTime: taskFullXpTime ? Number(taskFullXpTime) : null,
+      averageXp: taskAverageXp !== '' ? Number(taskAverageXp) : null,
       courseId: taskCourseId || null,
       category: taskCategory,
       quizQuestions: formattedQuestions, isDraft: false
@@ -1643,6 +1651,16 @@ export default function AdminDashboard() {
                     <label className="text-xs text-slate-400 font-semibold block mb-1.5">Max Marks</label>
                     <input type="number" value={taskMaxMarks} onChange={e => setTaskMaxMarks(e.target.value)} placeholder="e.g. 100"
                       className="w-full rounded-xl bg-black/20 border border-white/10 px-4 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-cyan-500/50 transition-shadow" />
+                  </div>
+                  <div>
+                    <label className="text-xs text-slate-400 font-semibold block mb-1.5">Full XP Time (secs)</label>
+                    <input type="number" value={taskFullXpTime} onChange={e => setTaskFullXpTime(e.target.value)} placeholder="e.g. 60"
+                      className="w-full rounded-xl bg-black/20 border border-white/10 px-4 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-cyan-500/50 transition-shadow" title="Time limit to get full XP" />
+                  </div>
+                  <div>
+                    <label className="text-xs text-slate-400 font-semibold block mb-1.5">Average XP (Min)</label>
+                    <input type="number" value={taskAverageXp} onChange={e => setTaskAverageXp(e.target.value)} placeholder="e.g. 50"
+                      className="w-full rounded-xl bg-black/20 border border-white/10 px-4 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-cyan-500/50 transition-shadow" title="Minimum XP given if late" />
                   </div>
                 </div>
               </div>

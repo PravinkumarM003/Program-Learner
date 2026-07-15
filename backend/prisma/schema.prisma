@@ -145,6 +145,8 @@ model Task {
   baseXp      Int      @default(0)
   targetTime  Int?     // Time limit in seconds
   maxMarks    Int?     // Maximum possible marks
+  fullXpTime  Int?     // Time limit in seconds to get full XP
+  averageXp   Int?     // Minimum XP given if completed late
 
   sampleInput  String? @db.Text
   sampleOutput String? @db.Text

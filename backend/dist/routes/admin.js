@@ -50,7 +50,8 @@ router.post('/submissions/:id/review', auth_1.authenticateJWT, (0, auth_1.author
 
     if (status === 'Accepted' && marksValue !== null && marksValue > 0) {
         const max = currentSubmission.task.maxMarks || 100;
-        newEarnedXp = Math.floor((marksValue / max) * (currentSubmission.task.baseXp || 0));
+        const availableBaseXp = currentSubmission.earnedXp > 0 ? currentSubmission.earnedXp : (currentSubmission.task.baseXp || 0);
+        newEarnedXp = Math.floor((marksValue / max) * availableBaseXp);
     } else if (status !== 'Accepted') {
         newEarnedXp = 0; // No XP for rejected/under-review
     }
