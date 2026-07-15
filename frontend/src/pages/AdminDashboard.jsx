@@ -388,9 +388,9 @@ export default function AdminDashboard() {
       
       setTaskHints(fullTask.hints || '')
       setTaskBaseXp(fullTask.baseXp || 0)
-      setTaskTargetTime(fullTask.targetTime || '')
+      setTaskTargetTime(fullTask.targetTime ? fullTask.targetTime / 60 : '')
       setTaskMaxMarks(fullTask.maxMarks || '')
-      setTaskFullXpTime(fullTask.fullXpTime || '')
+      setTaskFullXpTime(fullTask.fullXpTime ? fullTask.fullXpTime / 60 : '')
       setTaskAverageXp(fullTask.averageXp || '')
       setTaskCourseId(fullTask.courseId || '')
       
@@ -428,9 +428,9 @@ export default function AdminDashboard() {
       deadline: taskDeadline ? new Date(taskDeadline).toISOString() : null, starterCode: taskStarterCode, sampleInput: taskSampleInput,
       sampleOutput: taskSampleOutput, testCases: JSON.stringify(taskTestCases), hints: taskHints,
       baseXp: Number(taskBaseXp) || 0,
-      targetTime: taskTargetTime ? Number(taskTargetTime) : null,
+      targetTime: taskTargetTime ? Number(taskTargetTime) * 60 : null,
       maxMarks: taskMaxMarks ? Number(taskMaxMarks) : null,
-      fullXpTime: taskFullXpTime ? Number(taskFullXpTime) : null,
+      fullXpTime: taskFullXpTime ? Number(taskFullXpTime) * 60 : null,
       averageXp: taskAverageXp !== '' ? Number(taskAverageXp) : null,
       courseId: taskCourseId || null,
       category: taskCategory,
@@ -1636,15 +1636,15 @@ export default function AdminDashboard() {
                   </div>
                 </div>
 
-                <div className="grid sm:grid-cols-3 gap-5">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-5">
                   <div>
                     <label className="text-xs text-slate-400 font-semibold block mb-1.5">Base XP <span className="text-amber-500">⚡</span></label>
                     <input type="number" value={taskBaseXp} onChange={e => setTaskBaseXp(e.target.value)} required
                       className="w-full rounded-xl bg-black/20 border border-amber-500/20 px-4 py-2.5 text-sm text-amber-400 font-bold focus:outline-none focus:ring-2 focus:ring-amber-500/50 transition-shadow" />
                   </div>
                   <div>
-                    <label className="text-xs text-slate-400 font-semibold block mb-1.5">Target Time (secs)</label>
-                    <input type="number" value={taskTargetTime} onChange={e => setTaskTargetTime(e.target.value)} placeholder="e.g. 600"
+                    <label className="text-xs text-slate-400 font-semibold block mb-1.5">Target Time (mins)</label>
+                    <input type="number" value={taskTargetTime} onChange={e => setTaskTargetTime(e.target.value)} placeholder="e.g. 10"
                       className="w-full rounded-xl bg-black/20 border border-white/10 px-4 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-cyan-500/50 transition-shadow" />
                   </div>
                   <div>
@@ -1653,15 +1653,15 @@ export default function AdminDashboard() {
                       className="w-full rounded-xl bg-black/20 border border-white/10 px-4 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-cyan-500/50 transition-shadow" />
                   </div>
                   <div>
-                    <label className="text-xs text-slate-400 font-semibold block mb-1.5">Full XP Time (secs)</label>
-                    <input type="number" value={taskFullXpTime} onChange={e => setTaskFullXpTime(e.target.value)} placeholder="e.g. 60"
+                    <label className="text-xs text-slate-400 font-semibold block mb-1.5">Full XP Time (mins)</label>
+                    <input type="number" value={taskFullXpTime} onChange={e => setTaskFullXpTime(e.target.value)} placeholder="e.g. 1"
                       className="w-full rounded-xl bg-black/20 border border-white/10 px-4 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-cyan-500/50 transition-shadow" title="Time limit to get full XP" />
                   </div>
-                  <div>
-                    <label className="text-xs text-slate-400 font-semibold block mb-1.5">Average XP (Min)</label>
-                    <input type="number" value={taskAverageXp} onChange={e => setTaskAverageXp(e.target.value)} placeholder="e.g. 50"
-                      className="w-full rounded-xl bg-black/20 border border-white/10 px-4 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-cyan-500/50 transition-shadow" title="Minimum XP given if late" />
-                  </div>
+                </div>
+                <div>
+                  <label className="text-xs text-slate-400 font-semibold block mb-1.5">Average XP (Min)</label>
+                  <input type="number" value={taskAverageXp} onChange={e => setTaskAverageXp(e.target.value)} placeholder="e.g. 50"
+                    className="w-full rounded-xl bg-black/20 border border-white/10 px-4 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-cyan-500/50 transition-shadow" title="Minimum XP given if late" />
                 </div>
               </div>
 
@@ -1728,10 +1728,13 @@ export default function AdminDashboard() {
                     )}
                     <div className="space-y-2 max-h-40 overflow-y-auto pr-1">
                       {taskTestCases.map((tc, i) => (
-                        <div key={i} className="flex gap-2 items-start bg-black/20 p-2 rounded-lg border border-cyan-500/10">
-                          <input type="text" value={tc.input} onChange={e => handleTestCaseChange(i, 'input', e.target.value)} placeholder="Input" className="flex-1 rounded-lg bg-black/40 border border-cyan-500/20 px-3 py-1.5 text-xs text-cyan-100 font-mono focus:outline-none focus:ring-1 focus:ring-cyan-500/50" />
-                          <input type="text" value={tc.output} onChange={e => handleTestCaseChange(i, 'output', e.target.value)} placeholder="Output" className="flex-1 rounded-lg bg-black/40 border border-cyan-500/20 px-3 py-1.5 text-xs text-cyan-100 font-mono focus:outline-none focus:ring-1 focus:ring-cyan-500/50" />
-                          <button type="button" onClick={() => removeTestCase(i)} className="text-red-400 hover:text-red-300 hover:bg-red-500/20 text-xs px-2 py-1.5 rounded bg-red-500/10 transition-colors">✕</button>
+                        <div key={i} className="flex gap-2 items-start bg-black/20 p-2 rounded-lg border border-cyan-500/10 flex-col sm:flex-row">
+                          <input type="text" value={tc.input} onChange={e => handleTestCaseChange(i, 'input', e.target.value)} placeholder="Input 1" className="flex-1 w-full sm:w-auto rounded-lg bg-black/40 border border-cyan-500/20 px-3 py-1.5 text-xs text-cyan-100 font-mono focus:outline-none focus:ring-1 focus:ring-cyan-500/50" />
+                          <input type="text" value={tc.input2 || ''} onChange={e => handleTestCaseChange(i, 'input2', e.target.value)} placeholder="Input 2 (Optional)" className="flex-1 w-full sm:w-auto rounded-lg bg-black/40 border border-cyan-500/20 px-3 py-1.5 text-xs text-cyan-100 font-mono focus:outline-none focus:ring-1 focus:ring-cyan-500/50" />
+                          <input type="text" value={tc.output} onChange={e => handleTestCaseChange(i, 'output', e.target.value)} placeholder="Output" className="flex-1 w-full sm:w-auto rounded-lg bg-black/40 border border-cyan-500/20 px-3 py-1.5 text-xs text-cyan-100 font-mono focus:outline-none focus:ring-1 focus:ring-cyan-500/50" />
+                          <button type="button" onClick={() => {
+                            const nt = [...taskTestCases]; nt.splice(i, 1); setTaskTestCases(nt);
+                          }} className="p-1.5 text-red-400 hover:bg-red-500/20 rounded">✕</button>
                         </div>
                       ))}
                     </div>

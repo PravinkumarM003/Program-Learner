@@ -92,7 +92,9 @@ app.use(express_1.default.json({ limit: '15kb' }));
 app.use(express_1.default.urlencoded({ extended: true }));
 app.use((0, cookie_parser_1.default)());
 app.use((0, cors_1.default)({
-    origin: process.env.FRONTEND_URL || true,
+    origin: function (origin, callback) {
+        callback(null, true);
+    },
     credentials: true
 }));
 
