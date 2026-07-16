@@ -164,6 +164,7 @@ export default function AdminDashboard() {
   const [lessonDifficulty, setLessonDifficulty] = useState('Beginner')
   const [lessonCategory, setLessonCategory] = useState('C')
   const [savingLesson, setSavingLesson] = useState(false)
+  const [generatingLesson, setGeneratingLesson] = useState(false)
 
   // Content Manager State
   const [contentTrack, setContentTrack] = useState('C')
@@ -546,6 +547,37 @@ export default function AdminDashboard() {
       setTimeout(() => setMsg(null), 3000)
     })
       .finally(() => setSavingLesson(false))
+  }
+
+  const autoGenerateLesson = async () => {
+    const topic = prompt("What specific topic should this lesson cover? (e.g., 'Python Lists and Tuples')");
+    if (!topic) return;
+
+    setGeneratingLesson(true);
+    setMsg({ ok: true, text: '✨ Generating lesson with Claude AI... Please wait.' });
+
+    try {
+      const res = await api.post('/admin/lessons/generate', {
+        topic,
+        category: lessonCategory,
+        difficulty: lessonDifficulty
+      });
+
+      const data = res.data.lessonData;
+      if (data) {
+        setLessonTitle(data.title || '');
+        setLessonContent(data.content || '');
+        setLessonNotes(data.notes || '');
+        setMsg({ ok: true, text: '✅ Lesson generated! You can now review and tweak it.' });
+        setTimeout(() => setMsg(null), 5000);
+      }
+    } catch (err) {
+      const errMsg = err.response?.data?.error || 'Failed to generate lesson.';
+      setMsg({ ok: false, text: errMsg });
+      setTimeout(() => setMsg(null), 3000);
+    } finally {
+      setGeneratingLesson(false);
+    }
   }
 
   const addQuizQuestion = () => setQuizQuestions(prev => [...prev, { question: '', options: ['', '', '', ''], answer: '' }])
@@ -1839,7 +1871,15 @@ export default function AdminDashboard() {
           <div className="glass-card rounded-3xl w-full max-w-2xl p-4 sm:p-6 md:p-8 my-4 sm:my-8 shadow-2xl relative">
             <div className="flex items-start justify-between mb-4 sm:mb-6">
               <div>
-                <h2 className="font-bold text-white text-lg sm:text-xl">📚 {editingLesson ? 'Edit Lesson' : 'Create New Lesson'}</h2>
+                <h2 className="font-bold text-white text-lg sm:text-xl flex items-center gap-3">
+                  <span>📚 {editingLesson ? 'Edit Lesson' : 'Create New Lesson'}</span>
+                  {!editingLesson && (
+                    <button type="button" onClick={autoGenerateLesson} disabled={generatingLesson}
+                      className="text-xs font-black bg-gradient-to-r from-violet-500 to-fuchsia-600 px-3 py-1.5 rounded-lg shadow-lg hover:shadow-violet-500/25 transition-all disabled:opacity-50">
+                      {generatingLesson ? '✨ Generating...' : '✨ Auto-generate with Claude'}
+                    </button>
+                  )}
+                </h2>
                 <p className="text-xs text-slate-400 mt-1">Build a lesson with text content and/or an embedded video</p>
               </div>
               <button onClick={() => setLessonModalOpen(false)} className="text-slate-500 hover:text-white transition-colors text-xl">✕</button>

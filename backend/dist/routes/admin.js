@@ -4,6 +4,7 @@ const express_1 = require("express");
 const prisma_1 = require("../prisma");
 const auth_1 = require("../middleware/auth");
 const router = (0, express_1.Router)();
+const { Anthropic } = require('@anthropic-ai/sdk');
 
 async function notifyStudents(title, body) {
     const users = await prisma_1.prisma.user.findMany();
@@ -222,6 +223,48 @@ router.delete('/courses/:id', auth_1.authenticateJWT, (0, auth_1.authorizeRoles)
     } catch (e) {
         console.error(e);
         res.status(500).json({ error: 'Failed to delete track' });
+    }
+});
+
+router.post('/lessons/generate', auth_1.authenticateJWT, (0, auth_1.authorizeRoles)('ADMIN', 'TEACHER'), async (req, res) => {
+    try {
+        const { topic, category, difficulty } = req.body;
+        if (!topic) return res.status(400).json({ error: 'Topic is required' });
+        
+        const apiKey = process.env.ANTHROPIC_API_KEY;
+        if (!apiKey) return res.status(500).json({ error: 'Anthropic API key is not configured' });
+        
+        const anthropic = new Anthropic({ apiKey });
+        
+        const prompt = `You are an expert programming instructor. Create a lesson about "${topic}".
+The lesson is for the "${category}" track, and the difficulty is "${difficulty}".
+Output a JSON object with EXACTLY three fields:
+1. "title": A catchy, clear title for the lesson.
+2. "content": A detailed lesson body in Markdown formatting (use headings, code blocks, and explanations).
+3. "notes": Brief notes or learning objectives for the instructor (plain text or Markdown).
+
+Do not output any additional text before or after the JSON.`;
+
+        const response = await anthropic.messages.create({
+            model: 'claude-3-5-sonnet-20241022',
+            max_tokens: 2000,
+            temperature: 0.7,
+            messages: [{ role: 'user', content: prompt }]
+        });
+        
+        const text = response.content[0].text;
+        
+        // Extract JSON using regex in case Claude outputs extra text
+        const jsonMatch = text.match(/\{[\s\S]*\}/);
+        if (!jsonMatch) {
+            throw new Error("Failed to parse JSON from AI response");
+        }
+        
+        const lessonData = JSON.parse(jsonMatch[0]);
+        res.json({ lessonData });
+    } catch (e) {
+        console.error("AI Generation Error:", e);
+        res.status(500).json({ error: 'Failed to generate lesson with AI' });
     }
 });
 
