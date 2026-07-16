@@ -58,13 +58,11 @@ export default function TaskDetail() {
   }, [])
 
   useEffect(() => {
-    if (restrictedModeActive) {
-      setIsExamMode(true)
-    }
+    setIsExamMode(true)
     return () => {
       setIsExamMode(false)
     }
-  }, [restrictedModeActive, setIsExamMode])
+  }, [setIsExamMode])
 
   const showWarning = (msg) => {
     setWarningMsg(msg)

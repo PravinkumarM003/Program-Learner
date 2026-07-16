@@ -185,6 +185,11 @@ export default function AdminDashboard() {
 
   const fetchAllData = () => {
     setLoading(true)
+    const token = localStorage.getItem('access_token')
+    if (!token) {
+      setLoading(false)
+      return
+    }
     const requests = [
       api.get('/admin/submissions').catch(() => ({ data: { submissions: [] } })),
       api.get('/tasks/admin').catch(() => ({ data: { tasks: [] } })),
@@ -226,6 +231,8 @@ export default function AdminDashboard() {
 
   const fetchUsers = async () => {
     if (user?.role !== 'ADMIN') return;
+    const token = localStorage.getItem('access_token')
+    if (!token) return;
     try {
       const [uRes, lbRes] = await Promise.all([
         api.get(`/admin/users?page=${usersPage}&limit=${ITEMS_PER_PAGE}`),
@@ -244,6 +251,8 @@ export default function AdminDashboard() {
   }
 
   const fetchSubs = async () => {
+    const token = localStorage.getItem('access_token')
+    if (!token) return;
     try {
       const res = await api.get(`/admin/submissions?page=${subsPage}&limit=${ITEMS_PER_PAGE}`);
       setSubs(res.data?.submissions || []);
@@ -879,7 +888,7 @@ export default function AdminDashboard() {
                   </div>
                 </div>
                 
-                <div className="grid grid-cols-2 gap-2 mt-1 z-10">
+                <div className="grid grid-cols-3 gap-2 mt-1 z-10">
                   <div className="bg-white/5 rounded-lg p-2 border border-white/5" title={`Tasks: ${u.taskMarks} | XP: ${u.combinedScore - u.taskMarks}`}>
                     <p className="text-[9px] uppercase font-bold text-slate-500 mb-0.5">Total Score</p>
                     <p className="text-xl font-black text-cyan-400 leading-none">{u.combinedScore}</p>
@@ -887,6 +896,12 @@ export default function AdminDashboard() {
                   <div className="bg-white/5 rounded-lg p-2 border border-white/5">
                     <p className="text-[9px] uppercase font-bold text-slate-500 mb-0.5">Submissions</p>
                     <p className="text-xl font-black text-white leading-none">{u.totalSubs}</p>
+                  </div>
+                  <div className="bg-white/5 rounded-lg p-2 border border-white/5">
+                    <p className="text-[9px] uppercase font-bold text-slate-500 mb-0.5">Streak</p>
+                    <p className="text-xl font-black text-amber-400 leading-none flex items-center gap-1">
+                      {u.currentStreak || 0} <span className="text-[10px]">🔥</span>
+                    </p>
                   </div>
                 </div>
 
