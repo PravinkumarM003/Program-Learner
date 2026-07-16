@@ -63,6 +63,13 @@ self.addEventListener('fetch', (event) => {
         .catch(() =>
           caches.match(request).then(cached => {
             if (cached) return cached
+            
+            if (isHtmlRequest) {
+              return caches.match('/index.html').then(indexCache => {
+                if (indexCache) return indexCache;
+                return new Response('Offline', { status: 503, headers: { 'Content-Type': 'text/html' } });
+              });
+            }
             return new Response(
               JSON.stringify({ error: 'You are offline. Please check your internet connection.' }),
               { status: 503, headers: { 'Content-Type': 'application/json' } }
@@ -82,7 +89,7 @@ self.addEventListener('fetch', (event) => {
             }
             return response
           })
-          .catch(() => null)
+          .catch(() => new Response('', { status: 503, statusText: 'Service Unavailable' }))
 
         return cached || fetchPromise
       })

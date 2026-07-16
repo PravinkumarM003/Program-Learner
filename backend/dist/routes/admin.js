@@ -167,12 +167,15 @@ router.post('/users/:id/xp', auth_1.authenticateJWT, (0, auth_1.authorizeRoles)(
         if (!xp || typeof xp !== 'number' || xp <= 0) {
             return res.status(400).json({ error: 'Invalid XP amount.' });
         }
-        const user = await prisma_1.prisma.user.update({
-            where: { id },
-            data: { xp: { increment: xp }, currentXp: { increment: xp } },
-            select: { id: true, xp: true, currentXp: true }
+        const user = await prisma_1.prisma.user.findUnique({ where: { id }, select: { id: true } });
+        if (!user) return res.status(404).json({ error: 'User not found' });
+        
+        const leaderboard = await prisma_1.prisma.leaderboard.upsert({
+            where: { userId: id },
+            update: { xp: { increment: xp } },
+            create: { userId: id, xp: xp }
         });
-        res.json({ message: 'XP granted successfully', user });
+        res.json({ message: 'XP granted successfully', user: { id: user.id, xp: leaderboard.xp } });
     } catch (e) {
         res.status(500).json({ error: 'Failed to grant XP' });
     }

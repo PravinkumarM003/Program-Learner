@@ -67,6 +67,13 @@ async function notifyAdmins(title, body, meta = {}) {
     }
     catch (e) { }
 }
+app.use((0, cors_1.default)({
+    origin: function (origin, callback) {
+        callback(null, true);
+    },
+    credentials: true
+}));
+
 app.use((req, res, next) => {
     const ip = getClientIp(req);
     if (global.blockedIpsCache && global.blockedIpsCache.has(ip)) {
@@ -91,12 +98,6 @@ app.use((0, helmet_1.default)({
 app.use(express_1.default.json({ limit: '15kb' }));
 app.use(express_1.default.urlencoded({ extended: true }));
 app.use((0, cookie_parser_1.default)());
-app.use((0, cors_1.default)({
-    origin: function (origin, callback) {
-        callback(null, true);
-    },
-    credentials: true
-}));
 
 // CSRF removed for Bearer token auth
 
