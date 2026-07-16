@@ -25,11 +25,15 @@ export default function Tasks() {
   const [showDone, setShowDone] = useState(false)
 
   useEffect(() => {
-    Promise.all([
-      api.get('/tasks'),
-      api.get('/submissions').catch(() => ({ data: { submissions: [] } }))
-    ])
-      .then(([tRes, sRes]) => {
+    const promises = [api.get('/tasks')]
+    const token = localStorage.getItem('access_token')
+    if (token) {
+      promises.push(api.get('/submissions').catch(() => ({ data: { submissions: [] } })))
+    }
+    Promise.all(promises)
+      .then((results) => {
+        const tRes = results[0]
+        const sRes = token ? results[1] : { data: { submissions: [] } }
         setTasks(tRes.data?.tasks || [])
         setSubmittedTaskIds(new Set((sRes.data?.submissions || []).map(s => s.taskId)))
       })

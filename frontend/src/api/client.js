@@ -142,6 +142,14 @@ api.interceptors.response.use(
       }
     }
 
+    // Handle 503 Service Unavailable (Render cold starts)
+    if (status === 503 && originalRequest && !originalRequest._retry503) {
+      originalRequest._retry503 = true
+      // Wait for 3 seconds before retrying to allow the server to start
+      await new Promise(resolve => setTimeout(resolve, 3000))
+      return api(originalRequest)
+    }
+
     return Promise.reject(error)
   }
 )

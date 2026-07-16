@@ -86,15 +86,19 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    Promise.all([
-      api.get('/submissions').then(r => setSubs(r.data?.submissions || [])).catch(() => {}),
-      api.get('/progress').then(r => setProgress(r.data?.progress || [])).catch(() => {}),
-      api.get('/user/xp').then(r => setXpData(r.data || {})).catch(() => {}),
-      api.get('/user/leaderboard').then(r => setLeaderboard(r.data?.leaderboard || [])).catch(() => {}),
-      api.get('/user/achievements').then(r => setAchievements(r.data?.achievements || [])).catch(() => {}),
+    const token = localStorage.getItem('access_token')
+    const promises = [
       api.get('/courses').then(r => setCourses(r.data?.courses || [])).catch(() => {}),
-      api.get('/tasks/challenge/daily').then(r => setDailyChallenge(r.data?.task || null)).catch(() => {}),
-    ]).finally(() => setLoading(false))
+      api.get('/tasks/challenge/daily').then(r => setDailyChallenge(r.data?.task || null)).catch(() => {})
+    ]
+    if (token) {
+      promises.push(api.get('/submissions').then(r => setSubs(r.data?.submissions || [])).catch(() => {}))
+      promises.push(api.get('/progress').then(r => setProgress(r.data?.progress || [])).catch(() => {}))
+      promises.push(api.get('/user/xp').then(r => setXpData(r.data || {})).catch(() => {}))
+      promises.push(api.get('/user/leaderboard').then(r => setLeaderboard(r.data?.leaderboard || [])).catch(() => {}))
+      promises.push(api.get('/user/achievements').then(r => setAchievements(r.data?.achievements || [])).catch(() => {}))
+    }
+    Promise.all(promises).finally(() => setLoading(false))
   }, [])
 
   const lessonXpLocal = progress.reduce((sum, p) => sum + (p.xp || 0), 0)

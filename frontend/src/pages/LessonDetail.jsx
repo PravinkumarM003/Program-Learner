@@ -59,10 +59,17 @@ export default function LessonDetail() {
 
         // Fetch course + all its lessons for Next Lesson navigation
         if (l?.courseId) {
-          const [courseRes, progressRes] = await Promise.all([
-            api.get(`/courses/${l.courseId}`).catch(() => null),
-            api.get('/progress').catch(() => null),
-          ])
+          const promises = [api.get(`/courses/${l.courseId}`).catch(() => null)]
+          const token = localStorage.getItem('access_token')
+          if (token) {
+            promises.push(api.get('/progress').catch(() => null))
+            promises.push(api.get('/submissions').catch(() => null))
+          }
+          
+          const results = await Promise.all(promises)
+          const courseRes = results[0]
+          const progressRes = token ? results[1] : null
+
           if (courseRes?.data?.course) {
             setCourse(courseRes.data.course)
             const sorted = [...(courseRes.data.course.lessons || [])].sort((a, b) => a.order - b.order)

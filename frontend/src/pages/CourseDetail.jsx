@@ -31,11 +31,15 @@ export default function CourseDetail() {
   const [error, setError] = useState(null)
 
   useEffect(() => {
-    Promise.all([
-      api.get(`/courses/${id}`).then(r => setCourse(r.data?.course)),
-      api.get('/progress').then(r => setProgress(r.data?.progress || [])).catch(() => {}),
-      api.get('/submissions').then(r => setSubmittedTaskIds(new Set((r.data?.submissions || []).map(s => s.taskId)))).catch(() => {})
-    ])
+    const promises = [
+      api.get(`/courses/${id}`).then(r => setCourse(r.data?.course))
+    ]
+    const token = localStorage.getItem('access_token')
+    if (token) {
+      promises.push(api.get('/progress').then(r => setProgress(r.data?.progress || [])).catch(() => {}))
+      promises.push(api.get('/submissions').then(r => setSubmittedTaskIds(new Set((r.data?.submissions || []).map(s => s.taskId)))).catch(() => {}))
+    }
+    Promise.all(promises)
       .catch(() => setError('Course not found.'))
       .finally(() => setLoading(false))
   }, [id])

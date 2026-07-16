@@ -23,7 +23,12 @@ export default function Achievements() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    api.get('/user/xp').then(r => setXpData(r.data)).catch(() => { }).finally(() => setLoading(false))
+    const token = localStorage.getItem('access_token')
+    if (token) {
+      api.get('/user/xp').then(r => setXpData(r.data)).catch(() => { }).finally(() => setLoading(false))
+    } else {
+      setLoading(false)
+    }
   }, [])
 
   const currentXp = xpData?.totalXp || 0
