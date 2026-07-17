@@ -71,11 +71,17 @@ router.get('/dev-login', async (req, res) => {
     }
 });
 
-router.get('/google', (_req, res) => {
+router.get('/google', (req, res) => {
     const base = 'https://accounts.google.com/o/oauth2/v2/auth';
+    
+    // Resolve redirect URI dynamically based on the request host/headers
+    const host = req.get('host');
+    const proto = req.headers['x-forwarded-proto'] || req.protocol;
+    const redirectUri = process.env.GOOGLE_REDIRECT_URI || `${proto}://${host}/api/auth/google/callback`;
+
     const params = new URLSearchParams({
         client_id: process.env.GOOGLE_CLIENT_ID || '',
-        redirect_uri: process.env.GOOGLE_REDIRECT_URI || '',
+        redirect_uri: redirectUri,
         response_type: 'code',
         scope: 'openid email profile'
     });
@@ -91,6 +97,11 @@ router.get('/google/callback', async (req, res) => {
     if (!code)
         return res.status(400).json({ error: 'Missing code' });
     try {
+        // Resolve redirect URI dynamically using the same logic to guarantee matching exchange parameters
+        const host = req.get('host');
+        const proto = req.headers['x-forwarded-proto'] || req.protocol;
+        const redirectUri = process.env.GOOGLE_REDIRECT_URI || `${proto}://${host}/api/auth/google/callback`;
+
         const tokenRes = await fetch('https://oauth2.googleapis.com/token', {
             method: 'POST',
             headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -98,15 +109,15 @@ router.get('/google/callback', async (req, res) => {
                 code,
                 client_id: process.env.GOOGLE_CLIENT_ID || '',
                 client_secret: process.env.GOOGLE_CLIENT_SECRET || '',
-                redirect_uri: process.env.GOOGLE_REDIRECT_URI || '',
+                redirect_uri: redirectUri,
                 grant_type: 'authorization_code'
             })
         });
         const tokenJson = await tokenRes.json();
         if (tokenJson.error) {
-            logger_1.default.error('Google token error', { err: tokenJson });
+            logger_1.default.error('Google token error', { err: tokenJson, used_redirect_uri: redirectUri });
             trackFailedLogin(ip);
-            return res.status(400).json({ error: 'OAuth token exchange failed' });
+            return res.status(400).json({ error: 'OAuth token exchange failed', details: tokenJson.error_description || tokenJson.error });
         }
         const idToken = tokenJson.id_token;
         const infoRes = await fetch(`https://oauth2.googleapis.com/tokeninfo?id_token=${idToken}`);
