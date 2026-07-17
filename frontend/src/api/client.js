@@ -1,7 +1,7 @@
 import axios from 'axios'
 import { useStore } from '../store/useStore'
 
-const BASE_URL = import.meta.env.VITE_API_URL || 'https://program-learner.onrender.com/api'
+const BASE_URL = import.meta.env.VITE_API_URL || 'https://program-learner-backend.onrender.com/api'
 
 const api = axios.create({
   baseURL: BASE_URL,

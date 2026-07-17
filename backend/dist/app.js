@@ -70,6 +70,7 @@ async function notifyAdmins(title, body, meta = {}) {
 const allowedOrigins = [
     'https://program-learner.vercel.app',
     'https://program-learner.onrender.com',
+    'https://program-learner-backend.onrender.com',
     'http://localhost:5173',
     'http://localhost:4173'
 ];

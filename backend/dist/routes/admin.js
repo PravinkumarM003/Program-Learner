@@ -241,13 +241,8 @@ router.post('/lessons/generate', auth_1.authenticateJWT, (0, auth_1.authorizeRol
         const { topic, category, difficulty } = req.body;
         if (!topic) return res.status(400).json({ error: 'Topic is required' });
         
-        const apiKey = process.env.ANTHROPIC_API_KEY;
-        if (!apiKey) return res.status(500).json({ error: 'Anthropic API key is not configured' });
-        
-        const anthropic = new Anthropic({ apiKey });
-        
         const prompt = `You are an expert programming instructor. Create a lesson about "${topic}".
-The lesson is for the "${category}" track, and the difficulty is "${difficulty}".
+The lesson is for the "${category || 'C'}" track, and the difficulty is "${difficulty || 'Beginner'}".
 Output a JSON object with EXACTLY three fields:
 1. "title": A catchy, clear title for the lesson.
 2. "content": A detailed lesson body in Markdown formatting (use headings, code blocks, and explanations).
@@ -255,23 +250,56 @@ Output a JSON object with EXACTLY three fields:
 
 Do not output any additional text before or after the JSON.`;
 
-        const response = await anthropic.messages.create({
-            model: 'claude-3-5-sonnet-20241022',
-            max_tokens: 2000,
-            temperature: 0.7,
-            messages: [{ role: 'user', content: prompt }]
-        });
+        let text = "";
+        let providerUsed = "";
+
+        const anthropicKey = process.env.ANTHROPIC_API_KEY;
+        const geminiKey = process.env.GEMINI_API_KEY;
+
+        if (anthropicKey) {
+            try {
+                const anthropic = new Anthropic({ apiKey: anthropicKey });
+                const response = await anthropic.messages.create({
+                    model: 'claude-3-5-sonnet-20241022',
+                    max_tokens: 2000,
+                    temperature: 0.7,
+                    messages: [{ role: 'user', content: prompt }]
+                });
+                text = response.content[0].text;
+                providerUsed = "Claude";
+            } catch (claudeError) {
+                console.warn("[ADMIN] Claude generation failed, trying Gemini fallback:", claudeError?.message || claudeError);
+            }
+        }
+
+        if (!text && geminiKey) {
+            try {
+                const { GoogleGenAI } = require("@google/genai");
+                const ai = new GoogleGenAI({ apiKey: geminiKey });
+                const response = await ai.models.generateContent({
+                    model: 'gemini-2.5-flash',
+                    contents: prompt,
+                });
+                text = response.text;
+                providerUsed = "Gemini";
+            } catch (geminiError) {
+                console.error("[ADMIN] Gemini fallback generation failed:", geminiError?.message || geminiError);
+            }
+        }
+
+        if (!text) {
+            return res.status(500).json({ error: 'No AI API keys configured or both providers failed to respond.' });
+        }
         
-        const text = response.content[0].text;
-        
-        // Extract JSON using regex in case Claude outputs extra text
+        // Extract JSON using regex in case AI outputs extra text
         const jsonMatch = text.match(/\{[\s\S]*\}/);
         if (!jsonMatch) {
             throw new Error("Failed to parse JSON from AI response");
         }
         
         const lessonData = JSON.parse(jsonMatch[0]);
-        res.json({ lessonData });
+        console.log(`[ADMIN] Successfully generated lesson about "${topic}" using ${providerUsed}.`);
+        res.json({ lessonData, _meta: { provider: providerUsed } });
     } catch (e) {
         console.error("AI Generation Error:", e);
         res.status(500).json({ error: 'Failed to generate lesson with AI' });

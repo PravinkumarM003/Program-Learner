@@ -22,7 +22,7 @@ services:
       - key: FRONTEND_URL
         value: https://program-learner.onrender.com
       - key: GOOGLE_REDIRECT_URI
-        value: https://program-learner.onrender.com/api/auth/google/callback
+        value: https://program-learner-backend.onrender.com/api/auth/google/callback
       - key: GEMINI_API_KEY
         sync: false
       - key: JWT_ACCESS_SECRET
@@ -38,9 +38,9 @@ services:
     publishPath: dist
     envVars:
       - key: VITE_API_URL
-        value: https://program-learner.onrender.com/api
+        value: https://program-learner-backend.onrender.com/api
       - key: VITE_AUTH_URL
-        value: https://program-learner.onrender.com/api/auth/google
+        value: https://program-learner-backend.onrender.com/api/auth/google
       - key: VITE_FIREBASE_API_KEY
         value: AIzaSyBROE5uXMGhYb_v-_ZUwiqeEUVNNtgqRuE
       - key: VITE_FIREBASE_AUTH_DOMAIN

@@ -2,7 +2,7 @@ import { useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useStore } from '../store/useStore'
 
-const BASE_URL = import.meta.env.VITE_API_URL || 'https://program-learner.onrender.com/api'
+const BASE_URL = import.meta.env.VITE_API_URL || 'https://program-learner-backend.onrender.com/api'
 
 export default function Login() {
   const navigate = useNavigate()
