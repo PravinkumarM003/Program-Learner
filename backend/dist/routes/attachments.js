@@ -28,20 +28,25 @@ const upload = (0, multer_1.default)({
     }
 });
 router.post('/tasks/:taskId', auth_1.authenticateJWT, (0, auth_1.authorizeRoles)('ADMIN'), upload.single('file'), async (req, res) => {
-    const taskId = String(req.params.taskId);
-    const file = req.file;
-    if (!file)
-        return res.status(400).json({ error: 'Missing file' });
-    const attachment = await prisma_1.prisma.attachment.create({
-        data: {
-            filename: file.originalname,
-            mime: file.mimetype,
-            url: `/uploads/${path_1.default.basename(file.path)}`,
-            size: file.size,
-            kind: 'TASK_REFERENCE',
-            taskId
-        }
-    });
-    res.status(201).json({ attachment });
+    try {
+        const taskId = String(req.params.taskId);
+        const file = req.file;
+        if (!file)
+            return res.status(400).json({ error: 'Missing file' });
+        const attachment = await prisma_1.prisma.attachment.create({
+            data: {
+                filename: file.originalname,
+                mime: file.mimetype,
+                url: `/uploads/${path_1.default.basename(file.path)}`,
+                size: file.size,
+                kind: 'TASK_REFERENCE',
+                taskId
+            }
+        });
+        res.status(201).json({ attachment });
+    } catch (e) {
+        console.error('[ATTACHMENTS] POST /tasks/:taskId error:', e?.message || e);
+        res.status(500).json({ error: 'Failed to upload and create attachment reference' });
+    }
 });
 exports.default = router;

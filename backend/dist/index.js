@@ -6,6 +6,19 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const app_1 = __importDefault(require("./app"));
 const dotenv_1 = __importDefault(require("dotenv"));
 dotenv_1.default.config();
+
+// ── Process-level crash guards ────────────────────────────────────────────────
+// Prevent a single unhandled rejection from killing the entire Render service.
+// These log the error but keep the process alive so other requests aren't 502'd.
+process.on('unhandledRejection', (reason, promise) => {
+    console.error('[FATAL] Unhandled Rejection at:', promise, 'reason:', reason);
+});
+process.on('uncaughtException', (err) => {
+    console.error('[FATAL] Uncaught Exception:', err);
+    // Note: we intentionally do NOT call process.exit() here.
+    // The process stays alive to serve subsequent requests.
+});
+
 const prisma_1 = require("./prisma");
 
 async function seedAchievements() {

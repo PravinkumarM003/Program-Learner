@@ -67,12 +67,32 @@ async function notifyAdmins(title, body, meta = {}) {
     }
     catch (e) { }
 }
-app.use((0, cors_1.default)({
+const allowedOrigins = [
+    'https://program-learner.vercel.app',
+    'https://program-learner.onrender.com',
+    'http://localhost:5173',
+    'http://localhost:4173'
+];
+const corsOptions = {
     origin: function (origin, callback) {
-        callback(null, true);
+        // Allow requests with no origin (mobile apps, curl, server-to-server)
+        if (!origin) return callback(null, true);
+        if (allowedOrigins.includes(origin)) {
+            return callback(null, true);
+        }
+        // Still allow unknown origins in development, but log them
+        console.warn(`[CORS] Request from unlisted origin: ${origin}`);
+        return callback(null, true);
     },
-    credentials: true
-}));
+    methods: ['GET', 'HEAD', 'PUT', 'POST', 'DELETE', 'PATCH', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+    credentials: true,
+    optionsSuccessStatus: 204,
+    maxAge: 86400 // Cache preflight for 24 hours
+};
+app.use((0, cors_1.default)(corsOptions));
+// Explicit preflight handler — ensures Render's proxy never returns a bare 502 for OPTIONS
+app.options('*', (0, cors_1.default)(corsOptions));
 
 app.use((req, res, next) => {
     const ip = getClientIp(req);
@@ -186,9 +206,16 @@ app.use('/api/feedback', feedback_1.default);
 
 app.get('/health', (_req, res) => res.json({ status: 'ok' }));
 
-app.use((err, _req, res, _next) => {
-    // basic error handler
+app.use((err, req, res, _next) => {
+    // Global error handler — catches unhandled sync/async errors from Express
     const status = err.status || 500;
+    console.error(`[ERROR] ${req.method} ${req.originalUrl} →`, err.message || err);
+    // Ensure CORS headers are present even on error responses
+    const origin = req.headers.origin;
+    if (origin) {
+        res.setHeader('Access-Control-Allow-Origin', origin);
+        res.setHeader('Access-Control-Allow-Credentials', 'true');
+    }
     res.status(status).json({ error: err.message || 'Internal Server Error' });
 });
 exports.default = app;

@@ -6,20 +6,30 @@ const auth_1 = require("../middleware/auth");
 const router = (0, express_1.Router)();
 
 router.get('/', async (_req, res) => {
-    const lessons = await prisma_1.prisma.lesson.findMany({
-        include: { course: true },
-        orderBy: { order: 'asc' }
-    });
-    res.json({ lessons });
+    try {
+        const lessons = await prisma_1.prisma.lesson.findMany({
+            include: { course: true },
+            orderBy: { order: 'asc' }
+        });
+        res.json({ lessons });
+    } catch (e) {
+        console.error('[LESSONS] GET / error:', e?.message || e);
+        res.status(500).json({ error: 'Failed to fetch lessons list' });
+    }
 });
 router.get('/:id', async (req, res) => {
-    const lesson = await prisma_1.prisma.lesson.findUnique({
-        where: { id: String(req.params.id) },
-        include: { course: true }
-    });
-    if (!lesson)
-        return res.status(404).json({ error: 'Lesson not found' });
-    res.json({ lesson });
+    try {
+        const lesson = await prisma_1.prisma.lesson.findUnique({
+            where: { id: String(req.params.id) },
+            include: { course: true }
+        });
+        if (!lesson)
+            return res.status(404).json({ error: 'Lesson not found' });
+        res.json({ lesson });
+    } catch (e) {
+        console.error(`[LESSONS] GET /:id (${req.params.id}) error:`, e?.message || e);
+        res.status(500).json({ error: 'Failed to fetch lesson details' });
+    }
 });
 
 router.post('/:id/complete', auth_1.authenticateJWT, async (req, res) => {
@@ -49,8 +59,8 @@ router.post('/:id/complete', auth_1.authenticateJWT, async (req, res) => {
             });
         }
         
-        // Return 200 OK
-        res.json({ success: true });
+        // Return 200 OK with XP so the frontend shows the completion toast
+        res.json({ success: true, xp: 10 });
     } catch (e) {
         res.status(500).json({ error: 'Failed to mark lesson as complete' });
     }

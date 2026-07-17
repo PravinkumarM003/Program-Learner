@@ -20,6 +20,7 @@ async function notifyStudents(title, body) {
     }));
 }
 router.get('/submissions', auth_1.authenticateJWT, (0, auth_1.authorizeRoles)('ADMIN', 'TEACHER'), async (req, res) => {
+    try {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 20;
     const skip = (page - 1) * limit;
@@ -35,57 +36,66 @@ router.get('/submissions', auth_1.authenticateJWT, (0, auth_1.authorizeRoles)('A
     ]);
 
     res.json({ submissions, total, page, totalPages: Math.ceil(total / limit) });
+    } catch (e) {
+        console.error('[ADMIN] GET /submissions error:', e?.message || e);
+        res.status(500).json({ error: 'Failed to fetch submissions' });
+    }
 });
 router.post('/submissions/:id/review', auth_1.authenticateJWT, (0, auth_1.authorizeRoles)('ADMIN', 'TEACHER'), async (req, res) => {
-    const { id } = req.params;
-    const { status, marks, feedback } = req.body;
-    if (!['Accepted', 'Rejected', 'UnderReview'].includes(status)) {
-        return res.status(400).json({ error: 'Invalid status' });
-    }
-    const currentSubmission = await prisma_1.prisma.submission.findUnique({ where: { id }, include: { task: true } });
-    if (!currentSubmission) return res.status(404).json({ error: 'Submission not found' });
+    try {
+        const { id } = req.params;
+        const { status, marks, feedback } = req.body;
+        if (!['Accepted', 'Rejected', 'UnderReview'].includes(status)) {
+            return res.status(400).json({ error: 'Invalid status' });
+        }
+        const currentSubmission = await prisma_1.prisma.submission.findUnique({ where: { id }, include: { task: true } });
+        if (!currentSubmission) return res.status(404).json({ error: 'Submission not found' });
 
-    // Only calculate new XP if marks are being set and status is Accepted
-    let newEarnedXp = currentSubmission.earnedXp || 0; // keep existing by default
-    const marksValue = (marks !== undefined && marks !== null && marks !== '') ? Number(marks) : null;
+        // Only calculate new XP if marks are being set and status is Accepted
+        let newEarnedXp = currentSubmission.earnedXp || 0; // keep existing by default
+        const marksValue = (marks !== undefined && marks !== null && marks !== '') ? Number(marks) : null;
 
-    if (status === 'Accepted' && marksValue !== null && marksValue > 0) {
-        const max = currentSubmission.task.maxMarks || 100;
-        const availableBaseXp = currentSubmission.earnedXp > 0 ? currentSubmission.earnedXp : (currentSubmission.task.baseXp || 0);
-        newEarnedXp = Math.floor((marksValue / max) * availableBaseXp);
-    } else if (status !== 'Accepted') {
-        newEarnedXp = 0; // No XP for rejected/under-review
-    }
+        if (status === 'Accepted' && marksValue !== null && marksValue > 0) {
+            const max = currentSubmission.task.maxMarks || 100;
+            const availableBaseXp = currentSubmission.earnedXp > 0 ? currentSubmission.earnedXp : (currentSubmission.task.baseXp || 0);
+            newEarnedXp = Math.floor((marksValue / max) * availableBaseXp);
+        } else if (status !== 'Accepted') {
+            newEarnedXp = 0; // No XP for rejected/under-review
+        }
 
-    // Compute XP delta to avoid double-counting
-    const oldEarnedXp = currentSubmission.earnedXp || 0;
-    const xpDelta = newEarnedXp - oldEarnedXp;
+        // Compute XP delta to avoid double-counting
+        const oldEarnedXp = currentSubmission.earnedXp || 0;
+        const xpDelta = newEarnedXp - oldEarnedXp;
 
-    const submission = await prisma_1.prisma.submission.update({
-        where: { id },
-        data: {
-            status,
-            marks: marksValue,
-            feedback: feedback || null,
-            earnedXp: newEarnedXp,
-            reviewBy: req.user?.sub,
-            reviewedAt: new Date(),
-            acceptedAt: status === 'Accepted' ? new Date() : (status === 'Rejected' ? null : undefined),
-            rejectedAt: status === 'Rejected' ? new Date() : (status === 'Accepted' ? null : undefined)
-        },
-        include: { task: true, user: true, versions: true }
-    });
-
-    // Update leaderboard with delta only (prevents double-counting)
-    if (xpDelta !== 0) {
-        await prisma_1.prisma.leaderboard.upsert({
-            where: { userId: submission.userId },
-            update: { xp: { increment: xpDelta } },
-            create: { userId: submission.userId, xp: Math.max(0, xpDelta) }
+        const submission = await prisma_1.prisma.submission.update({
+            where: { id },
+            data: {
+                status,
+                marks: marksValue,
+                feedback: feedback || null,
+                earnedXp: newEarnedXp,
+                reviewBy: req.user?.sub,
+                reviewedAt: new Date(),
+                acceptedAt: status === 'Accepted' ? new Date() : (status === 'Rejected' ? null : undefined),
+                rejectedAt: status === 'Rejected' ? new Date() : (status === 'Accepted' ? null : undefined)
+            },
+            include: { task: true, user: true, versions: true }
         });
-    }
 
-    res.json({ submission });
+        // Update leaderboard with delta only (prevents double-counting)
+        if (xpDelta !== 0) {
+            await prisma_1.prisma.leaderboard.upsert({
+                where: { userId: submission.userId },
+                update: { xp: { increment: xpDelta } },
+                create: { userId: submission.userId, xp: Math.max(0, xpDelta) }
+            });
+        }
+
+        res.json({ submission });
+    } catch (e) {
+        console.error('[ADMIN] POST /submissions/:id/review error:', e?.message || e);
+        res.status(500).json({ error: 'Failed to process submission review' });
+    }
 });
 
 router.get('/users', auth_1.authenticateJWT, (0, auth_1.authorizeRoles)('ADMIN'), async (req, res) => {
@@ -299,10 +309,15 @@ router.post('/lessons', auth_1.authenticateJWT, (0, auth_1.authorizeRoles)('ADMI
 });
 
 router.get('/lessons', auth_1.authenticateJWT, (0, auth_1.authorizeRoles)('ADMIN', 'TEACHER'), async (req, res) => {
+    try {
     const lessons = await prisma_1.prisma.lesson.findMany({
         orderBy: { createdAt: 'desc' }
     });
     res.json({ lessons });
+    } catch (e) {
+        console.error('[ADMIN] GET /lessons error:', e?.message || e);
+        res.status(500).json({ error: 'Failed to fetch lessons' });
+    }
 });
 
 router.put('/lessons/:id', auth_1.authenticateJWT, (0, auth_1.authorizeRoles)('ADMIN', 'TEACHER'), async (req, res) => {

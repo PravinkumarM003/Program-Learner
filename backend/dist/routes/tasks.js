@@ -59,6 +59,7 @@ function validateCCode(code) {
 }
 
 router.get('/', async (_req, res) => {
+    try {
     const tasks = await prisma_1.prisma.task.findMany({
         where: { published: true },
         select: {
@@ -71,112 +72,117 @@ router.get('/', async (_req, res) => {
         orderBy: { deadline: 'asc' }
     });
     res.json({ tasks });
+    } catch (e) {
+        console.error('[TASKS] GET / error:', e?.message || e);
+        res.status(500).json({ error: 'Failed to fetch tasks' });
+    }
 });
 
 // IMPORTANT: /run-code must be declared before any /:id routes
 // to prevent Express matching "run-code" as an :id param
 router.post('/run-code', async (req, res) => {
-    const child_process = require('child_process');
-    const fs = require('fs');
-    const path = require('path');
-    const { code, language, input } = req.body;
-    if (!code || !language) {
-        return res.status(400).json({ error: 'Missing code or language' });
-    }
-    if (language === 'python') {
-        const validation = validatePythonCode(code);
-        if (!validation.valid) {
-            return res.status(400).json({ error: validation.reason });
+    try {
+        const child_process = require('child_process');
+        const fs = require('fs');
+        const path = require('path');
+        const { code, language, input } = req.body;
+        if (!code || !language) {
+            return res.status(400).json({ error: 'Missing code or language' });
         }
-    } else if (language === 'c') {
-        const validation = validateCCode(code);
-        if (!validation.valid) {
-            return res.status(400).json({ error: validation.reason });
+        if (language === 'python') {
+            const validation = validatePythonCode(code);
+            if (!validation.valid) {
+                return res.status(400).json({ error: validation.reason });
+            }
+        } else if (language === 'c') {
+            const validation = validateCCode(code);
+            if (!validation.valid) {
+                return res.status(400).json({ error: validation.reason });
+            }
+        } else {
+            return res.status(400).json({ error: 'Unsupported language' });
         }
-    } else {
-        return res.status(400).json({ error: 'Unsupported language' });
-    }
-    const tempDir = path.join(__dirname, '../../temp_run');
-    if (!fs.existsSync(tempDir)) {
-        fs.mkdirSync(tempDir, { recursive: true });
-    }
-    const fileId = Math.random().toString(36).substring(7);
-    if (language === 'python') {
-        const filePath = path.join(tempDir, `run_${fileId}.py`);
-        fs.writeFileSync(filePath, code);
-        const antigravityPath = path.join(tempDir, 'antigravity.py');
-        if (!fs.existsSync(antigravityPath)) {
-            fs.writeFileSync(antigravityPath, 'print("🚀 You are now floating in the air! (antigravity module loaded)")\n');
+        const tempDir = path.join(__dirname, '../../temp_run');
+        if (!fs.existsSync(tempDir)) {
+            fs.mkdirSync(tempDir, { recursive: true });
         }
+        const fileId = Math.random().toString(36).substring(7);
+        if (language === 'python') {
+            const filePath = path.join(tempDir, `run_${fileId}.py`);
+            fs.writeFileSync(filePath, code);
+            const antigravityPath = path.join(tempDir, 'antigravity.py');
+            if (!fs.existsSync(antigravityPath)) {
+                fs.writeFileSync(antigravityPath, 'print("🚀 You are now floating in the air! (antigravity module loaded)")\n');
+            }
 
-        let pythonCmd = 'python3';
-        try {
-            const out = child_process.spawnSync('python3', ['--version']);
-            if (out.error || out.status !== 0) pythonCmd = 'python';
-        } catch (e) { pythonCmd = 'python'; }
-
-        const child = child_process.spawn(pythonCmd, [filePath]);
-        let stdout = '';
-        let stderr = '';
-        if (input) {
-            child.stdin.write(input);
-            child.stdin.end();
-        }
-        child.stdout.on('data', (data) => { stdout += data.toString(); });
-        child.stderr.on('data', (data) => { stderr += data.toString(); });
-        const timeout = setTimeout(() => { child.kill(); }, 5000);
-        child.on('close', (exitCode) => {
-            clearTimeout(timeout);
-            try { fs.unlinkSync(filePath); } catch (e) {}
-            res.json({ stdout, stderr, exitCode });
-        });
-        child.on('error', (err) => {
-            clearTimeout(timeout);
-            try { fs.unlinkSync(filePath); } catch (e) {}
-            res.json({ stdout, stderr, exitCode: 1, error: err.message });
-        });
-    } else if (language === 'c') {
-        const sourcePath = path.join(tempDir, `run_${fileId}.c`);
-        const isWin = process.platform === 'win32';
-        const exePath = path.join(tempDir, isWin ? `run_${fileId}.exe` : `run_${fileId}`);
-        fs.writeFileSync(sourcePath, code);
-        // Prefer gcc then clang
-        const compilers = ['gcc', 'clang'];
-        let compiled = false;
-        let compileErrMsg = '';
-        for (const compiler of compilers) {
+            let pythonCmd = 'python3';
             try {
-                child_process.execSync(`${compiler} "${sourcePath}" -o "${exePath}"`, { stdio: 'pipe', timeout: 10000 });
-                compiled = true;
-                break;
-            } catch (ce) {
-                compileErrMsg = (ce && ce.stderr) ? ce.stderr.toString() : (ce && ce.message) ? ce.message : String(ce);
-                // If it was a real compile error and not a missing command, don't try the next compiler
-                if (ce.status !== undefined && compileErrMsg.trim() && !compileErrMsg.includes('not recognized') && !compileErrMsg.includes('not found')) {
-                    break;
-                }
-            }
-        }
-        if (!compiled) {
-            try { fs.unlinkSync(sourcePath); } catch (e) {}
-            return res.json({ stdout: '', stderr: compileErrMsg || 'Compilation failed (no compiler available)', exitCode: 1, compileError: true });
-        }
-        try {
-            if (!isWin) {
-                // ensure executable bit
-                fs.chmodSync(exePath, 0o755);
-            }
-        } catch (e) {}
-        const child = child_process.spawn(exePath);
+                const out = child_process.spawnSync('python3', ['--version']);
+                if (out.error || out.status !== 0) pythonCmd = 'python';
+            } catch (e) { pythonCmd = 'python'; }
+
+            const child = child_process.spawn(pythonCmd, [filePath]);
             let stdout = '';
             let stderr = '';
             if (input) {
                 child.stdin.write(input);
                 child.stdin.end();
             }
+            const timeout = setTimeout(() => { child.kill(); }, 5000);
             child.stdout.on('data', (data) => { stdout += data.toString(); });
             child.stderr.on('data', (data) => { stderr += data.toString(); });
+            child.on('close', (exitCode) => {
+                clearTimeout(timeout);
+                try { fs.unlinkSync(filePath); } catch (e) {}
+                res.json({ stdout, stderr, exitCode });
+            });
+            child.on('error', (err) => {
+                clearTimeout(timeout);
+                try { fs.unlinkSync(filePath); } catch (e) {}
+                res.json({ stdout, stderr, exitCode: 1, error: err.message });
+            });
+        } else if (language === 'c') {
+            const sourcePath = path.join(tempDir, `run_${fileId}.c`);
+            const isWin = process.platform === 'win32';
+            const exePath = path.join(tempDir, isWin ? `run_${fileId}.exe` : `run_${fileId}`);
+            fs.writeFileSync(sourcePath, code);
+            // Prefer gcc then clang
+            const compilers = ['gcc', 'clang'];
+            let compiled = false;
+            let compileErrMsg = '';
+            for (const compiler of compilers) {
+                try {
+                    child_process.execSync(`${compiler} "${sourcePath}" -o "${exePath}"`, { stdio: 'pipe', timeout: 10000 });
+                    compiled = true;
+                    break;
+                } catch (ce) {
+                    compileErrMsg = (ce && ce.stderr) ? ce.stderr.toString() : (ce && ce.message) ? ce.message : String(ce);
+                    // If it was a real compile error and not a missing command, don't try the next compiler
+                    if (ce.status !== undefined && compileErrMsg.trim() && !compileErrMsg.includes('not recognized') && !compileErrMsg.includes('not found')) {
+                        break;
+                    }
+                }
+            }
+            if (!compiled) {
+                try { fs.unlinkSync(sourcePath); } catch (e) {}
+                return res.json({ stdout: '', stderr: compileErrMsg || 'Compilation failed (no compiler available)', exitCode: 1, compileError: true });
+            }
+            try {
+                if (!isWin) {
+                    // ensure executable bit
+                    fs.chmodSync(exePath, 0o755);
+                }
+            } catch (e) {}
+            const child = child_process.spawn(exePath);
+            let stdout = '';
+            let stderr = '';
+            if (input) {
+                child.stdin.write(input);
+                child.stdin.end();
+            }
             const timeout = setTimeout(() => { child.kill(); }, 5000);
+            child.stdout.on('data', (data) => { stdout += data.toString(); });
+            child.stderr.on('data', (data) => { stderr += data.toString(); });
             child.on('close', (exitCode) => {
                 clearTimeout(timeout);
                 try { fs.unlinkSync(sourcePath); } catch (e) {}
@@ -189,15 +195,25 @@ router.post('/run-code', async (req, res) => {
                 try { fs.unlinkSync(exePath); } catch (e) {}
                 res.json({ stdout, stderr, exitCode: 1, error: err.message });
             });
+        }
+    } catch (e) {
+        console.error('[TASKS] POST /run-code error:', e?.message || e);
+        res.status(500).json({ error: 'Failed to run code execution process' });
     }
 });
 
 router.get('/admin', auth_1.authenticateJWT, (0, auth_1.authorizeRoles)('ADMIN', 'TEACHER'), async (_req, res) => {
+    try {
     const tasks = await prisma_1.prisma.task.findMany({ orderBy: { createdAt: 'desc' } });
     res.json({ tasks });
+    } catch (e) {
+        console.error('[TASKS] GET /admin error:', e?.message || e);
+        res.status(500).json({ error: 'Failed to fetch tasks' });
+    }
 });
 
 router.get('/:id', async (req, res) => {
+    try {
     const task = await prisma_1.prisma.task.findUnique({
         where: { id: String(req.params.id) },
         include: {
@@ -215,119 +231,139 @@ router.get('/:id', async (req, res) => {
     if (!task)
         return res.status(404).json({ error: 'Task not found' });
     res.json({ task });
+    } catch (e) {
+        console.error('[TASKS] GET /:id error:', e?.message || e);
+        res.status(500).json({ error: 'Failed to fetch task' });
+    }
 });
 
 router.get('/admin/:id', auth_1.authenticateJWT, (0, auth_1.authorizeRoles)('ADMIN', 'TEACHER'), async (req, res) => {
-    const task = await prisma_1.prisma.task.findUnique({
-        where: { id: String(req.params.id) },
-        include: {
-            quizQuestions: {
-                orderBy: { order: 'asc' }
+    try {
+        const task = await prisma_1.prisma.task.findUnique({
+            where: { id: String(req.params.id) },
+            include: {
+                quizQuestions: {
+                    orderBy: { order: 'asc' }
+                }
             }
-        }
-    });
-    if (!task)
-        return res.status(404).json({ error: 'Task not found' });
-    res.json({ task });
+        });
+        if (!task)
+            return res.status(404).json({ error: 'Task not found' });
+        res.json({ task });
+    } catch (e) {
+        console.error(`[TASKS] GET /admin/:id (${req.params.id}) error:`, e?.message || e);
+        res.status(500).json({ error: 'Failed to fetch task admin details' });
+    }
 });
 
 router.post('/', auth_1.authenticateJWT, (0, auth_1.authorizeRoles)('ADMIN', 'TEACHER'), (0, validation_1.validateBody)(validation_1.createTaskSchema), async (req, res) => {
-    const { title, description, courseId, category, type, difficulty, deadline, testCases, sampleInput, sampleOutput, hints, starterCode, isDraft, quizQuestions, baseXp, targetTime, maxMarks, fullXpTime, averageXp } = req.body;
-    
-    const taskCategory = category || 'C';
-    let resolvedCourseId = courseId || null;
-    if (!resolvedCourseId) {
-        let course = await prisma_1.prisma.course.findFirst({ where: { title: taskCategory } });
-        if (!course) {
-            course = await prisma_1.prisma.course.create({ data: { title: taskCategory } });
+    try {
+        const { title, description, courseId, category, type, difficulty, deadline, testCases, sampleInput, sampleOutput, hints, starterCode, isDraft, quizQuestions, baseXp, targetTime, maxMarks, fullXpTime, averageXp } = req.body;
+        
+        const taskCategory = category || 'C';
+        let resolvedCourseId = courseId || null;
+        if (!resolvedCourseId) {
+            let course = await prisma_1.prisma.course.findFirst({ where: { title: taskCategory } });
+            if (!course) {
+                course = await prisma_1.prisma.course.create({ data: { title: taskCategory } });
+            }
+            resolvedCourseId = course.id;
         }
-        resolvedCourseId = course.id;
-    }
 
-    const task = await prisma_1.prisma.task.create({
-        data: {
-            title,
-            description,
-            courseId: resolvedCourseId,
-            category: taskCategory,
-            type: type || 'CODE',
-            difficulty: difficulty || 'Beginner',
-            deadline: deadline ? new Date(deadline) : null,
-            baseXp: Number(baseXp) || 0,
-            targetTime: targetTime ? Number(targetTime) : null,
-            maxMarks: maxMarks ? Number(maxMarks) : null,
-            fullXpTime: fullXpTime ? Number(fullXpTime) : null,
-            averageXp: averageXp !== undefined && averageXp !== null ? Number(averageXp) : null,
-            testCases: testCases || '',
-            sampleInput: sampleInput || '',
-            sampleOutput: sampleOutput || '',
-            hints: hints || '',
-            starterCode: starterCode || '',
-            isDraft: Boolean(isDraft),
-            published: !Boolean(isDraft),
-            quizQuestions: type === 'QUIZ' && Array.isArray(quizQuestions) ? {
-                create: quizQuestions.map((q, idx) => ({
+        const task = await prisma_1.prisma.task.create({
+            data: {
+                title,
+                description,
+                courseId: resolvedCourseId,
+                category: taskCategory,
+                type: type || 'CODE',
+                difficulty: difficulty || 'Beginner',
+                deadline: deadline ? new Date(deadline) : null,
+                baseXp: Number(baseXp) || 0,
+                targetTime: targetTime ? Number(targetTime) : null,
+                maxMarks: maxMarks ? Number(maxMarks) : null,
+                fullXpTime: fullXpTime ? Number(fullXpTime) : null,
+                averageXp: averageXp !== undefined && averageXp !== null ? Number(averageXp) : null,
+                testCases: testCases || '',
+                sampleInput: sampleInput || '',
+                sampleOutput: sampleOutput || '',
+                hints: hints || '',
+                starterCode: starterCode || '',
+                isDraft: Boolean(isDraft),
+                published: !Boolean(isDraft),
+                quizQuestions: type === 'QUIZ' && Array.isArray(quizQuestions) ? {
+                    create: quizQuestions.map((q, idx) => ({
+                        question: q.question,
+                        options: JSON.stringify(q.options),
+                        answer: q.answer,
+                        order: q.order ?? idx
+                    }))
+                } : undefined
+            },
+            include: { quizQuestions: true }
+        });
+        
+        if (task.published) {
+            await notifyStudents('New Task Available!', `A new task "${task.title}" has been published.`);
+        }
+        
+        res.status(201).json({ task });
+    } catch (e) {
+        console.error('[TASKS] POST / error:', e?.message || e);
+        res.status(500).json({ error: 'Failed to create task' });
+    }
+});
+
+router.put('/:id', auth_1.authenticateJWT, (0, auth_1.authorizeRoles)('ADMIN', 'TEACHER'), (0, validation_1.validateBody)(validation_1.updateTaskSchema), async (req, res) => {
+    try {
+        const { id } = req.params;
+        const updates = req.body;
+        const taskData = {
+            title: updates.title,
+            description: updates.description,
+            courseId: updates.courseId !== undefined ? updates.courseId : undefined,
+            category: updates.category !== undefined ? updates.category : undefined,
+            type: updates.type,
+            difficulty: updates.difficulty,
+            deadline: updates.deadline ? new Date(updates.deadline) : undefined,
+            sampleInput: updates.sampleInput,
+            sampleOutput: updates.sampleOutput,
+            hints: updates.hints,
+            starterCode: updates.starterCode,
+            testCases: updates.testCases,
+            baseXp: updates.baseXp !== undefined ? Number(updates.baseXp) : undefined,
+            targetTime: updates.targetTime !== undefined ? Number(updates.targetTime) : undefined,
+            maxMarks: updates.maxMarks !== undefined ? Number(updates.maxMarks) : undefined,
+            fullXpTime: updates.fullXpTime !== undefined ? (updates.fullXpTime ? Number(updates.fullXpTime) : null) : undefined,
+            averageXp: updates.averageXp !== undefined ? (updates.averageXp !== null ? Number(updates.averageXp) : null) : undefined,
+            published: typeof updates.published === 'boolean' ? updates.published : undefined,
+            isDraft: typeof updates.isDraft === 'boolean' ? updates.isDraft : undefined
+        };
+        if (updates.type === 'QUIZ' && Array.isArray(updates.quizQuestions)) {
+            await prisma_1.prisma.quizQuestion.deleteMany({ where: { taskId: id } });
+            taskData.quizQuestions = {
+                create: updates.quizQuestions.map((q, idx) => ({
                     question: q.question,
                     options: JSON.stringify(q.options),
                     answer: q.answer,
                     order: q.order ?? idx
                 }))
-            } : undefined
-        },
-        include: { quizQuestions: true }
-    });
-    
-    if (task.published) {
-        await notifyStudents('New Task Available!', `A new task "${task.title}" has been published.`);
+            };
+        }
+        const task = await prisma_1.prisma.task.update({
+            where: { id },
+            data: taskData,
+            include: { quizQuestions: true }
+        });
+        res.json({ task });
+    } catch (e) {
+        console.error(`[TASKS] PUT /:id (${req.params.id}) error:`, e?.message || e);
+        res.status(500).json({ error: 'Failed to update task' });
     }
-    
-    res.status(201).json({ task });
-});
-
-router.put('/:id', auth_1.authenticateJWT, (0, auth_1.authorizeRoles)('ADMIN', 'TEACHER'), (0, validation_1.validateBody)(validation_1.updateTaskSchema), async (req, res) => {
-    const { id } = req.params;
-    const updates = req.body;
-    const taskData = {
-        title: updates.title,
-        description: updates.description,
-        courseId: updates.courseId !== undefined ? updates.courseId : undefined,
-        category: updates.category !== undefined ? updates.category : undefined,
-        type: updates.type,
-        difficulty: updates.difficulty,
-        deadline: updates.deadline ? new Date(updates.deadline) : undefined,
-        sampleInput: updates.sampleInput,
-        sampleOutput: updates.sampleOutput,
-        hints: updates.hints,
-        starterCode: updates.starterCode,
-        testCases: updates.testCases,
-        baseXp: updates.baseXp !== undefined ? Number(updates.baseXp) : undefined,
-        targetTime: updates.targetTime !== undefined ? Number(updates.targetTime) : undefined,
-        maxMarks: updates.maxMarks !== undefined ? Number(updates.maxMarks) : undefined,
-        fullXpTime: updates.fullXpTime !== undefined ? (updates.fullXpTime ? Number(updates.fullXpTime) : null) : undefined,
-        averageXp: updates.averageXp !== undefined ? (updates.averageXp !== null ? Number(updates.averageXp) : null) : undefined,
-        published: typeof updates.published === 'boolean' ? updates.published : undefined,
-        isDraft: typeof updates.isDraft === 'boolean' ? updates.isDraft : undefined
-    };
-    if (updates.type === 'QUIZ' && Array.isArray(updates.quizQuestions)) {
-        await prisma_1.prisma.quizQuestion.deleteMany({ where: { taskId: id } });
-        taskData.quizQuestions = {
-            create: updates.quizQuestions.map((q, idx) => ({
-                question: q.question,
-                options: JSON.stringify(q.options),
-                answer: q.answer,
-                order: q.order ?? idx
-            }))
-        };
-    }
-    const task = await prisma_1.prisma.task.update({
-        where: { id },
-        data: taskData,
-        include: { quizQuestions: true }
-    });
-    res.json({ task });
 });
 
 router.delete('/:id', auth_1.authenticateJWT, (0, auth_1.authorizeRoles)('ADMIN', 'TEACHER'), async (req, res) => {
+    try {
     const { id } = req.params;
     const task = await prisma_1.prisma.task.findUnique({ where: { id } });
     if (task) {
@@ -337,13 +373,22 @@ router.delete('/:id', auth_1.authenticateJWT, (0, auth_1.authorizeRoles)('ADMIN'
     }
     await prisma_1.prisma.task.delete({ where: { id } });
     res.json({ ok: true });
+    } catch (e) {
+        console.error('[TASKS] DELETE /:id error:', e?.message || e);
+        res.status(500).json({ error: 'Failed to delete task' });
+    }
 });
 
 router.post('/:id/publish', auth_1.authenticateJWT, (0, auth_1.authorizeRoles)('ADMIN', 'TEACHER'), async (req, res) => {
-    const { id } = req.params;
-    const task = await prisma_1.prisma.task.update({ where: { id }, data: { published: true, isDraft: false } });
-    await notifyStudents('New Task Available!', `A new task "${task.title}" has been published.`);
-    res.json({ task });
+    try {
+        const { id } = req.params;
+        const task = await prisma_1.prisma.task.update({ where: { id }, data: { published: true, isDraft: false } });
+        await notifyStudents('New Task Available!', `A new task "${task.title}" has been published.`);
+        res.json({ task });
+    } catch (e) {
+        console.error(`[TASKS] POST /:id/publish (${req.params.id}) error:`, e?.message || e);
+        res.status(500).json({ error: 'Failed to publish task' });
+    }
 });
 
 // Daily Challenge: set a task as today's challenge
@@ -374,43 +419,163 @@ router.get('/challenge/daily', async (_req, res) => {
 
 
 router.post('/:id/submit', auth_1.authenticateJWT, async (req, res) => {
-    const { id } = req.params;
-    const userId = req.user?.sub;
-    const { code, timeTaken, language } = req.body;
-    if (!userId)
-        return res.status(401).json({ error: 'Authentication required' });
-    const task = await prisma_1.prisma.task.findUnique({
-        where: { id },
-        include: { quizQuestions: true }
-    });
-    if (!task)
-        return res.status(404).json({ error: 'Task not found' });
-    let status = 'Pending';
-    let marks = null;
-    let feedback = null;
-    let earnedXp = 0;
-    if (task.type === 'QUIZ') {
-        let parsedAnswers = [];
-        try {
-            parsedAnswers = JSON.parse(code);
-        } catch (e) {
-            return res.status(400).json({ error: 'Invalid answers format. Must be JSON.' });
-        }
-        let correctCount = 0;
-        const totalQuestions = task.quizQuestions.length;
-        task.quizQuestions.forEach(q => {
-            const studentAns = parsedAnswers.find(a => a.questionId === q.id)?.answer || '';
-            if (q.answer.trim().toLowerCase() === studentAns.trim().toLowerCase()) {
-                correctCount++;
-            }
+    try {
+        const { id } = req.params;
+        const userId = req.user?.sub;
+        const { code, timeTaken, language } = req.body;
+        if (!userId)
+            return res.status(401).json({ error: 'Authentication required' });
+        const task = await prisma_1.prisma.task.findUnique({
+            where: { id },
+            include: { quizQuestions: true }
         });
-        marks = correctCount;
-        status = 'Accepted';
-        feedback = `Auto-graded: ${correctCount}/${totalQuestions} correct answers.`;
-        
-        let max = task.maxMarks || totalQuestions;
-        if (max > 0 && marks > 0) {
-            let pct = marks / max;
+        if (!task)
+            return res.status(404).json({ error: 'Task not found' });
+        let status = 'Pending';
+        let marks = null;
+        let feedback = null;
+        let earnedXp = 0;
+        if (task.type === 'QUIZ') {
+            let parsedAnswers = [];
+            try {
+                parsedAnswers = JSON.parse(code);
+            } catch (e) {
+                return res.status(400).json({ error: 'Invalid answers format. Must be JSON.' });
+            }
+            let correctCount = 0;
+            const totalQuestions = task.quizQuestions.length;
+            task.quizQuestions.forEach(q => {
+                const studentAns = parsedAnswers.find(a => a.questionId === q.id)?.answer || '';
+                if (q.answer.trim().toLowerCase() === studentAns.trim().toLowerCase()) {
+                    correctCount++;
+                }
+            });
+            marks = correctCount;
+            status = 'Accepted';
+            feedback = `Auto-graded: ${correctCount}/${totalQuestions} correct answers.`;
+            
+            let max = task.maxMarks || totalQuestions;
+            if (max > 0 && marks > 0) {
+                let pct = marks / max;
+                let finalBaseXp = task.baseXp || 0;
+                if (task.fullXpTime && timeTaken) {
+                    if (timeTaken <= task.fullXpTime) {
+                        finalBaseXp = task.baseXp || 0;
+                    } else {
+                        const diff = timeTaken - task.fullXpTime;
+                        finalBaseXp = Math.max((task.averageXp || 0), (task.baseXp || 0) - diff);
+                    }
+                }
+                earnedXp = Math.floor(pct * finalBaseXp);
+            }
+            
+            if (earnedXp > 0) {
+                await prisma_1.prisma.leaderboard.upsert({
+                    where: { userId },
+                    update: { xp: { increment: earnedXp } },
+                    create: { userId, xp: earnedXp }
+                });
+            }
+        } else if (task.type === 'CODE' && language && task.sampleInput && task.sampleOutput) {
+            if (language === 'python') {
+                const validation = validatePythonCode(code);
+                if (!validation.valid) {
+                    return res.status(400).json({ error: validation.reason });
+                }
+            } else if (language === 'c') {
+                const validation = validateCCode(code);
+                if (!validation.valid) {
+                    return res.status(400).json({ error: validation.reason });
+                }
+            }
+            const child_process = require('child_process');
+            const fs = require('fs');
+            const path = require('path');
+            const tempDir = path.join(__dirname, '../../temp_run');
+            if (!fs.existsSync(tempDir)) {
+                fs.mkdirSync(tempDir, { recursive: true });
+            }
+            const fileId = Math.random().toString(36).substring(7);
+            let runStdout = '';
+            if (language === 'python') {
+                const filePath = path.join(tempDir, `run_${fileId}.py`);
+                fs.writeFileSync(filePath, code);
+                const antigravityPath = path.join(tempDir, 'antigravity.py');
+                if (!fs.existsSync(antigravityPath)) {
+                    fs.writeFileSync(antigravityPath, 'print("🚀 You are now floating in the air! (antigravity module loaded)")\n');
+                }
+
+                let pythonCmd = 'python3';
+                try {
+                    const out = child_process.spawnSync('python3', ['--version']);
+                    if (out.error || out.status !== 0) pythonCmd = 'python';
+                } catch (e) { pythonCmd = 'python'; }
+
+                try {
+                    const out = child_process.spawnSync(pythonCmd, [filePath], { input: task.sampleInput, timeout: 5000 });
+                    if (out && out.status !== null) {
+                        runStdout = out.stdout ? out.stdout.toString() : '';
+                    }
+                } catch (e) {}
+                try { fs.unlinkSync(filePath); } catch (e) {}
+            } else if (language === 'c') {
+                const sourcePath = path.join(tempDir, `run_${fileId}.c`);
+                const isWin = process.platform === 'win32';
+                const exePath = path.join(tempDir, isWin ? `run_${fileId}.exe` : `run_${fileId}`);
+                fs.writeFileSync(sourcePath, code);
+                // Prefer gcc then clang
+                const compilers = ['gcc', 'clang'];
+                let compiled = false;
+                for (const compiler of compilers) {
+                    try {
+                        child_process.execSync(`${compiler} "${sourcePath}" -o "${exePath}"`, { stdio: 'pipe', timeout: 5000 });
+                        compiled = true;
+                        break;
+                    } catch (ce) {
+                        const errMsg = (ce && ce.stderr) ? ce.stderr.toString() : (ce && ce.message) ? ce.message : String(ce);
+                        if (ce.status !== undefined && errMsg.trim() && !errMsg.includes('not recognized') && !errMsg.includes('not found')) {
+                            break; // syntax error, don't try fallback
+                        }
+                    }
+                }
+                if (compiled) {
+                    try {
+                        if (!isWin) fs.chmodSync(exePath, 0o755);
+                        const out = child_process.spawnSync(exePath, { input: task.sampleInput, timeout: 5000 });
+                        runStdout = out.stdout ? out.stdout.toString() : '';
+                    } catch (e) {
+                        // ignore runtime errors here
+                    }
+                }
+                try { fs.unlinkSync(sourcePath); } catch (e) {}
+                try { fs.unlinkSync(exePath); } catch (e) {}
+            }
+
+            if (runStdout.trim() === task.sampleOutput.trim()) {
+                marks = task.maxMarks || 10;
+                status = 'Accepted';
+                feedback = 'Auto-graded: Output matches expected sample output.';
+                
+                let finalXp = task.baseXp || 0;
+                if (task.fullXpTime && timeTaken) {
+                    if (timeTaken <= task.fullXpTime) {
+                        finalXp = task.baseXp || 0;
+                    } else {
+                        const diff = timeTaken - task.fullXpTime;
+                        finalXp = Math.max((task.averageXp || 0), (task.baseXp || 0) - diff);
+                    }
+                }
+                earnedXp = finalXp;
+                
+                if (earnedXp > 0) {
+                    await prisma_1.prisma.leaderboard.upsert({
+                        where: { userId },
+                        update: { xp: { increment: earnedXp } },
+                        create: { userId, xp: earnedXp }
+                    });
+                }
+            }
+        } else if (task.type === 'GENERAL') {
             let finalBaseXp = task.baseXp || 0;
             if (task.fullXpTime && timeTaken) {
                 if (timeTaken <= task.fullXpTime) {
@@ -420,180 +585,65 @@ router.post('/:id/submit', auth_1.authenticateJWT, async (req, res) => {
                     finalBaseXp = Math.max((task.averageXp || 0), (task.baseXp || 0) - diff);
                 }
             }
-            earnedXp = Math.floor(pct * finalBaseXp);
+            earnedXp = finalBaseXp; // Save the max possible decayed XP here for the manual review to use
         }
-        
-        if (earnedXp > 0) {
-            await prisma_1.prisma.leaderboard.upsert({
-                where: { userId },
-                update: { xp: { increment: earnedXp } },
-                create: { userId, xp: earnedXp }
+        const existingSubmission = await prisma_1.prisma.submission.findUnique({
+            where: {
+                taskId_userId: {
+                    taskId: id,
+                    userId: userId
+                }
+            }
+        });
+        let submission;
+        if (existingSubmission) {
+            submission = await prisma_1.prisma.submission.update({
+                where: { id: existingSubmission.id },
+                data: {
+                    status,
+                    marks,
+                    feedback,
+                    timeTaken: timeTaken ? Number(timeTaken) : null,
+                    earnedXp,
+                    versions: {
+                        create: [{ code, isFinal: true }]
+                    }
+                },
+                include: { versions: true }
+            });
+        } else {
+            submission = await prisma_1.prisma.submission.create({
+                data: {
+                    taskId: id,
+                    userId,
+                    status,
+                    marks,
+                    feedback,
+                    timeTaken: timeTaken ? Number(timeTaken) : null,
+                    earnedXp,
+                    versions: {
+                        create: [{ code, isFinal: true }]
+                    }
+                },
+                include: { versions: true }
             });
         }
-    } else if (task.type === 'CODE' && language && task.sampleInput && task.sampleOutput) {
-        if (language === 'python') {
-            const validation = validatePythonCode(code);
-            if (!validation.valid) {
-                return res.status(400).json({ error: validation.reason });
-            }
-        } else if (language === 'c') {
-            const validation = validateCCode(code);
-            if (!validation.valid) {
-                return res.status(400).json({ error: validation.reason });
-            }
+        let responseMsg;
+        if (task.type === 'QUIZ') {
+            responseMsg = `Quiz graded! You got ${marks}/${task.quizQuestions.length} correct.`;
+        } else if (task.type === 'CODE' && status === 'Accepted') {
+            responseMsg = `✅ Output matches! Auto-graded: ${marks} marks, ⚡ +${earnedXp} XP earned.`;
+        } else {
+            responseMsg = 'Solution submitted successfully! Awaiting manual review.';
         }
-        const child_process = require('child_process');
-        const fs = require('fs');
-        const path = require('path');
-        const tempDir = path.join(__dirname, '../../temp_run');
-        if (!fs.existsSync(tempDir)) {
-            fs.mkdirSync(tempDir, { recursive: true });
-        }
-        const fileId = Math.random().toString(36).substring(7);
-        let runStdout = '';
-        if (language === 'python') {
-            const filePath = path.join(tempDir, `run_${fileId}.py`);
-            fs.writeFileSync(filePath, code);
-            const antigravityPath = path.join(tempDir, 'antigravity.py');
-            if (!fs.existsSync(antigravityPath)) {
-                fs.writeFileSync(antigravityPath, 'print("🚀 You are now floating in the air! (antigravity module loaded)")\n');
-            }
-
-            let pythonCmd = 'python3';
-            try {
-                const out = child_process.spawnSync('python3', ['--version']);
-                if (out.error || out.status !== 0) pythonCmd = 'python';
-            } catch (e) { pythonCmd = 'python'; }
-
-            try {
-                const out = child_process.spawnSync(pythonCmd, [filePath], { input: task.sampleInput, timeout: 5000 });
-                if (out && out.status !== null) {
-                    runStdout = out.stdout ? out.stdout.toString() : '';
-                }
-            } catch (e) {}
-            try { fs.unlinkSync(filePath); } catch (e) {}
-        } else if (language === 'c') {
-            const sourcePath = path.join(tempDir, `run_${fileId}.c`);
-            const isWin = process.platform === 'win32';
-            const exePath = path.join(tempDir, isWin ? `run_${fileId}.exe` : `run_${fileId}`);
-            fs.writeFileSync(sourcePath, code);
-            // Prefer gcc then clang
-            const compilers = ['gcc', 'clang'];
-            let compiled = false;
-            for (const compiler of compilers) {
-                try {
-                    child_process.execSync(`${compiler} "${sourcePath}" -o "${exePath}"`, { stdio: 'pipe', timeout: 5000 });
-                    compiled = true;
-                    break;
-                } catch (ce) {
-                    const errMsg = (ce && ce.stderr) ? ce.stderr.toString() : (ce && ce.message) ? ce.message : String(ce);
-                    if (ce.status !== undefined && errMsg.trim() && !errMsg.includes('not recognized') && !errMsg.includes('not found')) {
-                        break; // syntax error, don't try fallback
-                    }
-                }
-            }
-            if (compiled) {
-                try {
-                    if (!isWin) fs.chmodSync(exePath, 0o755);
-                    const out = child_process.spawnSync(exePath, { input: task.sampleInput, timeout: 5000 });
-                    runStdout = out.stdout ? out.stdout.toString() : '';
-                } catch (e) {
-                    // ignore runtime errors here
-                }
-            }
-            try { fs.unlinkSync(sourcePath); } catch (e) {}
-            try { fs.unlinkSync(exePath); } catch (e) {}
-        }
-
-        if (runStdout.trim() === task.sampleOutput.trim()) {
-            marks = task.maxMarks || 10;
-            status = 'Accepted';
-            feedback = 'Auto-graded: Output matches expected sample output.';
-            
-            let finalXp = task.baseXp || 0;
-            if (task.fullXpTime && timeTaken) {
-                if (timeTaken <= task.fullXpTime) {
-                    finalXp = task.baseXp || 0;
-                } else {
-                    const diff = timeTaken - task.fullXpTime;
-                    finalXp = Math.max((task.averageXp || 0), (task.baseXp || 0) - diff);
-                }
-            }
-            earnedXp = finalXp;
-            
-            if (earnedXp > 0) {
-                await prisma_1.prisma.leaderboard.upsert({
-                    where: { userId },
-                    update: { xp: { increment: earnedXp } },
-                    create: { userId, xp: earnedXp }
-                });
-            }
-        }
-    } else if (task.type === 'GENERAL') {
-        let finalBaseXp = task.baseXp || 0;
-        if (task.fullXpTime && timeTaken) {
-            if (timeTaken <= task.fullXpTime) {
-                finalBaseXp = task.baseXp || 0;
-            } else {
-                const diff = timeTaken - task.fullXpTime;
-                finalBaseXp = Math.max((task.averageXp || 0), (task.baseXp || 0) - diff);
-            }
-        }
-        earnedXp = finalBaseXp; // Save the max possible decayed XP here for the manual review to use
-    }
-    const existingSubmission = await prisma_1.prisma.submission.findUnique({
-        where: {
-            taskId_userId: {
-                taskId: id,
-                userId: userId
-            }
-        }
-    });
-    let submission;
-    if (existingSubmission) {
-        submission = await prisma_1.prisma.submission.update({
-            where: { id: existingSubmission.id },
-            data: {
-                status,
-                marks,
-                feedback,
-                timeTaken: timeTaken ? Number(timeTaken) : null,
-                earnedXp,
-                versions: {
-                    create: [{ code, isFinal: true }]
-                }
-            },
-            include: { versions: true }
+        res.status(201).json({
+            message: responseMsg,
+            submission
         });
-    } else {
-        submission = await prisma_1.prisma.submission.create({
-            data: {
-                taskId: id,
-                userId,
-                status,
-                marks,
-                feedback,
-                timeTaken: timeTaken ? Number(timeTaken) : null,
-                earnedXp,
-                versions: {
-                    create: [{ code, isFinal: true }]
-                }
-            },
-            include: { versions: true }
-        });
+    } catch (e) {
+        console.error(`[TASKS] POST /:id/submit (${req.params.id}) error:`, e?.message || e);
+        res.status(500).json({ error: 'Failed to submit solution task' });
     }
-    let responseMsg;
-    if (task.type === 'QUIZ') {
-        responseMsg = `Quiz graded! You got ${marks}/${task.quizQuestions.length} correct.`;
-    } else if (task.type === 'CODE' && status === 'Accepted') {
-        responseMsg = `✅ Output matches! Auto-graded: ${marks} marks, ⚡ +${earnedXp} XP earned.`;
-    } else {
-        responseMsg = 'Solution submitted successfully! Awaiting manual review.';
-    }
-    res.status(201).json({
-        message: responseMsg,
-        submission
-    });
 });
 
 // /run-code route moved above /:id routes (see above)
