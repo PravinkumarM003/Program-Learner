@@ -193,6 +193,8 @@ router.post('/users/:id/xp', auth_1.authenticateJWT, (0, auth_1.authorizeRoles)(
 });
 
 
+const { clearCoursesCache } = require('./courses');
+
 // Create a new course (track)
 router.post('/courses', auth_1.authenticateJWT, (0, auth_1.authorizeRoles)('ADMIN', 'TEACHER'), async (req, res) => {
     try {
@@ -201,6 +203,7 @@ router.post('/courses', auth_1.authenticateJWT, (0, auth_1.authorizeRoles)('ADMI
         const existing = await prisma_1.prisma.course.findFirst({ where: { title } });
         if (existing) return res.status(400).json({ error: 'Track already exists' });
         const course = await prisma_1.prisma.course.create({ data: { title, description: emoji || '' } });
+        if (typeof clearCoursesCache === 'function') clearCoursesCache();
         res.json({ course });
     } catch (e) {
         console.error(e);
@@ -208,16 +211,27 @@ router.post('/courses', auth_1.authenticateJWT, (0, auth_1.authorizeRoles)('ADMI
     }
 });
 
-
 // Edit course
 router.put('/courses/:id', auth_1.authenticateJWT, (0, auth_1.authorizeRoles)('ADMIN', 'TEACHER'), async (req, res) => {
     try {
         const { id } = req.params;
         const { title, emoji } = req.body;
+        const oldCourse = await prisma_1.prisma.course.findUnique({ where: { id } });
         const data = {};
         if (title !== undefined) data.title = title;
         if (emoji !== undefined) data.description = emoji;
         const course = await prisma_1.prisma.course.update({ where: { id }, data });
+        if (oldCourse && title && title !== oldCourse.title) {
+            await prisma_1.prisma.task.updateMany({
+                where: { OR: [{ courseId: id }, { category: oldCourse.title }] },
+                data: { category: title }
+            });
+            await prisma_1.prisma.lesson.updateMany({
+                where: { OR: [{ courseId: id }, { category: oldCourse.title }] },
+                data: { category: title }
+            });
+        }
+        if (typeof clearCoursesCache === 'function') clearCoursesCache();
         res.json({ course });
     } catch (e) {
         res.status(500).json({ error: 'Failed to update course' });
@@ -229,6 +243,7 @@ router.delete('/courses/:id', auth_1.authenticateJWT, (0, auth_1.authorizeRoles)
     try {
         const { id } = req.params;
         await prisma_1.prisma.course.delete({ where: { id } });
+        if (typeof clearCoursesCache === 'function') clearCoursesCache();
         res.json({ message: 'Track deleted' });
     } catch (e) {
         console.error(e);

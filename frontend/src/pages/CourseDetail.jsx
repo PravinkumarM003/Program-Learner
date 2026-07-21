@@ -37,7 +37,7 @@ export default function CourseDetail() {
     const token = localStorage.getItem('access_token')
     if (token) {
       promises.push(api.get('/progress').then(r => setProgress(r.data?.progress || [])).catch(() => {}))
-      promises.push(api.get('/submissions').then(r => setSubmittedTaskIds(new Set((r.data?.submissions || []).map(s => s.taskId)))).catch(() => {}))
+      promises.push(api.get('/submissions').then(r => setSubmittedTaskIds(new Set((r.data?.submissions || []).filter(s => s.status === 'Accepted').map(s => s.taskId)))).catch(() => {}))
     }
     Promise.all(promises)
       .catch(() => setError('Course not found.'))

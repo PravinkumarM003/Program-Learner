@@ -38,30 +38,45 @@ router.post('/:id/complete', auth_1.authenticateJWT, async (req, res) => {
         if (!userId) return res.status(401).json({ error: 'Authentication required' });
         
         const lessonId = req.params.id;
+        const LESSON_XP = 10;
         
         const progress = await prisma_1.prisma.lessonProgress.findFirst({
             where: { userId, lessonId }
         });
         
+        let earnedNewXp = false;
         if (progress) {
-            await prisma_1.prisma.lessonProgress.update({
-                where: { id: progress.id },
-                data: { completed: true, xp: 10 }
-            });
+            if (!progress.completed) {
+                earnedNewXp = true;
+                await prisma_1.prisma.lessonProgress.update({
+                    where: { id: progress.id },
+                    data: { completed: true, xp: LESSON_XP, completedAt: new Date() }
+                });
+            }
         } else {
+            earnedNewXp = true;
             await prisma_1.prisma.lessonProgress.create({
                 data: {
                     userId,
                     lessonId,
                     completed: true,
-                    xp: 10
+                    xp: LESSON_XP,
+                    completedAt: new Date()
                 }
             });
         }
         
-        // Return 200 OK with XP so the frontend shows the completion toast
-        res.json({ success: true, xp: 10 });
+        if (earnedNewXp) {
+            await prisma_1.prisma.leaderboard.upsert({
+                where: { userId },
+                update: { xp: { increment: LESSON_XP } },
+                create: { userId, xp: LESSON_XP }
+            });
+        }
+        
+        res.json({ success: true, xp: earnedNewXp ? LESSON_XP : 0 });
     } catch (e) {
+        console.error('[LESSONS] POST /:id/complete error:', e?.message || e);
         res.status(500).json({ error: 'Failed to mark lesson as complete' });
     }
 });

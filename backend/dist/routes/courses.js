@@ -338,4 +338,9 @@ router.get('/:id', async (req, res) => {
     }
 });
 
+function clearCoursesCache() {
+    _coursesCache.data = null;
+    _coursesCache.expiresAt = 0;
+}
+exports.clearCoursesCache = clearCoursesCache;
 exports.default = router;

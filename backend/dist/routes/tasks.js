@@ -446,7 +446,9 @@ router.post('/:id/submit', auth_1.authenticateJWT, async (req, res) => {
             const totalQuestions = task.quizQuestions.length;
             task.quizQuestions.forEach(q => {
                 const studentAns = parsedAnswers.find(a => a.questionId === q.id)?.answer || '';
-                if (q.answer.trim().toLowerCase() === studentAns.trim().toLowerCase()) {
+                const cleanCorrect = (q.answer || '').replace(/\s+/g, ' ').trim().toLowerCase();
+                const cleanStudent = (studentAns || '').replace(/\s+/g, ' ').trim().toLowerCase();
+                if (cleanCorrect && cleanStudent && (cleanCorrect === cleanStudent || cleanCorrect.includes(cleanStudent) || cleanStudent.includes(cleanCorrect))) {
                     correctCount++;
                 }
             });
@@ -476,7 +478,7 @@ router.post('/:id/submit', auth_1.authenticateJWT, async (req, res) => {
                     create: { userId, xp: earnedXp }
                 });
             }
-        } else if (task.type === 'CODE' && language && task.sampleInput && task.sampleOutput) {
+        } else if (task.type === 'CODE' && language) {
             if (language === 'python') {
                 const validation = validatePythonCode(code);
                 if (!validation.valid) {
@@ -497,6 +499,7 @@ router.post('/:id/submit', auth_1.authenticateJWT, async (req, res) => {
             }
             const fileId = Math.random().toString(36).substring(7);
             let runStdout = '';
+            const inputData = task.sampleInput || '';
             if (language === 'python') {
                 const filePath = path.join(tempDir, `run_${fileId}.py`);
                 fs.writeFileSync(filePath, code);
@@ -512,7 +515,7 @@ router.post('/:id/submit', auth_1.authenticateJWT, async (req, res) => {
                 } catch (e) { pythonCmd = 'python'; }
 
                 try {
-                    const out = child_process.spawnSync(pythonCmd, [filePath], { input: task.sampleInput, timeout: 5000 });
+                    const out = child_process.spawnSync(pythonCmd, [filePath], { input: inputData, timeout: 5000 });
                     if (out && out.status !== null) {
                         runStdout = out.stdout ? out.stdout.toString() : '';
                     }
@@ -541,7 +544,7 @@ router.post('/:id/submit', auth_1.authenticateJWT, async (req, res) => {
                 if (compiled) {
                     try {
                         if (!isWin) fs.chmodSync(exePath, 0o755);
-                        const out = child_process.spawnSync(exePath, { input: task.sampleInput, timeout: 5000 });
+                        const out = child_process.spawnSync(exePath, { input: inputData, timeout: 5000 });
                         runStdout = out.stdout ? out.stdout.toString() : '';
                     } catch (e) {
                         // ignore runtime errors here
@@ -551,7 +554,26 @@ router.post('/:id/submit', auth_1.authenticateJWT, async (req, res) => {
                 try { fs.unlinkSync(exePath); } catch (e) {}
             }
 
-            if (runStdout.trim() === task.sampleOutput.trim()) {
+            const cleanRun = runStdout.replace(/\r\n/g, '\n').replace(/\r/g, '\n').trim();
+            const cleanExpected = (task.sampleOutput || '').replace(/\r\n/g, '\n').replace(/\r/g, '\n').trim();
+
+            let isPassed = false;
+            if (cleanExpected && cleanRun === cleanExpected) {
+                isPassed = true;
+            } else if (task.testCases) {
+                try {
+                    const parsedTC = JSON.parse(task.testCases);
+                    if (Array.isArray(parsedTC) && parsedTC.length > 0) {
+                        const tcMatch = parsedTC.some(tc => {
+                            const expectedTcOut = (tc.output || '').replace(/\r\n/g, '\n').replace(/\r/g, '\n').trim();
+                            return expectedTcOut && cleanRun === expectedTcOut;
+                        });
+                        if (tcMatch) isPassed = true;
+                    }
+                } catch(e) {}
+            }
+
+            if (isPassed) {
                 marks = task.maxMarks || 10;
                 status = 'Accepted';
                 feedback = 'Auto-graded: Output matches expected sample output.';

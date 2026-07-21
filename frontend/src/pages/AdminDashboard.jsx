@@ -1602,17 +1602,18 @@ export default function AdminDashboard() {
 
       {/* Task Creation & Edit Modal */}
       {taskModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-start md:items-center justify-center bg-black/70 backdrop-blur-sm p-2 sm:p-4 overflow-y-auto">
-          <div className="glass-card rounded-3xl w-full max-w-2xl p-4 sm:p-6 md:p-8 my-4 sm:my-8 shadow-2xl relative">
-            <div className="flex items-start justify-between mb-4 sm:mb-6">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-3 sm:p-6 overflow-hidden">
+          <div className="glass-card rounded-3xl w-full max-w-2xl max-h-[90vh] flex flex-col shadow-2xl relative overflow-hidden border border-white/10">
+            <div className="flex items-start justify-between p-5 sm:p-6 border-b border-white/10 flex-none bg-[#030712]/50 backdrop-blur-md z-10">
               <div>
                 <h2 className="font-bold text-white text-lg sm:text-xl">{editingTask ? '✏️ Edit Task' : '➕ Create New Task'}</h2>
                 <p className="text-xs text-slate-400 mt-1">Configure your task, questions, and grading rules</p>
               </div>
-              <button onClick={() => setTaskModalOpen(false)} className="text-slate-500 hover:text-white transition-colors text-xl">✕</button>
+              <button onClick={() => setTaskModalOpen(false)} className="text-slate-400 hover:text-white transition-colors text-xl p-1 hover:bg-white/10 rounded-lg">✕</button>
             </div>
 
-            <form onSubmit={saveTask} className="space-y-6">
+            <form onSubmit={saveTask} className="flex-1 flex flex-col overflow-hidden">
+              <div className="flex-1 overflow-y-auto p-5 sm:p-6 space-y-6 pr-2">
               
               {/* SECTION 1: General Info */}
               <div className="bg-white/[0.02] border border-white/5 rounded-2xl p-5 space-y-4">
@@ -1850,13 +1851,16 @@ export default function AdminDashboard() {
                 </div>
               )}
 
-              <div className="flex gap-3 border-t border-white/5 pt-5">
+              </div>
+
+              {/* Modal Footer (Fixed) */}
+              <div className="p-4 sm:p-6 border-t border-white/10 bg-[#030712]/80 backdrop-blur-md flex gap-3 flex-none z-10">
                 <button type="submit" disabled={savingTask}
-                  className="flex-1 rounded-xl bg-gradient-to-r from-cyan-500 to-violet-600 py-3 text-sm font-bold text-white shadow-xl hover:opacity-90 transition-opacity disabled:opacity-50">
+                  className="flex-1 rounded-xl bg-gradient-to-r from-cyan-500 to-violet-600 py-3 text-sm font-bold text-white shadow-xl hover:opacity-90 transition-opacity disabled:opacity-50 cursor-pointer">
                   {savingTask ? '⏳ Saving...' : '💾 Save Task'}
                 </button>
                 <button type="button" onClick={() => setTaskModalOpen(false)}
-                  className="rounded-xl border border-white/10 px-6 py-3 text-sm text-slate-400 hover:bg-white/5 hover:text-white transition-colors">
+                  className="rounded-xl border border-white/10 px-6 py-3 text-sm text-slate-400 hover:bg-white/5 hover:text-white transition-colors cursor-pointer">
                   Cancel
                 </button>
               </div>
@@ -1867,96 +1871,99 @@ export default function AdminDashboard() {
 
       {/* Lesson Creation Modal */}
       {lessonModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-start md:items-center justify-center bg-black/70 backdrop-blur-sm p-2 sm:p-4 overflow-y-auto">
-          <div className="glass-card rounded-3xl w-full max-w-2xl p-4 sm:p-6 md:p-8 my-4 sm:my-8 shadow-2xl relative">
-            <div className="flex items-start justify-between mb-4 sm:mb-6">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-3 sm:p-6 overflow-hidden">
+          <div className="glass-card rounded-3xl w-full max-w-2xl max-h-[90vh] flex flex-col shadow-2xl relative overflow-hidden border border-white/10">
+            <div className="flex items-start justify-between p-5 sm:p-6 border-b border-white/10 flex-none bg-[#030712]/50 backdrop-blur-md z-10">
               <div>
                 <h2 className="font-bold text-white text-lg sm:text-xl flex items-center gap-3">
                   <span>📚 {editingLesson ? 'Edit Lesson' : 'Create New Lesson'}</span>
                   {!editingLesson && (
                     <button type="button" onClick={autoGenerateLesson} disabled={generatingLesson}
-                      className="text-xs font-black bg-gradient-to-r from-violet-500 to-fuchsia-600 px-3 py-1.5 rounded-lg shadow-lg hover:shadow-violet-500/25 transition-all disabled:opacity-50">
+                      className="text-xs font-black bg-gradient-to-r from-violet-500 to-fuchsia-600 px-3 py-1.5 rounded-lg shadow-lg hover:shadow-violet-500/25 transition-all disabled:opacity-50 cursor-pointer">
                       {generatingLesson ? '✨ Generating...' : '✨ Auto-generate with Claude'}
                     </button>
                   )}
                 </h2>
                 <p className="text-xs text-slate-400 mt-1">Build a lesson with text content and/or an embedded video</p>
               </div>
-              <button onClick={() => setLessonModalOpen(false)} className="text-slate-500 hover:text-white transition-colors text-xl">✕</button>
+              <button onClick={() => setLessonModalOpen(false)} className="text-slate-400 hover:text-white transition-colors text-xl p-1 hover:bg-white/10 rounded-lg">✕</button>
             </div>
 
-            <form onSubmit={saveLesson} className="space-y-5">
-              {/* SECTION 1: Basics */}
-              <div className="bg-white/[0.02] border border-white/5 rounded-2xl p-5 space-y-4">
-                <h3 className="text-[11px] font-bold text-cyan-400 uppercase tracking-widest">1 · Basics</h3>
-                <div className="grid sm:grid-cols-2 gap-4">
+            <form onSubmit={saveLesson} className="flex-1 flex flex-col overflow-hidden">
+              <div className="flex-1 overflow-y-auto p-5 sm:p-6 space-y-5 pr-2">
+                {/* SECTION 1: Basics */}
+                <div className="bg-white/[0.02] border border-white/5 rounded-2xl p-5 space-y-4">
+                  <h3 className="text-[11px] font-bold text-cyan-400 uppercase tracking-widest">1 · Basics</h3>
+                  <div className="grid sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-xs text-slate-400 font-semibold block mb-1.5">Lesson Title *</label>
+                      <input type="text" value={lessonTitle} onChange={e => setLessonTitle(e.target.value)} required
+                        className="w-full rounded-xl bg-black/20 border border-white/10 px-4 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-cyan-500/50 transition-shadow" placeholder="e.g. Introduction to Variables" />
+                    </div>
+                    <div>
+                      <label className="text-xs text-slate-400 font-semibold block mb-1.5">Difficulty</label>
+                      <select value={lessonDifficulty} onChange={e => setLessonDifficulty(e.target.value)}
+                        className="w-full rounded-xl bg-black/20 border border-white/10 px-4 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-cyan-500/50 transition-shadow">
+                        <option value="Beginner">Beginner</option>
+                        <option value="Intermediate">Intermediate</option>
+                        <option value="Advanced">Advanced</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="text-xs text-slate-400 font-semibold block mb-1.5">Language Track</label>
+                      <select value={lessonCategory} onChange={e => setLessonCategory(e.target.value)}
+                        className="w-full rounded-xl bg-black/20 border border-white/10 px-4 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-cyan-500/50 transition-shadow">
+                        {courses.map(c => <option key={c.id} value={c.title}>{c.title} Track</option>)}
+                      </select>
+                    </div>
+                  </div>
+                </div>
+
+                {/* SECTION 2: Video URL */}
+                <div className="bg-violet-500/5 border border-violet-500/20 rounded-2xl p-5 space-y-3">
+                  <h3 className="text-[11px] font-bold text-violet-400 uppercase tracking-widest">2 · Video (Optional)</h3>
                   <div>
-                    <label className="text-xs text-slate-400 font-semibold block mb-1.5">Lesson Title *</label>
-                    <input type="text" value={lessonTitle} onChange={e => setLessonTitle(e.target.value)} required
-                      className="w-full rounded-xl bg-black/20 border border-white/10 px-4 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-cyan-500/50 transition-shadow" placeholder="e.g. Introduction to Variables" />
+                    <label className="text-xs text-slate-400 font-semibold block mb-1.5">YouTube / Video URL</label>
+                    <input type="url" value={lessonVideoUrl} onChange={e => setLessonVideoUrl(e.target.value)}
+                      className="w-full rounded-xl bg-black/20 border border-violet-500/20 px-4 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-violet-500/50 transition-shadow"
+                      placeholder="https://www.youtube.com/watch?v=..." />
+                    {lessonVideoUrl && (
+                      <p className="text-[10px] mt-1.5 font-semibold">
+                        {/youtube\.com|youtu\.be/.test(lessonVideoUrl)
+                          ? <span className="text-green-400">✅ YouTube URL detected — will be embedded as a video player</span>
+                          : <span className="text-slate-400">🔗 URL saved — will be shown as a link</span>
+                        }
+                      </p>
+                    )}
+                  </div>
+                </div>
+
+                {/* SECTION 3: Content */}
+                <div className="bg-white/[0.02] border border-white/5 rounded-2xl p-5 space-y-4">
+                  <h3 className="text-[11px] font-bold text-cyan-400 uppercase tracking-widest">3 · Content</h3>
+                  <div>
+                    <label className="text-xs text-slate-400 font-semibold block mb-1.5">Lesson Content *</label>
+                    <textarea rows={6} value={lessonContent} onChange={e => setLessonContent(e.target.value)} required
+                      className="w-full rounded-xl bg-black/20 border border-white/10 px-4 py-3 text-sm text-white focus:outline-none focus:ring-2 focus:ring-cyan-500/50 resize-none transition-shadow"
+                      placeholder="Write the main lesson text here — theory, examples, step-by-step explanations..." />
                   </div>
                   <div>
-                    <label className="text-xs text-slate-400 font-semibold block mb-1.5">Difficulty</label>
-                    <select value={lessonDifficulty} onChange={e => setLessonDifficulty(e.target.value)}
-                      className="w-full rounded-xl bg-black/20 border border-white/10 px-4 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-cyan-500/50 transition-shadow">
-                      <option value="Beginner">Beginner</option>
-                      <option value="Intermediate">Intermediate</option>
-                      <option value="Advanced">Advanced</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="text-xs text-slate-400 font-semibold block mb-1.5">Language Track</label>
-                    <select value={lessonCategory} onChange={e => setLessonCategory(e.target.value)}
-                      className="w-full rounded-xl bg-black/20 border border-white/10 px-4 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-cyan-500/50 transition-shadow">
-                      {courses.map(c => <option key={c.id} value={c.title}>{c.title} Track</option>)}
-                    </select>
+                    <label className="text-xs text-slate-400 font-semibold block mb-1.5">Additional Notes (Optional)</label>
+                    <textarea rows={2} value={lessonNotes} onChange={e => setLessonNotes(e.target.value)}
+                      className="w-full rounded-xl bg-black/20 border border-white/10 px-4 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-cyan-500/50 resize-none transition-shadow"
+                      placeholder="Extra study tips, references, or key takeaways..." />
                   </div>
                 </div>
               </div>
 
-              {/* SECTION 2: Video URL */}
-              <div className="bg-violet-500/5 border border-violet-500/20 rounded-2xl p-5 space-y-3">
-                <h3 className="text-[11px] font-bold text-violet-400 uppercase tracking-widest">2 · Video (Optional)</h3>
-                <div>
-                  <label className="text-xs text-slate-400 font-semibold block mb-1.5">YouTube / Video URL</label>
-                  <input type="url" value={lessonVideoUrl} onChange={e => setLessonVideoUrl(e.target.value)}
-                    className="w-full rounded-xl bg-black/20 border border-violet-500/20 px-4 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-violet-500/50 transition-shadow"
-                    placeholder="https://www.youtube.com/watch?v=..." />
-                  {lessonVideoUrl && (
-                    <p className="text-[10px] mt-1.5 font-semibold">
-                      {/youtube\.com|youtu\.be/.test(lessonVideoUrl)
-                        ? <span className="text-green-400">✅ YouTube URL detected — will be embedded as a video player</span>
-                        : <span className="text-slate-400">🔗 URL saved — will be shown as a link</span>
-                      }
-                    </p>
-                  )}
-                </div>
-              </div>
-
-              {/* SECTION 3: Content */}
-              <div className="bg-white/[0.02] border border-white/5 rounded-2xl p-5 space-y-4">
-                <h3 className="text-[11px] font-bold text-cyan-400 uppercase tracking-widest">3 · Content</h3>
-                <div>
-                  <label className="text-xs text-slate-400 font-semibold block mb-1.5">Lesson Content *</label>
-                  <textarea rows={6} value={lessonContent} onChange={e => setLessonContent(e.target.value)} required
-                    className="w-full rounded-xl bg-black/20 border border-white/10 px-4 py-3 text-sm text-white focus:outline-none focus:ring-2 focus:ring-cyan-500/50 resize-none transition-shadow"
-                    placeholder="Write the main lesson text here — theory, examples, step-by-step explanations..." />
-                </div>
-                <div>
-                  <label className="text-xs text-slate-400 font-semibold block mb-1.5">Additional Notes (Optional)</label>
-                  <textarea rows={2} value={lessonNotes} onChange={e => setLessonNotes(e.target.value)}
-                    className="w-full rounded-xl bg-black/20 border border-white/10 px-4 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-cyan-500/50 resize-none transition-shadow"
-                    placeholder="Extra study tips, references, or key takeaways..." />
-                </div>
-              </div>
-
-              <div className="flex gap-3 border-t border-white/5 pt-5">
+              {/* Modal Footer (Fixed) */}
+              <div className="p-4 sm:p-6 border-t border-white/10 bg-[#030712]/80 backdrop-blur-md flex gap-3 flex-none z-10">
                 <button type="submit" disabled={savingLesson}
-                  className="flex-1 rounded-xl bg-gradient-to-r from-cyan-500 to-violet-600 py-3 text-sm font-bold text-white shadow-xl hover:opacity-90 transition-opacity disabled:opacity-50">
+                  className="flex-1 rounded-xl bg-gradient-to-r from-cyan-500 to-violet-600 py-3 text-sm font-bold text-white shadow-xl hover:opacity-90 transition-opacity disabled:opacity-50 cursor-pointer">
                   {savingLesson ? '⏳ Saving...' : '💾 Save Lesson'}
                 </button>
                 <button type="button" onClick={() => setLessonModalOpen(false)}
-                  className="rounded-xl border border-white/10 px-6 py-3 text-sm text-slate-400 hover:bg-white/5 hover:text-white transition-colors">
+                  className="rounded-xl border border-white/10 px-6 py-3 text-sm text-slate-400 hover:bg-white/5 hover:text-white transition-colors cursor-pointer">
                   Cancel
                 </button>
               </div>

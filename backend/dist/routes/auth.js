@@ -73,7 +73,7 @@ router.get('/dev-login', async (req, res) => {
 
 router.get('/google', (req, res) => {
     const base = 'https://accounts.google.com/o/oauth2/v2/auth';
-    
+
     // Resolve redirect URI dynamically based on the request host/headers
     const host = req.get('host');
     const proto = req.headers['x-forwarded-proto'] || req.protocol;
@@ -153,9 +153,9 @@ router.post('/refresh', async (req, res) => {
         const token = req.body.refresh_token || req.headers.authorization?.split(' ')[1];
         if (!token)
             return res.status(401).json({ error: 'No refresh token' });
-        
+
         const data = (0, jwt_1.verifyRefreshToken)(token);
-        
+
         // Token Reuse Detection
         if ((0, jwt_1.isTokenRevoked)(data.jti)) {
             logger_1.default.error('Security alert: Refresh token reuse detected!', { jti: data.jti, userId: data.sub });
@@ -168,7 +168,7 @@ router.post('/refresh', async (req, res) => {
                         meta: JSON.stringify({ jti: data.jti, ip: getClientIp(req) })
                     }
                 });
-            } catch (e) {}
+            } catch (e) { }
             return res.status(401).json({ error: 'Token reuse detected. Access denied. Please log in again.' });
         }
 
@@ -182,7 +182,7 @@ router.post('/refresh', async (req, res) => {
         // Generate rotated tokens
         const access = (0, jwt_1.signAccessToken)({ sub: user.id, role: user.role });
         const refresh = (0, jwt_1.signRefreshToken)({ sub: user.id });
-        
+
         res.json({ ok: true, access_token: access, refresh_token: refresh });
     }
     catch (err) {

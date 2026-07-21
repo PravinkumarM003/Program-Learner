@@ -414,12 +414,39 @@ export default function TaskDetail() {
           {warningMsg}
         </div>
       )}
-      {/* Breadcrumb */}
-      <Link to="/tasks" className="text-sm text-slate-500 hover:text-slate-300 transition-colors mb-4 inline-flex items-center gap-1">
-        ← All Tasks
-      </Link>
+      {/* Top Navigation & Exit Header Bar */}
+      <div className="flex items-center justify-between mb-4 bg-white/5 border border-white/10 p-3.5 px-5 rounded-2xl shadow-xl backdrop-blur-md">
+        <button
+          onClick={() => {
+            if (document.fullscreenElement) {
+              document.exitFullscreen().catch(() => {});
+            }
+            navigate('/tasks');
+          }}
+          className="flex items-center gap-2 px-4 py-2 rounded-xl bg-red-500/15 hover:bg-red-500/25 text-red-400 border border-red-500/30 font-bold text-xs sm:text-sm transition-all shadow-md active:scale-95 cursor-pointer"
+        >
+          <span className="text-base sm:text-lg">🚪</span> Exit Task / Back to Tasks
+        </button>
+        
+        <div className="flex items-center gap-3">
+          <span className="text-xs text-slate-400 font-semibold hidden md:inline">
+            Task: <strong className="text-white">{task.title}</strong> ({task.category || 'C'} Track)
+          </span>
+          <button
+            onClick={() => {
+              if (document.fullscreenElement) {
+                document.exitFullscreen().catch(() => {});
+              }
+              navigate('/dashboard');
+            }}
+            className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-slate-300 border border-white/10 text-xs font-semibold transition-all cursor-pointer"
+          >
+            🏠 Dashboard
+          </button>
+        </div>
+      </div>
 
-      <div className="flex flex-col lg:flex-row gap-6 mt-4">
+      <div className="flex flex-col lg:flex-row gap-6 mt-2">
         {/* Left Panel — Problem */}
         <div className="lg:w-[42%] flex flex-col gap-4">
           <div className="glass-card rounded-2xl p-6">
@@ -450,6 +477,18 @@ export default function TaskDetail() {
             </div>
             <h1 className="text-xl font-black text-white">{task.title}</h1>
           </div>
+
+          {isCompleted && (
+            <div className="rounded-2xl bg-emerald-500/10 border border-emerald-500/30 p-4 flex items-center justify-between text-xs shadow-lg">
+              <div className="flex items-center gap-3">
+                <span className="text-2xl">🎉</span>
+                <div>
+                  <p className="font-bold text-emerald-400 text-sm">Task Completed!</p>
+                  <p className="text-slate-300">You have successfully submitted and passed this challenge.</p>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Tabs */}
           <div className="flex gap-1 glass-card rounded-xl p-1 overflow-x-auto scrollbar-hide">

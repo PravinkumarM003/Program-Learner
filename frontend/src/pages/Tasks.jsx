@@ -35,7 +35,12 @@ export default function Tasks() {
         const tRes = results[0]
         const sRes = token ? results[1] : { data: { submissions: [] } }
         setTasks(tRes.data?.tasks || [])
-        setSubmittedTaskIds(new Set((sRes.data?.submissions || []).map(s => s.taskId)))
+        const acceptedSet = new Set(
+          (sRes.data?.submissions || [])
+            .filter(s => s.status === 'Accepted')
+            .map(s => s.taskId)
+        )
+        setSubmittedTaskIds(acceptedSet)
       })
       .catch(() => setError('Could not load tasks.'))
       .finally(() => setLoading(false))
@@ -53,6 +58,9 @@ export default function Tasks() {
   }
   const filtered = tasks.filter(filterTasks)
   const doneCount = tasks.filter(t => submittedTaskIds.has(t.id)).length
+
+  // Extract dynamic tracks from tasks
+  const dynamicTracks = Array.from(new Set(tasks.map(t => t.category || 'General'))).sort()
 
   return (
     <div className="max-w-7xl mx-auto px-4 md:px-6 py-10">
@@ -158,41 +166,29 @@ export default function Tasks() {
       {/* ── Tasks grid ── */}
       {!loading && !error && filtered.length > 0 && (
         <div className="space-y-10">
-          {['C', 'Python', 'Other'].map(categoryGroup => {
-            const catTasks = filtered.filter(t => {
-              const cat = t.category?.toLowerCase() || 'c';
-              if (categoryGroup === 'Python') return cat === 'python';
-              if (categoryGroup === 'C') return cat === 'c';
-              return !['python', 'c'].includes(cat);
-            });
+          {(dynamicTracks.length > 0 ? dynamicTracks : ['General']).map(categoryGroup => {
+            const catTasks = filtered.filter(t => (t.category || 'General').toLowerCase() === categoryGroup.toLowerCase());
 
             if (catTasks.length === 0) return null;
 
-            const dividerColor = categoryGroup === 'C'
-              ? 'bg-cyan-500/40'
-              : categoryGroup === 'Python'
-              ? 'bg-violet-500/40'
-              : 'bg-white/10'
-            const labelColor = categoryGroup === 'C'
-              ? 'text-cyan-400'
-              : categoryGroup === 'Python'
-              ? 'text-violet-400'
-              : 'text-slate-400'
-            const icon = categoryGroup === 'C' ? '🖥️' : categoryGroup === 'Python' ? '🐍' : '📝'
-            const label = categoryGroup === 'Other' ? 'General' : categoryGroup
+            const isC = categoryGroup.toLowerCase() === 'c';
+            const isPy = categoryGroup.toLowerCase() === 'python';
+
+            const dividerColor = isC ? 'bg-cyan-500/40' : isPy ? 'bg-violet-500/40' : 'bg-white/10';
+            const icon = isC ? '🖥️' : isPy ? '🐍' : '📚';
 
             return (
               <div key={categoryGroup}>
                 <div className="flex items-center gap-3 mb-6">
                   <div className={`h-px flex-1 ${dividerColor}`}></div>
-                  <span className={`flex items-center gap-2 font-black tracking-wider uppercase text-sm px-3 py-1 rounded-full border ${
-                    categoryGroup === 'C'
+                  <span className={`flex items-center gap-2 font-black tracking-wider uppercase text-sm px-3.5 py-1 rounded-full border ${
+                    isC
                       ? 'bg-cyan-500/10 border-cyan-500/30 text-cyan-400'
-                      : categoryGroup === 'Python'
+                      : isPy
                       ? 'bg-violet-500/10 border-violet-500/30 text-violet-400'
-                      : 'bg-white/5 border-white/10 text-slate-400'
+                      : 'bg-white/5 border-white/10 text-slate-300'
                   }`}>
-                    <span>{icon}</span> {label}
+                    <span>{icon}</span> {categoryGroup} Track
                   </span>
                   <div className={`h-px flex-1 ${dividerColor}`}></div>
                 </div>
@@ -204,13 +200,12 @@ export default function Tasks() {
                     const diff = DIFF_CONFIG[t.difficulty] || { cls: 'badge', bar: 'bg-slate-500', width: '50%' }
                     return (
                       <Link key={t.id} to={`/tasks/${t.id}`}
-                        onClick={(e) => { if (done) e.preventDefault() }}
-                        className={`card-hover glass-card rounded-2xl p-6 flex flex-col gap-4 group relative overflow-hidden animate-fade-up gradient-border ${done ? 'opacity-70 cursor-default' : ''}`}>
+                        className={`card-hover glass-card rounded-2xl p-6 flex flex-col gap-4 group relative overflow-hidden animate-fade-up gradient-border ${done ? 'border-emerald-500/30 bg-emerald-500/[0.03]' : ''}`}>
                         
                         {/* Done overlay badge */}
                         {done && (
                           <div className="absolute top-4 right-4 z-10">
-                            <span className="badge badge-accepted">✓ Done</span>
+                            <span className="badge badge-accepted shadow-lg">✓ Completed</span>
                           </div>
                         )}
 
@@ -221,7 +216,7 @@ export default function Tasks() {
                             {type.icon}
                           </span>
                           {t.baseXp > 0 && (
-                            <span className="text-xs font-bold text-amber-400 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded-full">
+                            <span className="text-xs font-bold text-amber-400 bg-amber-500/10 border border-amber-500/20 px-2.5 py-0.5 rounded-full">
                               ⚡ {t.baseXp} XP
                             </span>
                           )}
@@ -254,7 +249,7 @@ export default function Tasks() {
                         <div className="flex items-center justify-between text-xs border-t pt-3" style={{ borderColor: 'var(--border-subtle)', color: 'var(--text-muted)' }}>
                           {t.deadline
                             ? <span>⏰ Due {new Date(t.deadline).toLocaleDateString()}</span>
-                            : <span>{t.submissions?.length ?? 0} submissions</span>
+                            : <span>{done ? 'View submission' : 'Start challenge'}</span>
                           }
                           <span className="text-cyan-400 group-hover:translate-x-1 transition-transform inline-block font-bold">→</span>
                         </div>
