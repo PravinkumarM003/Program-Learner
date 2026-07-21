@@ -212,6 +212,31 @@ router.get('/admin', auth_1.authenticateJWT, (0, auth_1.authorizeRoles)('ADMIN',
     }
 });
 
+// Daily Challenge: get today's challenge (public) — MUST be defined BEFORE /:id
+router.get('/challenge/daily', async (_req, res) => {
+    try {
+        let task = null;
+        try {
+            task = await prisma_1.prisma.task.findFirst({
+                where: { isDailyChallenge: true, published: true }
+            });
+        } catch (dbErr) {
+            task = await prisma_1.prisma.task.findFirst({
+                where: { published: true }
+            });
+        }
+        if (!task) {
+            task = await prisma_1.prisma.task.findFirst({
+                where: { published: true }
+            });
+        }
+        res.json({ task: task || null });
+    } catch (e) {
+        console.error('[TASKS] GET /challenge/daily error:', e?.message || e);
+        res.json({ task: null });
+    }
+});
+
 router.get('/:id', async (req, res) => {
     try {
     const task = await prisma_1.prisma.task.findUnique({
@@ -405,19 +430,6 @@ router.patch('/:id/daily', auth_1.authenticateJWT, (0, auth_1.authorizeRoles)('A
     }
 });
 
-// Daily Challenge: get today's challenge (public)
-router.get('/challenge/daily', async (_req, res) => {
-    try {
-        const task = await prisma_1.prisma.task.findFirst({
-            where: { isDailyChallenge: true, published: true }
-        });
-        res.json({ task: task || null });
-    } catch (e) {
-        res.status(500).json({ error: 'Failed to fetch daily challenge' });
-    }
-});
-
-
 router.post('/:id/submit', auth_1.authenticateJWT, async (req, res) => {
     try {
         const { id } = req.params;
@@ -425,10 +437,22 @@ router.post('/:id/submit', auth_1.authenticateJWT, async (req, res) => {
         const { code, timeTaken, language } = req.body;
         if (!userId)
             return res.status(401).json({ error: 'Authentication required' });
-        const task = await prisma_1.prisma.task.findUnique({
+        let task = await prisma_1.prisma.task.findUnique({
             where: { id },
             include: { quizQuestions: true }
         });
+        if (!task && id === 'task-hello-python') {
+            try {
+                const coursesRoute = require('./courses');
+                if (typeof coursesRoute.ensureSeedDataInDb === 'function') {
+                    await coursesRoute.ensureSeedDataInDb();
+                }
+                task = await prisma_1.prisma.task.findUnique({
+                    where: { id },
+                    include: { quizQuestions: true }
+                });
+            } catch(seedErr) {}
+        }
         if (!task)
             return res.status(404).json({ error: 'Task not found' });
         let status = 'Pending';
@@ -677,19 +701,31 @@ router.post('/:id/violation', auth_1.authenticateJWT, async (req, res) => {
         const userId = req.user?.sub;
         if (!userId)
             return res.status(401).json({ error: 'Authentication required' });
-        const task = await prisma_1.prisma.task.findUnique({ where: { id } });
+        let task = await prisma_1.prisma.task.findUnique({ where: { id } });
+        if (!task && id === 'task-hello-python') {
+            try {
+                const coursesRoute = require('./courses');
+                if (typeof coursesRoute.ensureSeedDataInDb === 'function') {
+                    await coursesRoute.ensureSeedDataInDb();
+                }
+                task = await prisma_1.prisma.task.findUnique({ where: { id } });
+            } catch(seedErr) {}
+        }
         if (!task)
             return res.status(404).json({ error: 'Task not found' });
         const student = await prisma_1.prisma.user.findUnique({ where: { id: userId } });
         const studentName = student ? (student.name || student.email) : 'Unknown Student';
+        const taskTitle = task.title || 'Task';
         
-        await prisma_1.prisma.activityLog.create({
-            data: {
-                userId,
-                action: 'TASK_VIOLATION',
-                meta: JSON.stringify({ taskId: id, taskTitle: task.title, reason })
-            }
-        });
+        try {
+            await prisma_1.prisma.activityLog.create({
+                data: {
+                    userId,
+                    action: 'TASK_VIOLATION',
+                    meta: JSON.stringify({ taskId: id, taskTitle, reason })
+                }
+            });
+        } catch(e) {}
 
         // Auto-reject so it's hidden
         const existingSub = await prisma_1.prisma.submission.findUnique({

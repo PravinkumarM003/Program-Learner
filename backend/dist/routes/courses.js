@@ -66,15 +66,56 @@ const DEFAULT_SEED_COURSE = {
 const CACHE_TTL_MS = 5 * 60 * 1000;
 const _coursesCache = { data: null, expiresAt: 0 };
 
+async function ensureSeedDataInDb() {
+    try {
+        let course = await prisma_1.prisma.course.findFirst({ where: { id: 'course-python' } });
+        if (!course) {
+            course = await prisma_1.prisma.course.create({
+                data: {
+                    id: 'course-python',
+                    title: 'Python Starter',
+                    description: '🐍'
+                }
+            });
+        }
+        let task = await prisma_1.prisma.task.findFirst({ where: { id: 'task-hello-python' } });
+        if (!task) {
+            await prisma_1.prisma.task.create({
+                data: {
+                    id: 'task-hello-python',
+                    courseId: course.id,
+                    title: 'Print a Greeting',
+                    description: 'Write a Python program that prints Hello, PyLearn!',
+                    type: 'CODE',
+                    difficulty: 'Beginner',
+                    category: 'Python',
+                    sampleOutput: 'Hello, PyLearn!',
+                    published: true,
+                    isDraft: false
+                }
+            });
+        }
+    } catch (e) {
+        console.warn('[COURSES] Seed DB sync warning:', e?.message || e);
+    }
+}
+exports.ensureSeedDataInDb = ensureSeedDataInDb;
+
 async function refreshCoursesCacheIfNeeded() {
     const now = Date.now();
     if (_coursesCache.data && now < _coursesCache.expiresAt) {
         return _coursesCache.data;
     }
     try {
-        const courses = await prisma_1.prisma.course.findMany({
+        let courses = await prisma_1.prisma.course.findMany({
             include: { lessons: { orderBy: { order: 'asc' } }, tasks: { orderBy: { createdAt: 'asc' } } }
         });
+        if (!courses || courses.length === 0) {
+            await ensureSeedDataInDb();
+            courses = await prisma_1.prisma.course.findMany({
+                include: { lessons: { orderBy: { order: 'asc' } }, tasks: { orderBy: { createdAt: 'asc' } } }
+            });
+        }
         if (courses && courses.length > 0) {
             _coursesCache.data = courses;
             _coursesCache.expiresAt = now + CACHE_TTL_MS;
@@ -83,7 +124,7 @@ async function refreshCoursesCacheIfNeeded() {
         return courses;
     } catch (err) {
         console.warn('[COURSES] Cache refresh failed (DB may be waking up):', err?.message || err);
-        return null; // caller will use existing cache or fallback
+        return null;
     }
 }
 
