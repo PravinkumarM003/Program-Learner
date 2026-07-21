@@ -324,6 +324,12 @@ Do not output any additional text before or after the JSON.`;
 router.post('/lessons', auth_1.authenticateJWT, (0, auth_1.authorizeRoles)('ADMIN', 'TEACHER'), async (req, res) => {
     try {
         const { title, content, notes, videoUrl, difficulty, category } = req.body;
+        if (!title || !title.trim()) {
+            return res.status(400).json({ error: 'Title is required.' });
+        }
+        if (!content || !content.trim()) {
+            return res.status(400).json({ error: 'Content is required.' });
+        }
         const lessonCategory = category || 'C';
         let course = await prisma_1.prisma.course.findFirst({ where: { title: lessonCategory } });
         if (!course) {
@@ -332,22 +338,27 @@ router.post('/lessons', auth_1.authenticateJWT, (0, auth_1.authorizeRoles)('ADMI
         const count = await prisma_1.prisma.lesson.count({ where: { courseId: course.id } });
         const lesson = await prisma_1.prisma.lesson.create({
             data: {
-                title,
-                content,
-                notes,
-                videoUrl,
-                category: category || 'C',
+                title: title.trim(),
+                content: content.trim(),
+                notes: notes || null,
+                videoUrl: videoUrl || null,
+                category: lessonCategory,
                 difficulty: difficulty || 'Beginner',
                 order: count + 1,
                 courseId: course.id
             }
         });
         
-        await notifyStudents('New Lesson Available!', `A new lesson "${lesson.title}" has been added.`);
+        try {
+            await notifyStudents('New Lesson Available!', `A new lesson "${lesson.title}" has been added.`);
+        } catch(notifyErr) {
+            console.warn('[ADMIN] Failed to notify students about new lesson:', notifyErr?.message || notifyErr);
+        }
         
         res.json({ lesson });
     } catch (e) {
-        res.status(500).json({ error: 'Failed to create lesson' });
+        console.error('[ADMIN] POST /lessons error:', e?.message || e);
+        res.status(500).json({ error: 'Failed to create lesson: ' + (e?.message || 'Unknown error') });
     }
 });
 

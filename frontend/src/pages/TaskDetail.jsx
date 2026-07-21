@@ -39,6 +39,7 @@ export default function TaskDetail() {
 
   const [submitting, setSubmitting] = useState(false)
   const [result, setResult] = useState(null)
+  const [submitted, setSubmitted] = useState(false) // true after successful submission
   const [tab, setTab] = useState('problem')
   const [history, setHistory] = useState([])
   const editorRef = useRef(null)
@@ -52,6 +53,8 @@ export default function TaskDetail() {
   const [restrictedModeActive, setRestrictedModeActive] = useState(false)
   const [warningMsg, setWarningMsg] = useState(null)
   const lastViolationTime = useRef(0)
+  const submittingRef = useRef(false) // Ref mirror of submitting for use in event handlers
+  const blurTimeoutRef = useRef(null) // Debounce blur to avoid Monaco editor iframe false positives
 
   useEffect(() => {
     import('../utils/monaco').then(({ initMonaco }) => initMonaco())
@@ -137,27 +140,42 @@ export default function TaskDetail() {
 
     // Detect Tab switching / Minimizing
     const handleVisibilityChange = () => {
-      if (document.hidden) {
+      if (document.hidden && !submittingRef.current) {
         api.post(`/tasks/${id}/violation`, { reason: 'Tab switched / window minimized' }).catch(()=>{});
-        navigate('/dashboard');
+        showWarning('⚠️ Tab switch detected! Returning to dashboard.');
+        setTimeout(() => navigate('/dashboard'), 1500);
       }
     };
 
-    // Detect Window Blur (clicking outside, Alt+Tab, opening another app)
+    // Detect Window Blur — debounced to avoid Monaco editor iframe focus stealing
     const handleBlur = () => {
-      api.post(`/tasks/${id}/violation`, { reason: 'Window lost focus' }).catch(()=>{});
-      navigate('/dashboard');
+      if (submittingRef.current) return; // Don't penalize during API submission
+      if (blurTimeoutRef.current) clearTimeout(blurTimeoutRef.current);
+      blurTimeoutRef.current = setTimeout(() => {
+        // Only navigate if focus truly left (document is still visible but window is blurred)
+        if (!document.hasFocus() && !submittingRef.current) {
+          api.post(`/tasks/${id}/violation`, { reason: 'Window lost focus (Alt+Tab / external app)' }).catch(()=>{});
+          showWarning('⚠️ Window focus lost! Returning to dashboard.');
+          setTimeout(() => navigate('/dashboard'), 1500);
+        }
+      }, 300);
     };
 
-    // Detect Fullscreen Exit
+    const handleFocus = () => {
+      // Cancel false-positive blur triggered by Monaco iframes
+      if (blurTimeoutRef.current) clearTimeout(blurTimeoutRef.current);
+    };
+
+    // Detect Fullscreen Exit — only navigate if not currently submitting
     const handleFullscreenChange = () => {
       const isFullscreen = document.fullscreenElement || 
                            document.webkitFullscreenElement || 
                            document.mozFullScreenElement || 
                            document.msFullscreenElement;
-      if (!isFullscreen && restrictedModeActive) {
+      if (!isFullscreen && restrictedModeActive && !submittingRef.current) {
         api.post(`/tasks/${id}/violation`, { reason: 'Exited Fullscreen Mode' }).catch(()=>{});
-        navigate('/dashboard');
+        showWarning('⚠️ Fullscreen exited! Returning to dashboard.');
+        setTimeout(() => navigate('/dashboard'), 1500);
       }
     };
 
@@ -165,6 +183,7 @@ export default function TaskDetail() {
     window.addEventListener('keydown', handleKeyDown);
     document.addEventListener('visibilitychange', handleVisibilityChange);
     window.addEventListener('blur', handleBlur);
+    window.addEventListener('focus', handleFocus);
     document.addEventListener('fullscreenchange', handleFullscreenChange);
     document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
     document.addEventListener('mozfullscreenchange', handleFullscreenChange);
@@ -175,10 +194,12 @@ export default function TaskDetail() {
       window.removeEventListener('keydown', handleKeyDown);
       document.removeEventListener('visibilitychange', handleVisibilityChange);
       window.removeEventListener('blur', handleBlur);
+      window.removeEventListener('focus', handleFocus);
       document.removeEventListener('fullscreenchange', handleFullscreenChange);
       document.removeEventListener('webkitfullscreenchange', handleFullscreenChange);
       document.removeEventListener('mozfullscreenchange', handleFullscreenChange);
       document.removeEventListener('MSFullscreenChange', handleFullscreenChange);
+      if (blurTimeoutRef.current) clearTimeout(blurTimeoutRef.current);
     };
   }, [restrictedModeActive, task]);
 
@@ -285,20 +306,24 @@ export default function TaskDetail() {
 
   const submit = async () => {
     setSubmitting(true)
+    submittingRef.current = true
     setResult(null)
+    setTab('result')
 
     let submissionPayload = ''
     if (task.type === 'GENERAL') {
       if (!generalAnswer.trim()) {
         showToast('Please write your answer before submitting.', 'warning')
         setSubmitting(false)
+        submittingRef.current = false
         return
       }
       submissionPayload = generalAnswer
     } else if (task.type === 'QUIZ') {
-      const allAnswered = task.quizQuestions.every(q => quizAnswers[q.id])
-      if (!allAnswered && !confirm('You have unanswered questions. Are you sure you want to submit?')) {
+      const allAnswered = (task.quizQuestions || []).every(q => quizAnswers[q.id])
+      if (!allAnswered && !window.confirm('You have unanswered questions. Are you sure you want to submit?')) {
         setSubmitting(false)
+        submittingRef.current = false
         return
       }
       const answersArray = (task.quizQuestions || []).map(q => ({
@@ -313,26 +338,34 @@ export default function TaskDetail() {
     const timeTakenToSubmit = task.targetTime && timeLeft !== null ? task.targetTime - timeLeft : timeSpent
 
     try {
-      const r = await api.post(`/tasks/${id}/submit`, { code: submissionPayload, timeTaken: timeTakenToSubmit, language: task.type === 'CODE' ? lang : undefined })
+      const r = await api.post(`/tasks/${id}/submit`, {
+        code: submissionPayload,
+        timeTaken: timeTakenToSubmit,
+        language: task.type === 'CODE' ? lang : undefined
+      })
       const sub = r.data?.submission
-      setResult({
+      const resultData = {
         ok: true,
         msg: r.data?.message || 'Submitted! Awaiting review.',
         marks: sub?.marks,
         earnedXp: sub?.earnedXp,
         status: sub?.status,
         autoGraded: sub?.feedback?.startsWith('Auto-graded')
-      })
-      if (sub?.status === 'Accepted') {
-        setTimeout(() => navigate('/dashboard'), 2500)
-      } else {
-        navigate('/dashboard')
       }
+      setResult(resultData)
+      setSubmitted(true)
+      setTimerActive(false) // Stop timer on submit
+      // Exit fullscreen gracefully
+      if (document.fullscreenElement) {
+        document.exitFullscreen().catch(() => {})
+      }
+      // Navigate after showing result
+      setTimeout(() => navigate('/tasks'), 3000)
     } catch (e) {
-      setResult({ ok: false, msg: e.response?.data?.error || 'Submission failed.' })
-      setTab('result')
+      setResult({ ok: false, msg: e.response?.data?.error || 'Submission failed. Please try again.' })
     } finally {
       setSubmitting(false)
+      submittingRef.current = false
     }
   }
 
@@ -407,6 +440,9 @@ export default function TaskDetail() {
     }))
   }
 
+  // Determine if exam is actively locked (restricted mode entered and not yet submitted)
+  const examLocked = restrictedModeActive && !submitted
+
   return (
     <div className="max-w-7xl mx-auto px-4 py-6 relative">
       {warningMsg && (
@@ -414,37 +450,58 @@ export default function TaskDetail() {
           {warningMsg}
         </div>
       )}
-      {/* Top Navigation & Exit Header Bar */}
-      <div className="flex items-center justify-between mb-4 bg-white/5 border border-white/10 p-3.5 px-5 rounded-2xl shadow-xl backdrop-blur-md">
-        <button
-          onClick={() => {
-            if (document.fullscreenElement) {
-              document.exitFullscreen().catch(() => {});
-            }
-            navigate('/tasks');
-          }}
-          className="flex items-center gap-2 px-4 py-2 rounded-xl bg-red-500/15 hover:bg-red-500/25 text-red-400 border border-red-500/30 font-bold text-xs sm:text-sm transition-all shadow-md active:scale-95 cursor-pointer"
-        >
-          <span className="text-base sm:text-lg">🚪</span> Exit Task / Back to Tasks
-        </button>
-        
-        <div className="flex items-center gap-3">
-          <span className="text-xs text-slate-400 font-semibold hidden md:inline">
-            Task: <strong className="text-white">{task.title}</strong> ({task.category || 'C'} Track)
-          </span>
+
+      {/* Top Navigation — hidden during active exam lock, visible otherwise */}
+      {!examLocked && (
+        <div className="flex items-center justify-between mb-4 bg-white/5 border border-white/10 p-3.5 px-5 rounded-2xl shadow-xl backdrop-blur-md">
           <button
             onClick={() => {
               if (document.fullscreenElement) {
                 document.exitFullscreen().catch(() => {});
               }
-              navigate('/dashboard');
+              navigate('/tasks');
             }}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-slate-300 border border-white/10 text-xs font-semibold transition-all cursor-pointer"
+            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-red-500/15 hover:bg-red-500/25 text-red-400 border border-red-500/30 font-bold text-xs sm:text-sm transition-all shadow-md active:scale-95 cursor-pointer"
           >
-            🏠 Dashboard
+            <span className="text-base sm:text-lg">🚪</span> Exit Task / Back to Tasks
           </button>
+          <div className="flex items-center gap-3">
+            <span className="text-xs text-slate-400 font-semibold hidden md:inline">
+              Task: <strong className="text-white">{task.title}</strong> ({task.category || 'C'} Track)
+            </span>
+            <button
+              onClick={() => {
+                if (document.fullscreenElement) {
+                  document.exitFullscreen().catch(() => {});
+                }
+                navigate('/dashboard');
+              }}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-slate-300 border border-white/10 text-xs font-semibold transition-all cursor-pointer"
+            >
+              🏠 Dashboard
+            </button>
+          </div>
         </div>
-      </div>
+      )}
+
+      {/* Locked exam mode top bar */}
+      {examLocked && (
+        <div className="flex items-center justify-between mb-4 bg-red-950/40 border border-red-500/30 p-3 px-5 rounded-2xl">
+          <div className="flex items-center gap-2 text-red-400 text-xs font-bold">
+            🔒 Restricted Exam Mode Active — Navigation Locked
+          </div>
+          <div className="flex items-center gap-2">
+            {timeLeft !== null && (
+              <span className={`text-sm px-3 py-1 rounded-lg font-black ${
+                timeLeft < 60 ? 'bg-red-500/20 text-red-400 animate-pulse' : 'bg-white/10 text-white'
+              }`}>
+                ⏱ {Math.floor(timeLeft / 60).toString().padStart(2, '0')}:{(timeLeft % 60).toString().padStart(2, '0')}
+              </span>
+            )}
+            <span className="text-xs text-red-300 font-semibold">{task.title}</span>
+          </div>
+        </div>
+      )}
 
       <div className="flex flex-col lg:flex-row gap-6 mt-2">
         {/* Left Panel — Problem */}

@@ -1196,7 +1196,7 @@ export default function AdminDashboard() {
                     </div>
                     <div className="opacity-100 md:opacity-0 md:group-hover:opacity-100 flex items-center gap-1 absolute right-2 top-2.5 transition-all bg-black/80 pl-2 backdrop-blur-sm rounded-l">
                       <button onClick={() => openEditTask(t)} className="p-1.5 text-cyan-400 hover:bg-cyan-500/20 rounded" title="Edit">✏️</button>
-                      <button onClick={() => setDailyChallenge(t.id)} disabled={settingDailyId === t.id || t.isDailyChallenge} className="p-1.5 text-orange-400 hover:bg-orange-500/20 rounded disabled:opacity-40" title="Set Daily">🔥</button>
+                      <button onClick={() => setDailyChallenge(t.id)} disabled={settingDailyId === t.id || t.isDailyChallenge} className="p-1.5 text-orange-400 hover:bg-orange-500/20 rounded disabled:opacity-40" title="Set as Daily Challenge">🔥</button>
                       <button onClick={() => deleteTask(t.id)} className="p-1.5 text-red-400 hover:bg-red-500/20 rounded" title="Delete">🗑️</button>
                     </div>
                   </div>
